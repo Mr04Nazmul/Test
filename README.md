@@ -186,3 +186,15 @@ To refresh Agargaon roads locally: `node scripts/refresh-real-roads.mjs --statio
 **Accuracy boundary:** The map source provides *road centerline position*, not a surveyed 3D street reconstruction or exact curb, lanes, sidewalks, building exterior colors, traffic or real-time GPS. The updated system does not promise a Google Maps photorealistic digital twin. Existing OSM 3D building footprints have estimated heights/illustrative facades.
 
 **GitHub Pages deployment:** The repository's Pages site uses *deploy from branch*; to prevent HTTP 400 concurrent deployment failures, `.github/workflows/deploy-pages.yml` now only generates/persists assets to `main`. GitHub Pages' own branch publishing process serves the files. If Overpass is unavailable, the mapped-road cache may be absent and the fallback imagery will remain.
+
+
+## Train Radar (4 November 2026)
+
+- **Train Radar** panel displays every inferred scheduled MRT-6 train with a selectable direction, nearest segment (two official station names), next station and Dhaka local clock (BST).
+- **Find Nearest Train** chooses the timetable-inferred departure nearest the currently selected station and moves the existing six-coach 3D camera to it. You can also tap a train marker/model or a specific row in Train Radar.
+- Each schedule-inferred active departure has a visibly labeled 3D lead-car model plus a high-contrast pinned marker, updated along the cached OSM route. The selected train retains six full 3D coaches.
+- **No false out-of-hours train:** When the published schedule has no active departures, markers and 3D trains are hidden; the next scheduled first terminal departure is shown instead. Demo animation runs only after explicit **Demo Ride** selection, never by default.
+- Phone GPS is the user's *own* current phone position, shown privately. Being near tracks no longer automatically creates a "live train".
+- The app keeps the explicit **ESTIMATED · NOT GPS** label. A 3D model moving continuously on OSM coordinates is **not** proof that a train is really there. Public DMTCL train-location GPS/GTFS-RT telemetry is not available. See [DMTCL official schedule](https://dmtcl.gov.bd/pages/static-pages/6922df5f933eb65569e218ed). Train headways can change due to disruptions or holiday notices.
+- Current backend: no trusted live train observation provider connected. Supporting *real* locations will require a data-sharing agreement with a train-position provider or explicit opted-in passengers on a secure, separately configured backend with authentication, minimal location retention and source freshness controls. Do not borrow an unrelated Supabase database or silently infer "real" from a user's phone.
+- Validation: `node scripts/check-train-radar.mjs`, run as part of GitHub Actions.
