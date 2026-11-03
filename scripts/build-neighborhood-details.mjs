@@ -3,7 +3,7 @@
  * Open-data neighborhood furnishing for the 16 Dhaka MRT-6 stops.
  * Accurate anchor and OSM building exclusion, procedural inferred trees/street objects.
  * NOT satellite photogrammetry, surveyed road lines or observed vegetation.
- * Local glTF axes: +X east, +Y up, +Z south. Cesium glTF Y-up conversion.
+ * Cesium Entity model Y-up axes: +X north, +Y up, +Z east (default facing east).
  */
 import {readFileSync,writeFileSync,mkdirSync,existsSync} from 'node:fs';
 import {join} from 'node:path';
@@ -97,10 +97,10 @@ function inside(p,poly){
 function make(i){
  const s=route.stations[i],center=[s.lon,s.lat],lonScale=111320*Math.cos(s.lat*Math.PI/180);
  const city=JSON.parse(readFileSync('data/buildings/'+i+'.json','utf8'));
- const polygons=(city.buildings||[]).filter(x=>Array.isArray(x.p)&&x.p.length>=4).map(x=>x.p.map(([lon,lat])=>[(lon-s.lon)*lonScale,-(lat-s.lat)*111320]));
+ const polygons=(city.buildings||[]).filter(x=>Array.isArray(x.p)&&x.p.length>=4).map(x=>x.p.map(([lon,lat])=>[(lat-s.lat)*111320,(lon-s.lon)*lonScale]));
  const start=Math.max(0,route.stationBreaks[i]-3),end=Math.min(route.points.length-1,route.stationBreaks[i]+3);
  const before=route.points[start],after=route.points[end];
- const vx=(after[1]-before[1])*lonScale,vz=-(after[0]-before[0])*111320;
+ const vx=(after[0]-before[0])*111320,vz=(after[1]-before[1])*lonScale;
  const len=Math.hypot(vx,vz)||1,along=[vx/len,vz/len],across=[-along[1],along[0]];
  const local=(alongMeters,lateralMeters)=>[along[0]*alongMeters+across[0]*lateralMeters,along[1]*alongMeters+across[1]*lateralMeters];
  const conflict=(x,z,margin=2)=>{
@@ -174,7 +174,7 @@ function make(i){
   buffers:[{byteLength:binary.length,uri:'data:application/octet-stream;base64,'+binary.toString('base64')}],
   bufferViews:views,accessors,
   extras:{station:i,name:s.n,realData:'OpenStreetMap building footprints only',
-   localCoordinates:'glTF X east Y up Z south; model origin at mapped station point',
+   localCoordinates:'Cesium glTF X north Y up Z east; model origin at mapped station point',
    simulatedVegetation:placed,illustrativeStreetlamps:lamps,illustrativeBenches:benches,illustrativeStalls:stalls,
    triangles,warning:'Tree positions, market stands, lamp positions and dimensions are artist approximations, not verified physical positions',
    attribution:'© OpenStreetMap contributors, ODbL 1.0'}
