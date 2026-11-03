@@ -236,6 +236,10 @@ body.panel-hidden .controls{margin-left:auto}
  .sound-panel select{font-size:12px}
 }
 
+#roadAttribution{position:fixed;z-index:3;bottom:188px;left:10px;
+ font-size:9px;line-height:1.25;color:#edf8f2cf;background:#0a1b24a6;
+ border-radius:5px;padding:3px 6px;text-decoration:none;max-width:55vw}
+@media(max-width:680px){#roadAttribution{bottom:176px;left:7px;max-width:50vw;font-size:8px}}
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/";</script>
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
@@ -244,6 +248,7 @@ body.panel-hidden .controls{margin-left:auto}
 </head>
 <body>
 <div id="app"><div id="scene" aria-label="Interactive Dhaka Metro 3D map"></div></div>
+<a id="roadAttribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">Road alignments © OpenStreetMap contributors · width may be estimated</a>
 <div id="notice" role="status">মেট্রোরেলের 3D ভিউ লোড হচ্ছে...</div>
 <div class="shell">
 <header>
@@ -332,7 +337,7 @@ body.panel-hidden .controls{margin-left:auto}
 </section>
 </div>
 <script src="dhaka-soundscape.js?v=20261104-local-audio-fix-v3"></script>
-<script src="actual-roads.js?v=20261104-osm-geometry-v1"></script>
-<script src="app-v2.js?v=20261104-osm-geometry-v1"></script>
+<script src="actual-roads.js?v=20261104-osm-geometry-v2"></script>
+<script src="app-v2.js?v=20261104-osm-geometry-v2"></script>
 </body>
 </html>
