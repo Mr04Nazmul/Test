@@ -24,7 +24,7 @@ function cleanWays(raw){
   if(seen.has(id))continue;
   seen.add(id);ways.push({id,kind,points});
  }
- return ways.slice(0,MAX_ROADS);
+ return ways.slice(0,250);
 }
 function fromOverpass(elements){
  if(!Array.isArray(elements))return [];
@@ -43,12 +43,18 @@ function clear(viewer){
  entities=[];lastStation=null;
 }
 async function tryCache(i,signal){
- try{
-  const res=await fetch("./data/buildings/"+i+".json",{signal,cache:"no-store"});
-  if(!res.ok)return [];
-  const json=await res.json();
-  return cleanWays(json.roads);
- }catch(e){if(signal.aborted)throw e;return []}
+ // Prefer independently sourced real road-line GeoJSON-style data generated
+ // via Overpass on GitHub Actions. Old building files rarely contain roads.
+ for(const path of ["./data/osm-roads/"+i+".json","./data/buildings/"+i+".json"]){
+  try{
+   const res=await fetch(path,{signal,cache:"no-store"});
+   if(!res.ok)continue;
+   const json=await res.json();
+   const roads=cleanWays(json.roads);
+   if(roads.length)return roads;
+  }catch(e){if(signal.aborted)throw e}
+ }
+ return [];
 }
 async function fromLiveOSM(lat,lon,signal){
  // Exactly one station query. No scraping Google Maps / Google Earth.
