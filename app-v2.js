@@ -439,7 +439,7 @@ function openTrainRadar(force){
 function updateTrainRadar(){
  if(!radar)return;
  const info=radar.snapshot(),area=$("trainRadarList");
- $("trainRadarClock").textContent=info.clock+" BST · 4 Nov 2026 সহ স্থানীয় ঢাকা সময়";
+ $("trainRadarClock").textContent=info.clock+" BST · "+info.date+" · ঢাকা সময়";
  $("trainRadarCount").textContent=info.count+"টি অনুমিত · GPS নয়";
  area.replaceChildren();
  if(!info.trains.length){
