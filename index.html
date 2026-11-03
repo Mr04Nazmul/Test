@@ -374,23 +374,34 @@ function loop(t){
 async function loadOSMBuildings(i){
  if(!buildingsEnabled||googleMode)return;
  osmBuildings.forEach(e=>viewer.entities.remove(e));osmBuildings=[];
- const s=stations[i], query='[out:json][timeout:20];way["building"](around:380,'+s.lat+','+s.lon+');out geom;';
+ const s=stations[i], query='[out:json][timeout:20];way["building"](around:470,'+s.lat+','+s.lon+');out geom;';
  notify("OpenStreetMap থেকে ভবনের 3D footprint লোড করছি...",9000);
  try{
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),18000);
-  let response;
-  try{response=await fetch("https://overpass-api.de/api/interpreter?data="+encodeURIComponent(query),{signal:controller.signal});}
-  finally{clearTimeout(timer);}
-  if(!response.ok)throw new Error("OSM server "+response.status);
-  const data=await response.json();
+  let response=null,data=null;
+  const endpoints=[
+   "https://overpass.kumi.systems/api/interpreter",
+   "https://overpass-api.de/api/interpreter",
+   "https://overpass.openstreetmap.fr/api/interpreter"
+  ];
+  try{
+   for(const endpoint of endpoints){
+    try{
+     const attempt=await fetch(endpoint+"?data="+encodeURIComponent(query),{signal:controller.signal});
+     if(!attempt.ok)continue;
+     data=await attempt.json();response=attempt;break;
+    }catch(e){if(controller.signal.aborted)break;}
+   }
+  }finally{clearTimeout(timer);}
+  if(!response||!data)throw new Error("OpenStreetMap Overpass currently unavailable");
   if(!buildingsEnabled||googleMode||selectedStation!==i)return;
   for(const item of (data.elements||[]).slice(0,110)){
    if(!item.geometry||item.geometry.length<4)continue;
    const points=item.geometry.filter(p=>Number.isFinite(p.lon)&&Number.isFinite(p.lat)).flatMap(p=>[p.lon,p.lat]);
    if(points.length<8)continue;
    const levels=parseFloat(item.tags?.["building:levels"])||3;
-   const height=Math.min(110,Math.max(5,parseFloat(item.tags?.height)||levels*3.2));
+   const rawHeight=parseFloat(item.tags?.height);const height=Math.min(120,Math.max(4,Number.isFinite(rawHeight)?rawHeight:levels*3.2));
    const shape=viewer.entities.add({name:"OSM building footprint",polygon:{
     hierarchy:new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(points)),
     height:0,extrudedHeight:height,material:Cesium.Color.fromCssColorString("#aac1cb").withAlpha(.85),
@@ -398,7 +409,7 @@ async function loadOSMBuildings(i){
    }});
    osmBuildings.push(shape);
   }
-  notify(osmBuildings.length+"টি OSM building 3D extrusion দেখা যাচ্ছে। Heights অনুমানভিত্তিক।",8000);
+  notify(osmBuildings.length+"টি OSM footprint-based 3D building দেখা যাচ্ছে। কিছু height অনুমানভিত্তিক; photorealistic Google 3D নয়।",8000);
  }catch(error){notify("OpenStreetMap ভবন লোড হয়নি। রুট ও ট্রেন আগের মতো চলবে।",9000);}
 }
 $("buildings").addEventListener("click",()=>{
