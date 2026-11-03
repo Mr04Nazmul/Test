@@ -245,11 +245,12 @@ function renderCoachSet(dt=0.016){
  }
 }
 function findTrain(){
- clearViewLock();renderCoachSet();
- const p=lastKnown();
- viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(p.lon,p.lat,160),
-  orientation:{heading:p.heading+C.Math.PI,pitch:C.Math.toRadians(-44),roll:0},duration:1.15});
- announce(mode==="estimate"?"সময়সূচিভিত্তিক অনুমান—এটি live GPS tracking নয়":mode==="onboard"?"ফোনের নিজস্ব GPS অনুযায়ী ট্র্যাক অনুসরণ; অন্য ট্রেনের GPS নয়":"সিমুলেটেড ট্রেন—live নয়",6500);
+ renderCoachSet();
+ ride=true;cameraStyle="chase";orbitYaw=0;orbitPitch=-0.28;followDistance=105;
+ $("follow").classList.add("primary");
+ updateCameraLabel();
+ updateFollowCamera();
+ announce(mode==="estimate"?"Train-follow চালু। অবস্থান সময়সূচিভিত্তিক অনুমান (GPS নয়)।":mode==="onboard"?"ফোনের GPS অনুসরণ হচ্ছে, অন্য ট্রেনের GPS নয়।":"Demo train অনুসরণ হচ্ছে (live নয়)।",6500);
 }
 function updateModeControls(){
  const demo=mode==="demo",onboard=mode==="onboard";
@@ -257,14 +258,41 @@ function updateModeControls(){
  $("speed").textContent="▶ "+rate+"× demo speed";
  $("status").textContent=onboard?"MY PHONE GPS · PRIVATE":demo?"DEMO RIDE":"TIMETABLE ESTIMATE";
 }
+// Follow view remains user-controlled through orbit/zoom offset; no forced reset.
+function updateFollowCamera(){
+ if(!ride||!focused)return;
+ if(cameraStyle==="front"){
+  // Camera at the train nose looking along the real mapped track; NOT video.
+  const ahead=at(focused.distance+(focused.dir==="south"?1:-1)*10,focused.dir);
+  viewer.camera.setView({destination:C.Cartesian3.fromDegrees(ahead.lon,ahead.lat,22.8),
+   orientation:{heading:focused.heading+orbitYaw,pitch:C.Math.toRadians(-2)+orbitPitch*0.12,roll:0}});
+ }else{
+  const pitch=cameraStyle==="top"?-1.12:orbitPitch;
+  const range=cameraStyle==="top"?Math.max(105,followDistance):followDistance;
+  viewer.camera.lookAt(lonlatPoint(focused,21.4),
+   new C.HeadingPitchRange(focused.heading+C.Math.PI+orbitYaw,pitch,range));
+ }
+}
+function animateTrainMarkers(){
+ if(mode!=="estimate")return;
+ for(const [id,entity] of trainMarkers){
+  const sample=svc.positionFor&&svc.positionFor(id);
+  if(sample){
+   const pos=at(metersAtIndex(sample.position),sample.dir);
+   entity.position=lonlatPoint(pos,24);
+  }
+ }
+}
 function updateNow(t){
- const dt=Math.min(.10,Math.max(0,(t-lastFrame)/1000||0));lastFrame=t;
+ // Train + 3D camera rendered per animation frame. Schedule lookup is fractional-time.
+ const dt=lastFrame?Math.min(.06,Math.max(0,(t-lastFrame)/1000)):0.016;
+ lastFrame=t;
  if(mode==="demo"&&playing){demoMeters+=dt*16*rate;if(demoMeters>trackLength-2)demoMeters=0;}
- if(t-lastMapUpdate>900){
+ renderCoachSet(dt);
+ if(t-lastMarkerAnimation>120){animateTrainMarkers();lastMarkerAnimation=t;}
+ if(t-lastMapUpdate>1300){
   if(mode==="estimate")refreshTrainMarkerPositions();
-  renderCoachSet();lastMapUpdate=t;
-  // When riding, update nearby station architecture and offline OSM building geometry.
-  // Only change once when the train enters the vicinity of another station.
+  lastMapUpdate=t;
   if(ride&&focused&&showBuildings&&!googleMode){
    let closest=0,dist=Number.POSITIVE_INFINITY;
    for(let j=0;j<stopMeters.length;j++){
@@ -272,18 +300,11 @@ function updateNow(t){
     if(d<dist){closest=j;dist=d;}
    }
    if(closest!==selectedStation){
-    selectedStation=closest;
-    renderStructure(closest);
-    updateStationText();
-    loadBuildings(closest);
+    selectedStation=closest;renderStructure(closest);updateStationText();loadBuildings(closest);
    }
   }
  }
- if(ride&&focused){
-  // Look along the train's length from behind, rather than broadside.
-  const target=lonlatPoint(focused,22.2);
-  viewer.camera.lookAt(target,new C.HeadingPitchRange(focused.heading+C.Math.PI,C.Math.toRadians(-19),130));
- }
+ updateFollowCamera();
  if(t-etaLast>10000){updateStationText();etaLast=t}
  requestAnimationFrame(updateNow);
 }
