@@ -627,6 +627,38 @@ function appendNeighborhoodFurnishings(index){
  }));
 }
 
+// Expand beyond 16 station-area patches: load actual OSM building/road
+// features in cached rail-corridor gap tiles when the manifest has real data.
+// No generated building is presented as a surveyed photorealistic Google model.
+let corridorIndexPromise=null;
+function corridorIndex(){
+ if(!corridorIndexPromise)corridorIndexPromise=fetch("./assets/corridor/manifest.json",
+  {cache:"force-cache"}).then(r=>r.ok?r.json():{models:[]}).catch(()=>({models:[]}));
+ return corridorIndexPromise;
+}
+async function appendOSMCorridorSegments(index,ticket){
+ const manifest=await corridorIndex();
+ if(ticket!==loadTicket||index!==selectedStation||googleMode||!showBuildings)return;
+ const origin=st[index];
+ const distance=tile=>{
+  const dx=(tile.center.lon-origin.lon)*111320*Math.cos(C.Math.toRadians(origin.lat));
+  const dy=(tile.center.lat-origin.lat)*111320;
+  return Math.hypot(dx,dy);
+ };
+ const extent=extendedCityCoverage?3000:1700;
+ const limit=window.innerWidth<700?8:12;
+ for(const tile of (manifest.models||[]).filter(x=>distance(x)<extent)
+  .sort((a,b)=>distance(a)-distance(b)).slice(0,limit)){
+  if(ticket!==loadTicket||googleMode||!showBuildings)return;
+  buildings.push(viewer.entities.add({
+   name:"Mapped OSM rail-corridor 3D buildings and roads (not Google photogrammetry)",
+   position:C.Cartesian3.fromDegrees(tile.center.lon,tile.center.lat,0),
+   model:{uri:"./"+tile.file,scale:1,minimumPixelSize:0,maximumScale:1,
+    distanceDisplayCondition:new C.DistanceDisplayCondition(0,5300)}
+  }));
+ }
+}
+
 async function loadBuildings(i){
  if(!showBuildings||googleMode)return;
  const token=++loadTicket,s=st[i];
@@ -650,6 +682,7 @@ async function loadBuildings(i){
       distanceDisplayCondition:new C.DistanceDisplayCondition(0,5500)}
     }));
     appendAdjacentUrbanTiles(i);
+    appendOSMCorridorSegments(i,token);
     // Close-up 3D shops, roofs and urban greenery. Built from cached OSM
     // footprint anchors; decorations are illustrative and are NOT surveyed.
     for(const zone of [...new Set([i,...adjacentUrbanTileIndices(i)])]){
