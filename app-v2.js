@@ -113,7 +113,9 @@ st.forEach((s,i)=>{
  outlineWidth:3,style:C.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new C.Cartesian2(0,-22),
  distanceDisplayCondition:new C.DistanceDisplayCondition(0,9000),disableDepthTestDistance:Number.POSITIVE_INFINITY}});
 });
-function modelOrientation(p){return C.Transforms.headingPitchRollQuaternion(lonlatPoint(p,0),new C.HeadingPitchRoll(p.heading,0,0))}
+// glTF 2.0 uses +Z-forward; Cesium converts it to +X. Adjust -90 degrees to
+// make the longitudinal axis of all train and station glTF files follow the rail's compass bearing.
+function modelOrientation(p){return C.Transforms.headingPitchRollQuaternion(lonlatPoint(p,0),new C.HeadingPitchRoll(p.heading-C.Math.PI_OVER_TWO,0,0))}
 function renderStructure(index){
  if(stationStructure)viewer.entities.remove(stationStructure);
  const s=st[index],p=at(stopMeters[index]);
@@ -157,7 +159,7 @@ for(let i=0;i<6;i++){
  trainEntities.push(viewer.entities.add({
  id:"detailed-coach-"+i,name:"MRT-6 "+variant+" coach "+(i+1),
  position:lonlatPoint(at(demoMeters),0),
- model:{uri:"assets/mrt6-"+variant+".gltf",scale:1,minimumPixelSize:35,maximumScale:2.2}
+ model:{uri:"assets/mrt6-"+variant+".gltf",scale:1,minimumPixelSize:0,maximumScale:1}
  }));
 }
 function refreshTrainMarkerPositions(){
@@ -221,7 +223,7 @@ function renderCoachSet(){
  focused=at(focus.m,dir);
  for(let i=0;i<trainEntities.length;i++){
   const m=clamp(focus.m+(dir==="south"?-1:1)*i*carLength,0,trackLength-.1),p=at(m,dir);
-  const pos=lonlatPoint(p,19);
+  const pos=lonlatPoint(p,19.0);
   trainEntities[i].position=pos;trainEntities[i].orientation=modelOrientation(p);
  }
 }
@@ -229,7 +231,7 @@ function findTrain(){
  clearViewLock();renderCoachSet();
  const p=lastKnown();
  viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(p.lon,p.lat,160),
-  orientation:{heading:p.heading,pitch:C.Math.toRadians(-34),roll:0},duration:1.15});
+  orientation:{heading:p.heading+C.Math.PI,pitch:C.Math.toRadians(-44),roll:0},duration:1.15});
  announce(mode==="estimate"?"সময়সূচিভিত্তিক অনুমান—এটি live GPS tracking নয়":mode==="onboard"?"ফোনের নিজস্ব GPS অনুযায়ী ট্র্যাক অনুসরণ; অন্য ট্রেনের GPS নয়":"সিমুলেটেড ট্রেন—live নয়",6500);
 }
 function updateModeControls(){
@@ -246,8 +248,9 @@ function updateNow(t){
   renderCoachSet();lastMapUpdate=t;
  }
  if(ride&&focused){
-  const target=lonlatPoint(focused,22);
-  viewer.camera.lookAt(target,new C.HeadingPitchRange(focused.heading,C.Math.toRadians(-16),105));
+  // Look along the train's length from behind, rather than broadside.
+  const target=lonlatPoint(focused,22.2);
+  viewer.camera.lookAt(target,new C.HeadingPitchRange(focused.heading+C.Math.PI,C.Math.toRadians(-19),130));
  }
  if(t-etaLast>10000){updateStationText();etaLast=t}
  requestAnimationFrame(updateNow);
@@ -260,34 +263,58 @@ async function loadBuildings(i){
  const query='[out:json][timeout:18];way["building"](around:520,'+s.lat+','+s.lon+');out geom;';
  const base=["https://overpass.kumi.systems/api/interpreter","https://overpass-api.de/api/interpreter"];
  try{
-  let data=null;
-  for(const endpoint of base){
-   try{
-    const response=await fetch(endpoint+"?data="+encodeURIComponent(query),{signal:bldgRequest.signal});
-    if(!response.ok)continue;
-    data=await response.json();break;
-   }catch(e){if(bldgRequest.signal.aborted)return}
+  let rows=[],offline=false;
+  // Real OpenStreetMap building polygons are stored in this repository, as same-origin JSON.
+  // Unlike public Overpass API, these can be loaded reliably on a phone with no API key/CORS.
+  try{
+   const result=await fetch("./data/buildings/"+i+".json",{signal:bldgRequest.signal,cache:"force-cache"});
+   if(result.ok){
+    const cached=await result.json();
+    if(Array.isArray(cached.buildings)&&cached.buildings.length){
+     rows=cached.buildings;offline=true;
+    }
+   }
+  }catch(err){if(bldgRequest.signal.aborted)return}
+  if(!rows.length){
+   // Live OSM fallback for stations whose pre-packaged data is not yet available.
+   let data=null;
+   for(const endpoint of base){
+    try{
+     const response=await fetch(endpoint+"?data="+encodeURIComponent(query),{signal:bldgRequest.signal});
+     if(!response.ok)continue;
+     data=await response.json();break;
+    }catch(e){if(bldgRequest.signal.aborted)return}
+   }
+   if(!data)throw Error("No offline footprints; Overpass unavailable");
+   rows=(data.elements||[]).map(item=>{
+    if(!item.geometry||item.geometry.length<4)return null;
+    const p=item.geometry.filter(p=>Number.isFinite(p.lon)&&Number.isFinite(p.lat)).map(p=>[p.lon,p.lat]);
+    const h=parseFloat(item.tags?.height),levels=parseFloat(item.tags?.["building:levels"]);
+    return {p,h:Number.isFinite(h)?h:Number.isFinite(levels)?levels*3.2:undefined};
+   }).filter(Boolean);
   }
-  if(!data)throw Error("OpenStreetMap Overpass temporarily unavailable");
   if(!showBuildings||googleMode||i!==selectedStation||token!==loadTicket)return;
   for(const old of buildings)viewer.entities.remove(old);buildings=[];
-  for(const item of (data.elements||[]).slice(0,190)){
-   if(!item.geometry||item.geometry.length<4)continue;
-   const vertices=item.geometry.filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)).flatMap(p=>[p.lon,p.lat]);
+  // Cap rendered polygons for iPhone GPU performance; use actual footprint shapes.
+  for(const item of rows.slice(0,420)){
+   if(!item.p||item.p.length<4)continue;
+   const vertices=item.p.flat();
    if(vertices.length<8)continue;
-   let m=parseFloat(item.tags?.height);
-   if(!Number.isFinite(m))m=(parseFloat(item.tags?.["building:levels"])||3)*3.2;
-   const height=clamp(m,4,120);
-   const type=item.tags?.building;
-   const color=type==="commercial"||type==="office"?"#a9c0c1":type==="apartments"?"#c1bbab":"#a3b4b6";
-   buildings.push(viewer.entities.add({name:"OSM building · approximate height",polygon:{
+   // OSM height/level tag where available; deterministic guess otherwise.
+   const seed=(Number(item.id)||item.p.length*17)%17;
+   const h=(item.h===undefined||item.h===null)?(8+(seed%6)*3.1):Number(item.h);
+   const height=clamp(h,4,110);
+   const colorPalette=["#a6abb3","#d4c8b9","#bdbfbd","#c6c6bd","#b0bbb9","#bdb4ae"];
+   const color=colorPalette[seed%colorPalette.length];
+   buildings.push(viewer.entities.add({name:offline?"OSM building footprint (cached)":"OSM building footprint",polygon:{
     hierarchy:new C.PolygonHierarchy(C.Cartesian3.fromDegreesArray(vertices)),
-    height:0,extrudedHeight:height,
-    material:C.Color.fromCssColorString(color).withAlpha(.85),
-    outline:false}}));
+    height:1.5,extrudedHeight:height,
+    material:C.Color.fromCssColorString(color).withAlpha(.98),
+    outline:false
+   }}));
   }
-  announce("OSM footprint দিয়ে "+buildings.length+"টি 3D ভবন দেখাচ্ছে; উচ্চতা আনুমানিক।",6500);
- }catch(e){if(!bldgRequest.signal.aborted)announce("3D OSM ভবনের সার্ভার সাড়া দেয়নি। Satellite map ও train চালু থাকবে।",7500)}
+  announce(buildings.length+"টি বাস্তব OSM footprint থেকে 3D ভবন তৈরি ("+(offline?"লোকাল ক্যাশ":"অনলাইন")+"). Height অনেকে আনুমানিক।",8500);
+ }catch(e){if(!bldgRequest.signal.aborted)announce("Building data unavailable for this station. অন্য স্টেশন নির্বাচন করো।",8000)}
 }
 async function satelliteToggle(){
  if(googleMode){announce("প্রথমে Google 3D mode বন্ধ করো।");return}
