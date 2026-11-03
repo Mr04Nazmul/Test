@@ -5,7 +5,7 @@
   "photoDate": "2023-11-02",
   "baseArchitecture": "Reference-guided original geometry: not photogrammetry; visible colors/structures approximated; unseen facades conjectural",
   "survey": "Station types and proposed widths from DMTCL environmental assessment (January 2016), not verified as-built dimensions",
-  "verifiedImageReferences": 11,
+  "verifiedImageReferences": 12,
   "stations": [
     {
       "id": 0,
@@ -128,9 +128,9 @@
       "density": 0.84,
       "trees": 9,
       "terrain": "urban",
-      "detail": "dense low/midrise corridor with narrow streets; photo location verified but architectural details estimated",
-      "photo": null,
-      "photoEvidence": "environmental/structural guess where source image could not be directly verified",
+      "detail": "dense midrise apartment and commercial grid around a continuous green-roofed elevated metro canopy, rooftop parapets, junctions and narrow roads",
+      "photo": "https://online92.thedailystar.net/sites/default/files/styles/very_big/public/images/2023/11/02/kazipara.jpg",
+      "photoEvidence": "reference image identified in 2023 Daily Star gallery",
       "status": "reference-derived approximate reconstruction"
     },
     {
