@@ -35,6 +35,9 @@ jobs:
           node --check data/train-radar.js
           node --check scripts/check-train-radar.mjs
           node scripts/check-train-radar.mjs
+          node --check live-rider-p2p.js
+          node --check scripts/check-private-gps.mjs
+          node scripts/check-private-gps.mjs
       - name: Build six loud locally-hosted iPhone audio tracks and check audible RMS
         run: |
           node --check scripts/build-dhaka-audio.mjs
