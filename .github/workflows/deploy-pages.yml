@@ -33,6 +33,11 @@ jobs:
           node scripts/check-metro-quality.mjs
       - name: Build textured Dhaka station-area glTF meshes
         run: node scripts/build-urban-models.mjs
+      - name: Validate all 16 surrounding 3D city neighborhoods
+        run: |
+          node --check scripts/build-urban-models.mjs
+          node --check scripts/check-urban-coverage.mjs
+          node scripts/check-urban-coverage.mjs
       - name: Generate OSM-aware whole-neighborhood vegetation and fixtures
         run: |
           node --check scripts/build-neighborhood-details.mjs
