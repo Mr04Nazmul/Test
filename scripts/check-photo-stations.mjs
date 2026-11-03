@@ -21,6 +21,14 @@ for(let i=0;i<16;i++){
  assert(g.meshes[0].primitives.length<=30,"Mobile draw calls too high: "+i);
  assert(g.extras.triangles>100,"Empty photoreferenced 3D scene: "+i);
  assert(g.extras.officialDesignWidthM>=23&&g.extras.officialDesignWidthM<=34);
+ const roofMat=g.materials.find(m=>m.name==="roof");
+ const redMat=g.materials.find(m=>m.name==="red");
+ const hex=h=>[1,3,5].map(k=>parseInt(h.slice(k,k+2),16)/255);
+ assert(roofMat&&redMat,"Station-specific roof/accent materials not found");
+ const expected=hex(p.roofTone),roofActual=roofMat.pbrMetallicRoughness.baseColorFactor;
+ assert(expected.every((v,i)=>Math.abs(roofActual[i]-v)<1e-7),"Wrong roof shade for "+i);
+ assert(hex(p.accent).every((v,i)=>Math.abs(redMat.pbrMetallicRoughness.baseColorFactor[i]-v)<1e-7),"Wrong red/brick accent "+i);
+
  const decoded=Buffer.from(g.buffers[0].uri.split(",")[1],"base64");
  assert.equal(decoded.length,g.buffers[0].byteLength);
  for(const v of g.bufferViews)assert(v.byteOffset+v.byteLength<=decoded.length);
