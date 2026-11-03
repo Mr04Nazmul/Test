@@ -72,6 +72,7 @@ try{
  viewer.camera.setView({destination:C.Cartesian3.fromDegrees(s.lon,s.lat,470),
  orientation:{heading:C.Math.toRadians(20),pitch:C.Math.toRadians(-48),roll:0}});
 }catch(e){announce("3D viewer শুরু হয়নি: "+e.message,0);return}
+const originalCameraFov=viewer.camera.frustum.fov;
 $("status").textContent="ETA ESTIMATE";
 $("notice").textContent="রেলপথ OSM থেকে; ট্রেন অবস্থান সময়সূচিভিত্তিক অনুমান (GPS নয়)।";
 const routePositions=C.Cartesian3.fromDegreesArrayHeights(pts.flatMap(p=>[p[1],p[0],18.7]));
@@ -152,7 +153,7 @@ function updateStationText(){
  const foot=document.createElement("small");foot.className="estimate-caption";foot.textContent="সময় ও অবস্থান আনুমানিক — সরকারি GPS live feed নয়";
  box.append(foot);
 }
-function clearViewLock(){viewer.camera.lookAtTransform(C.Matrix4.IDENTITY);ride=false;$("follow").classList.remove("primary")}
+function clearViewLock(){viewer.camera.lookAtTransform(C.Matrix4.IDENTITY);if(typeof originalCameraFov==="number")viewer.camera.frustum.fov=originalCameraFov;ride=false;$("follow").classList.remove("primary")}
 function focusStation(i){
  selectedStation=i;clearViewLock();renderStructure(i);updateStationText();
  if(showBuildings&&!googleMode)loadBuildings(i);
@@ -263,10 +264,12 @@ function updateFollowCamera(){
  if(!ride||!focused)return;
  if(cameraStyle==="front"){
   // Camera at the train nose looking along the real mapped track; NOT video.
+  if(typeof originalCameraFov==="number")viewer.camera.frustum.fov=C.Math.toRadians(clamp(followDistance*1.1,23,95));
   const ahead=at(focused.distance+(focused.dir==="south"?1:-1)*10,focused.dir);
   viewer.camera.setView({destination:C.Cartesian3.fromDegrees(ahead.lon,ahead.lat,22.8),
    orientation:{heading:focused.heading+orbitYaw,pitch:C.Math.toRadians(-2)+orbitPitch*0.12,roll:0}});
  }else{
+  if(typeof originalCameraFov==="number")viewer.camera.frustum.fov=originalCameraFov;
   const pitch=cameraStyle==="top"?-1.12:orbitPitch;
   const range=cameraStyle==="top"?Math.max(105,followDistance):followDistance;
   viewer.camera.lookAt(lonlatPoint(focused,21.4),
@@ -518,7 +521,7 @@ const qModes=[
 function setQuality(level,notify=false){
  qualityLevel=level;
  const q=qModes[level],mobile=window.innerWidth<700;
- viewer.resolutionScale=q.scale*(mobile?.96:1.13);
+ viewer.resolutionScale=q.scale*(mobile?0.96:1.13);
  viewer.scene.globe.maximumScreenSpaceError=q.error;
  if(viewer.scene.postProcessStages.fxaa)viewer.scene.postProcessStages.fxaa.enabled=level>=1;
  $("quality").textContent=q.name;
