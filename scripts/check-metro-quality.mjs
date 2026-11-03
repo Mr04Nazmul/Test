@@ -28,5 +28,6 @@ assert(app.includes('renderCoachSet(dt);'),'Train should animate on every frame'
 assert(app.includes('updateFollowCamera();'),'Following camera not animated');
 assert(app.includes('World_Transportation/MapServer'),'Real street/road overlay absent');
 assert(app.includes('assets/urban/'),'OSM building glTF loading missing');
+assert(app.includes('assets/farmgate-landmark.gltf'),'Farmgate landmark is not linked in app');
 assert(html.includes('NOT GPS'),'Simulated data must not be labelled as official GPS');
 console.log('PASS smooth train samples, route camera hooks, 360°/zoom/quality controls and map-source accuracy.');
