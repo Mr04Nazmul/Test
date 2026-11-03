@@ -20,7 +20,14 @@ function toPolygon(way){
  if(p.length<4||p.length>190)return null;
  const raw=Number.parseFloat(way.tags?.height),lv=Number.parseFloat(way.tags?.['building:levels']);
  const height=Number.isFinite(raw)&&raw>2?raw:Number.isFinite(lv)&&lv>0?lv*3.1:null;
- return {id:way.id,p,...(height?{h:Math.round(height*10)/10}:{})};
+ // Preserve only verifiable OpenStreetMap colour tags. No colours are
+ // guessed in the data file. The GLTF builder uses them when available.
+ const wallColor=way.tags?.['building:colour']||way.tags?.['building:color']||null;
+ const roofColor=way.tags?.['roof:colour']||way.tags?.['roof:color']||null;
+ const verifiedColor=v=>typeof v==='string'&&v.length<32&&/^[#a-zA-Z0-9 -]+$/.test(v)?v.trim():null;
+ return {id:way.id,p,...(height?{h:Math.round(height*10)/10}:{}),
+  ...(verifiedColor(wallColor)?{wallColor:verifiedColor(wallColor)}:{}),
+  ...(verifiedColor(roofColor)?{roofColor:verifiedColor(roofColor)}:{})};
 }
 function toRoad(way){
  if(!Array.isArray(way.geometry)||way.geometry.length<2)return null;
