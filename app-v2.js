@@ -391,25 +391,140 @@ async function loadBuildings(i){
   announce(buildings.length+"টি বাস্তব OSM footprint থেকে 3D ভবন তৈরি ("+(offline?"লোকাল ক্যাশ":"অনলাইন")+"). Height অনেকে আনুমানিক।",8500);
  }catch(e){if(!bldgRequest.signal.aborted)announce("Building data unavailable for this station. অন্য স্টেশন নির্বাচন করো।",8000)}
 }
+// Esri satellite is real imagery, while these independent reference overlays add
+// actual road/street and locality labeling (not invented ground textures).
 async function satelliteToggle(){
  if(googleMode){announce("প্রথমে Google 3D mode বন্ধ করো।");return}
  const btn=$("satellite");
  if(satelliteOn){
-  satelliteOn=false;if(satLayer)satLayer.show=false;if(osmLayer)osmLayer.show=true;
+  satelliteOn=false;
+  if(satLayer)satLayer.show=false;
+  if(roadsLayer)roadsLayer.show=false;
+  if(labelsLayer)labelsLayer.show=false;
+  if(osmLayer)osmLayer.show=true;
   btn.textContent="◈ Satellite";btn.classList.remove("primary");return;
  }
  btn.disabled=true;btn.textContent="Loading…";
  try{
   if(!satLayer){
-   const provider=await C.ArcGisMapServerImageryProvider.fromUrl("https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer",
-    {credit:"Satellite: Esri, Maxar, Earthstar Geographics and imagery contributors"});
+   const provider=await C.ArcGisMapServerImageryProvider.fromUrl(
+    "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer",
+    {credit:"Aerial imagery © Esri, Maxar, Earthstar Geographics and contributors"});
    satLayer=viewer.imageryLayers.addImageryProvider(provider);
+   satLayer.brightness=1.075;satLayer.contrast=1.075;satLayer.saturation=1.08;
   }
-  satelliteOn=true;satLayer.show=true;if(osmLayer)osmLayer.show=false;
+  satelliteOn=true;satLayer.show=true;
+  if(osmLayer)osmLayer.show=false;
   btn.textContent="◈ Street Map";btn.classList.add("primary");
+  // Reference overlay services are optional; satellite mode works if one fails.
+  if(!roadsLayer){
+   try{
+    const provider=await C.ArcGisMapServerImageryProvider.fromUrl(
+     "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer",
+     {credit:"Transportation labels © Esri, HERE, Garmin, contributors"});
+    roadsLayer=viewer.imageryLayers.addImageryProvider(provider);
+   }catch(e){console.warn("Road overlay not available",e)}
+  }
+  if(!labelsLayer){
+   try{
+    const provider=await C.ArcGisMapServerImageryProvider.fromUrl(
+     "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer",
+     {credit:"Place names © Esri and contributors"});
+    labelsLayer=viewer.imageryLayers.addImageryProvider(provider);
+   }catch(e){console.warn("Place-name overlay not available",e)}
+  }
+  if(roadsLayer)roadsLayer.show=true;
+  if(labelsLayer)labelsLayer.show=true;
  }catch(e){btn.textContent="◈ Satellite";announce("Satellite imagery load হয়নি; street map ব্যবহার করা হচ্ছে।",6500)}
  finally{btn.disabled=false}
 }
+const cameraModes=[
+ {id:"chase",label:"▣ Rear Chase"},
+ {id:"front",label:"▣ Front View"},
+ {id:"top",label:"▣ Drone Top"},
+ {id:"orbit",label:"◉ Orbit 360°"}
+];
+function updateCameraLabel(){
+ const item=cameraModes.find(c=>c.id===cameraStyle)||cameraModes[0];
+ if($("camMode"))$("camMode").textContent=item.label;
+}
+function useCameraMode(id){
+ cameraStyle=id;ride=true;orbitYaw=0;
+ orbitPitch=id==="orbit"?-0.36:-0.27;
+ followDistance=id==="top"?190:id==="front"?38:105;
+ $("follow").classList.add("primary");updateCameraLabel();
+ updateFollowCamera();
+}
+function cameraZoom(multiplier){
+ if(!ride){
+  const distance=clamp(viewer.camera.positionCartographic.height*.22,12,7500);
+  if(multiplier<1)viewer.camera.zoomIn(distance);
+  else viewer.camera.zoomOut(distance);
+  return;
+ }
+ followDistance=clamp(followDistance*multiplier,9,1500);
+ updateFollowCamera();
+}
+const sceneCanvas=viewer.canvas;
+const activePointers=new Map();
+function pointerLength(){
+ const a=[...activePointers.values()];
+ return a.length<2?null:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+}
+sceneCanvas.addEventListener("pointerdown",e=>{
+ if(!ride)return;
+ activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ try{sceneCanvas.setPointerCapture(e.pointerId)}catch(err){}
+ e.preventDefault();e.stopImmediatePropagation();
+},true);
+sceneCanvas.addEventListener("pointermove",e=>{
+ if(!ride||!activePointers.has(e.pointerId))return;
+ const prev=activePointers.get(e.pointerId),d0=pointerLength();
+ activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ const d1=pointerLength();
+ if(activePointers.size===1){
+  orbitYaw-=(e.clientX-prev.x)*.009;
+  orbitPitch=clamp(orbitPitch+(e.clientY-prev.y)*.005,-1.50,0.12);
+ }else if(d0&&d1&&d1>10)followDistance=clamp(followDistance*d0/d1,9,1500);
+ e.preventDefault();e.stopImmediatePropagation();
+},true);
+function endOrbitPointer(e){
+ if(!activePointers.has(e.pointerId))return;
+ activePointers.delete(e.pointerId);
+ try{sceneCanvas.releasePointerCapture(e.pointerId)}catch(err){}
+ e.preventDefault();e.stopImmediatePropagation();
+}
+sceneCanvas.addEventListener("pointerup",endOrbitPointer,true);
+sceneCanvas.addEventListener("pointercancel",endOrbitPointer,true);
+sceneCanvas.addEventListener("wheel",e=>{
+ if(!ride)return;
+ e.preventDefault();e.stopImmediatePropagation();
+ cameraZoom(e.deltaY>0?1.14:.87);
+},{capture:true,passive:false});
+$("camMode").addEventListener("click",()=>{
+ const n=cameraModes.findIndex(x=>x.id===cameraStyle);
+ useCameraMode(cameraModes[(n+1)%cameraModes.length].id);
+});
+$("orbitLeft").addEventListener("click",()=>{if(!ride)useCameraMode("orbit");orbitYaw-=C.Math.toRadians(25)});
+$("orbitRight").addEventListener("click",()=>{if(!ride)useCameraMode("orbit");orbitYaw+=C.Math.toRadians(25)});
+$("zoomIn").addEventListener("click",()=>cameraZoom(.78));
+$("zoomOut").addEventListener("click",()=>cameraZoom(1.28));
+let qualityLevel=1;
+const qModes=[
+ {name:"Balanced",scale:1.02,error:2.5},
+ {name:"HD",scale:1.22,error:1.65},
+ {name:"Ultra",scale:1.48,error:1.14}
+];
+function setQuality(level,notify=false){
+ qualityLevel=level;
+ const q=qModes[level],mobile=window.innerWidth<700;
+ viewer.resolutionScale=q.scale*(mobile?.96:1.13);
+ viewer.scene.globe.maximumScreenSpaceError=q.error;
+ if(viewer.scene.postProcessStages.fxaa)viewer.scene.postProcessStages.fxaa.enabled=level>=1;
+ $("quality").textContent=q.name;
+ if(notify)announce(q.name+" 3D quality নির্বাচিত। ফোন গরম/slow হলে Balanced ব্যবহার করো।",5200);
+}
+$("quality").addEventListener("click",()=>setQuality((qualityLevel+1)%qModes.length,true));
 $("overview").addEventListener("click",overview);
 $("findTrain").addEventListener("click",findTrain);
 $("north").addEventListener("click",()=>focusStation(0));
