@@ -182,7 +182,7 @@ function mergeOSMFootprints(data,index){
   const prefix='window.MRT_OFFLINE_BUILDINGS['+index+']=';
   const offset=source.indexOf(prefix);
   if(offset<0)return {items,legacyCount};
-  const text=source.slice(offset+prefix.length).trim().replace(/;\\s*$/,'');
+  const text=source.slice(offset+prefix.length).trim().replace(/;\s*$/,'');
   const obj=JSON.parse(text);
   for(const old of obj.features||[]){
    if(!Array.isArray(old.p)||old.p.length<4||identifiers.has(String(old.id)))continue;
