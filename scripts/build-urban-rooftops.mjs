@@ -81,7 +81,7 @@ function nearTrack(p,track){
 function decorateBuilding(item,station,center,track){
  if(!Array.isArray(item.p)||item.p.length<4)return;
  const [lon,lat]=center,lonScale=111320*Math.cos(lat*Math.PI/180),latScale=111320;
- const p=item.p.map(([lng,lt])=>[-(lt-lat)*latScale,(lng-lon)*lonScale]);
+ const p=item.p.map(([lng,lt])=>[(lng-lon)*lonScale,-(lt-lat)*latScale]);
  if(p.length>3&&Math.hypot(p[0][0]-p.at(-1)[0],p[0][1]-p.at(-1)[1])<.15)p.pop();
  if(p.length<3||Math.abs(area(p))<10||p.length>145)return;
  const centroid=p.reduce((s,q)=>[s[0]+q[0]/p.length,s[1]+q[1]/p.length],[0,0]);
@@ -118,7 +118,7 @@ function decorateBuilding(item,station,center,track){
  if(!longest)return;
  const e=longest,normal=[(ccw?1:-1)*e.dz/e.len,(ccw?-1:1)*e.dx/e.len];
  const mx=(e.a[0]+e.b[0])/2,mz=(e.a[1]+e.b[1])/2,yaw=Math.atan2(e.dx,e.dz);
- if(!nearTrack([mx+normal[0]*2,mz+normal[1]*2])){
+ if(!nearTrack([mx+normal[0]*2,mz+normal[1]*2],track)){
   const len=Math.min(8,e.len*.70);
   // Shop sign and awning use blank color blocks, no fictional real business labels.
   box('facade-banner',mx+normal[0]*.25,3.35,mz+normal[1]*.25,len,.59,.15,yaw);
@@ -129,9 +129,9 @@ function decorateBuilding(item,station,center,track){
 }
 function make(i){
  const city=JSON.parse(readFileSync(join(root,'data','buildings',i+'.json'),'utf8')),station=route.stations[i];
- const center=city.center||[station.lon,station.lat];
+ const center=[station.lon,station.lat];
  const lonScale=111320*Math.cos(center[1]*Math.PI/180);
- const track=route.points.map(([lat,lon])=>[-(lat-center[1])*111320,(lon-center[0])*lonScale]);
+ const track=route.points.map(([lat,lon])=>[(lon-center[0])*lonScale,-(lat-center[1])*111320]);
  gNow=materialColors.map(()=>({p:[],n:[],ind:[]}));
  counts={buildings:0,tank:0,stair:0,ac:0,solar:0,shops:0};
  for(const item of (city.buildings||[]).slice(0,450))decorateBuilding(item,i,center,track);
