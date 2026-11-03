@@ -30,4 +30,6 @@ assert(app.includes('World_Transportation/MapServer'),'Real street/road overlay 
 assert(app.includes('assets/urban/'),'OSM building glTF loading missing');
 assert(app.includes('assets/farmgate-landmark.gltf'),'Farmgate landmark is not linked in app');
 assert(html.includes('NOT GPS'),'Simulated data must not be labelled as official GPS');
+for(const vehicle of ['bus','rickshaw','car'])assert(app.includes('assets/dhaka-'+vehicle+'.gltf'),'Missing '+vehicle+' model hook');
+assert(app.includes('animateStreetTraffic(dt);'),'Street traffic must animate every frame');
 console.log('PASS smooth train samples, route camera hooks, 360°/zoom/quality controls and map-source accuracy.');
