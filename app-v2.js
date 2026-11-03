@@ -5,7 +5,7 @@
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
-const C=window.Cesium,route=window.MRT_TRACK,svc=window.MRT_SCHEDULE;
+const C=window.Cesium,route=window.MRT_TRACK,svc=window.MRT_SCHEDULE,radar=window.MRT_TRAIN_RADAR;
 const info=$("notice");
 function announce(message,ms=6500){
  info.textContent=message;
@@ -18,7 +18,7 @@ let viewer,osmLayer=null,satLayer=null,roadsLayer=null,labelsLayer=null,googleTi
 let selectedStation=8,mode="estimate",selectedTrain="",trainData=[],focused=null;
 let playing=true,demoMeters=0,rate=1,ride=false,worldModels=[],buildings=[],showBuildings=true;
 let cameraStyle="chase",orbitYaw=0,orbitPitch=-0.74,followDistance=220,gpsDisplayMeters=null;
-let lastFrame=0,lastMapUpdate=0,lastMarkerAnimation=0,etaLast=0,lastAudioSceneUpdate=0,stationStructure=null,trainEntities=[],trainMarkers=new Map();
+let lastFrame=0,lastMapUpdate=0,lastMarkerAnimation=0,etaLast=0,lastAudioSceneUpdate=0,stationStructure=null,trainEntities=[],trainMarkers=new Map(),miniTrains=new Map();
 const stationMarkers=[];
 let loadTicket=0,bldgRequest=null,gpsWatchId=null,gpsMeters=null,gpsMark=null;
 const nameFor=i=>(st[i]&&st[i].bn)||"";
@@ -430,7 +430,53 @@ for(let i=0;i<6;i++){
  model:{uri:"assets/mrt6-"+variant+".gltf",scale:1,minimumPixelSize:0,maximumScale:1}
  }));
 }
+const radarPanel=$("trainRadarPanel");
+function openTrainRadar(force){
+ radarPanel.hidden=force===undefined?!radarPanel.hidden:!force;
+ $("trainRadarButton").setAttribute("aria-expanded",String(!radarPanel.hidden));
+ if(!radarPanel.hidden)updateTrainRadar();
+}
+function updateTrainRadar(){
+ if(!radar)return;
+ const info=radar.snapshot(),area=$("trainRadarList");
+ $("trainRadarClock").textContent=info.clock+" BST · 4 Nov 2026 সহ স্থানীয় ঢাকা সময়";
+ $("trainRadarCount").textContent=info.count+"টি অনুমিত · GPS নয়";
+ area.replaceChildren();
+ if(!info.trains.length){
+  const box=document.createElement("div");box.className="radar-empty";
+  const h=document.createElement("strong");h.textContent="এখন সময়সূচিতে চলমান ট্রেন নেই";
+  const p=document.createElement("p");const next=info.nextDeparture;
+  p.textContent=next?"পরের যাত্রা: "+next.origin+" → "+next.clock+" BST"+(next.isTomorrow?" (আগামীকাল)":"")+" · ট্রেনের লাইভ GPS পাওয়া যায় না।":"নতুন যাত্রার সময়সূচি পাওয়া যায়নি।";
+  box.append(h,p);area.append(box);return;
+ }
+ const sorted=[...info.trains].sort((a,b)=>Math.abs(a.position-selectedStation)-Math.abs(b.position-selectedStation));
+ for(const t of sorted){
+  const btn=document.createElement("button");btn.type="button";
+  btn.className="radar-train"+(t.id===selectedTrain?" selected":"");
+  const main=document.createElement("b");main.textContent="🚆 "+t.id+" · "+t.directionText;
+  const sub=document.createElement("small");sub.textContent=t.segment+" · পরবর্তী "+t.nextStation+" · "+t.stateText+" (~ অনুমান)";
+  btn.append(main,sub);
+  btn.addEventListener("click",()=>{openTrainRadar(false);mode="estimate";selectedTrain=t.id;refreshTrainMarkerPositions();findTrain(t.id)});
+  area.append(btn);
+ }
+}
+$("trainRadarButton").addEventListener("click",()=>openTrainRadar());
+$("trainRadarClose").addEventListener("click",()=>openTrainRadar(false));
+$("trainRadarNearest").addEventListener("click",()=>{openTrainRadar(false);findTrain()});
+$("trainRadarOverview").addEventListener("click",()=>{openTrainRadar(false);overview()});
+// Picking one of the actual mapped timetable-estimate train icons selects it.
+const trainPick=new C.ScreenSpaceEventHandler(viewer.scene.canvas);
+trainPick.setInputAction(click=>{
+ if(mode!=="estimate")return;
+ const picked=viewer.scene.pick(click.position);
+ const entity=picked?.id;
+ const id=entity?.properties?.trainId?.getValue(viewer.clock.currentTime);
+ if(id&&svc.positionFor(id)){selectedTrain=id;findTrain(id)}
+},C.ScreenSpaceEventType.LEFT_CLICK);
+
 function refreshTrainMarkerPositions(){
+ // Only show a timetable estimate when DMTCL's published service period
+ // implies a departure. Never inject a demo train into "live" mode.
  const active=mode==="estimate"?svc.active():[];
  const previous=new Set(trainMarkers.keys());
  for(const t of active){
@@ -438,27 +484,45 @@ function refreshTrainMarkerPositions(){
   const m=metersAtIndex(t.position),pos=at(m,t.dir),position=lonlatPoint(pos,24);
   let e=trainMarkers.get(t.id);
   if(!e){
-   e=viewer.entities.add({name:"Estimated "+t.id,position,point:{
-    pixelSize:13,color:t.dir==="south"?C.Color.fromCssColorString("#ffcf76"):green,
-    outlineColor:C.Color.BLACK,outlineWidth:2,disableDepthTestDistance:Number.POSITIVE_INFINITY},
-    label:{text:"🚆 "+t.id,font:"bold 11px sans-serif",fillColor:C.Color.WHITE,
-     outlineColor:C.Color.BLACK,outlineWidth:3,style:C.LabelStyle.FILL_AND_OUTLINE,
-     pixelOffset:new C.Cartesian2(0,-18),distanceDisplayCondition:new C.DistanceDisplayCondition(0,900),
-     disableDepthTestDistance:Number.POSITIVE_INFINITY}});
+   e=viewer.entities.add({name:"NOT GPS · estimated "+t.id,position,
+    properties:{trainId:t.id,source:"DMTCL timetable inference; NOT GPS"},
+    point:{pixelSize:16,color:t.dir==="south"?C.Color.fromCssColorString("#ffcf76"):green,
+      outlineColor:C.Color.BLACK,outlineWidth:3,disableDepthTestDistance:Number.POSITIVE_INFINITY},
+    label:{text:"🚆 "+t.id+" · ~",font:"bold 12px sans-serif",fillColor:C.Color.WHITE,
+      outlineColor:C.Color.BLACK,outlineWidth:3,style:C.LabelStyle.FILL_AND_OUTLINE,
+      pixelOffset:new C.Cartesian2(0,-23),distanceDisplayCondition:new C.DistanceDisplayCondition(0,4500),
+      disableDepthTestDistance:Number.POSITIVE_INFINITY}});
    trainMarkers.set(t.id,e);
   }else e.position=position;
+  // One independently modeled 3D lead coach for each inferred timetable
+  // departure. Marker stays visible even if distant 3D mesh is culled.
+  let mini=miniTrains.get(t.id);
+  if(!mini){
+   mini=viewer.entities.add({name:"3D estimate only · "+t.id,
+    position:lonlatPoint(pos,19),orientation:modelOrientation(pos),
+    properties:{trainId:t.id,source:"DMTCL timetable inference; NOT GPS"},
+    model:{uri:"assets/mrt6-front.gltf",scale:1,minimumPixelSize:0,maximumScale:1,
+      distanceDisplayCondition:new C.DistanceDisplayCondition(0,3000)}});
+   miniTrains.set(t.id,mini);
+  }else{mini.position=lonlatPoint(pos,19);mini.orientation=modelOrientation(pos)}
+  mini.show=t.id!==selectedTrain;
  }
- for(const id of previous){viewer.entities.remove(trainMarkers.get(id));trainMarkers.delete(id)}
+ for(const id of previous){
+  viewer.entities.remove(trainMarkers.get(id));trainMarkers.delete(id);
+  const mini=miniTrains.get(id);if(mini)viewer.entities.remove(mini);
+  miniTrains.delete(id);
+ }
  trainData=active;
  if(mode==="estimate"){
   if(!active.length){
-   mode="demo";updateModeControls();
-   announce("এই মুহূর্তে অনুমিত চালু ট্রেন নেই। 3D demo ride চালু হয়েছে।",8500);
+   selectedTrain="";
+   if(ride)clearViewLock();
   }else if(!active.some(t=>t.id===selectedTrain)){
    selectedTrain=active.reduce((best,t)=>Math.abs(t.position-selectedStation)<Math.abs(best.position-selectedStation)?t:best,active[0]).id;
   }
  }
- updateTrainsUI();
+ for(const [id,m] of miniTrains)m.show=id!==selectedTrain;
+ updateTrainsUI();updateTrainRadar();updateModeControls();
 }
 function updateTrainsUI(){
  const area=$("trainList");if(!area)return;
@@ -467,14 +531,19 @@ function updateTrainsUI(){
  const title=document.createElement("strong");title.textContent="আনুমানিক চলমান ট্রেন";
  const count=document.createElement("small");count.textContent=trainData.length+"টি";
  head.append(title,count);area.append(head);
- if(!trainData.length){const p=document.createElement("small");p.textContent="সময় অনুযায়ী ট্রেন পাওয়া যায়নি";area.append(p);return}
- const close=[...trainData].sort((a,b)=>Math.abs(a.position-selectedStation)-Math.abs(b.position-selectedStation)).slice(0,5);
+ if(!trainData.length){
+  const p=document.createElement("small"),n=radar?.nextDeparture();
+  p.textContent=n?"এখন অনুমিত ট্রেন নেই। পরের যাত্রা "+n.origin+" থেকে "+n.clock+" BST"+(n.isTomorrow?" (আগামীকাল)":""):
+   "এখন সময়সূচি অনুযায়ী ট্রেন নেই";
+  area.append(p);return;
+ }
+ const close=[...trainData].sort((a,b)=>Math.abs(a.position-selectedStation)-Math.abs(b.position-selectedStation));
  close.forEach(t=>{
   const btn=document.createElement("button");btn.type="button";btn.className="train-row"+(t.id===selectedTrain?" active":"");
   const label=document.createElement("strong");label.textContent="🚆 "+t.id+" · "+(t.dir==="south"?"মতিঝিলমুখী":"উত্তরামুখী");
-  const sub=document.createElement("small");sub.textContent=st[Math.min(15,Math.max(0,Math.round(t.position)))].bn+" · আনুমানিক";
+  const sub=document.createElement("small");sub.textContent=(radar?.describe(t).segment||st[Math.round(t.position)].bn)+" · GPS নয়";
   btn.append(label,sub);
-  btn.addEventListener("click",()=>{selectedTrain=t.id;updateTrainsUI();findTrain()});
+  btn.addEventListener("click",()=>{selectedTrain=t.id;updateTrainsUI();findTrain(t.id)});
   area.append(btn);
  });
 }
@@ -493,6 +562,10 @@ function activeFocus(dt=0.016){
  return {m:demoMeters,dir:"south"};
 }
 function renderCoachSet(dt=0.016){
+ const hasEstimate=mode==="estimate"&&!!selectedTrain&&trainData.some(t=>t.id===selectedTrain);
+ const visible=mode==="demo"||mode==="onboard"||hasEstimate;
+ for(const coach of trainEntities)coach.show=visible;
+ if(!visible){focused=null;return}
  const focus=activeFocus(dt),dir=focus.dir;
  focused={...at(focus.m,dir),dir};
  for(let i=0;i<trainEntities.length;i++){
@@ -501,19 +574,31 @@ function renderCoachSet(dt=0.016){
   trainEntities[i].position=pos;trainEntities[i].orientation=modelOrientation(p);
  }
 }
-function findTrain(){
+function findTrain(preferredId=null){
+ if(mode==="estimate"){
+  const current=svc.active();
+  if(!current.length){
+   refreshTrainMarkerPositions();openTrainRadar(true);
+   const next=radar?.nextDeparture();
+   announce("এখন সময়সূচি অনুযায়ী চলমান ট্রেন নেই। "+(next?"পরের ট্রেন "+next.origin+" থেকে "+next.clock+" BST। ":"")+"সরকারি Live GPS feed নেই। Demo আলাদা বোতামে।",12000);
+   return;
+  }
+  const nearest=current.reduce((best,t)=>Math.abs(t.position-selectedStation)<Math.abs(best.position-selectedStation)?t:best,current[0]);
+  selectedTrain=typeof preferredId==="string"&&current.some(x=>x.id===preferredId)?preferredId:nearest.id;
+  trainData=current;
+  for(const [id,m] of miniTrains)m.show=id!==selectedTrain;
+ }
  renderCoachSet();
+ if(!focused){openTrainRadar(true);return}
  ride=true;cameraStyle="chase";orbitYaw=0;orbitPitch=-0.76;followDistance=235;
- $("follow").classList.add("primary");
- updateCameraLabel();
- updateFollowCamera();
- announce(mode==="estimate"?"Train-follow চালু। অবস্থান সময়সূচিভিত্তিক অনুমান (GPS নয়)।":mode==="onboard"?"ফোনের GPS অনুসরণ হচ্ছে, অন্য ট্রেনের GPS নয়।":"Demo train অনুসরণ হচ্ছে (live নয়)।",6500);
+ $("follow").classList.add("primary");updateCameraLabel();updateFollowCamera();updateTrainsUI();
+ announce(mode==="estimate"?"নির্বাচিত ট্রেনটি সময়সূচিভিত্তিক অনুমান—আসল GPS নয়।":mode==="onboard"?"এটি তোমার ফোনের GPS; অন্য ট্রেনের নয়।":"এটি শুধুই Demo Train (Live নয়)।",7500);
 }
 function updateModeControls(){
  const demo=mode==="demo",onboard=mode==="onboard";
- $("pause").textContent=demo?"◉ ETA Mode":onboard?"◉ Exit My GPS":"▶ Demo Ride";
+ $("pause").textContent=demo?"◉ Timetable Mode":onboard?"◉ Exit My GPS":"▶ Demo Ride";
  $("speed").textContent="▶ "+rate+"× demo speed";
- $("status").textContent=onboard?"PHONE GPS · NOT TRAIN GPS":demo?"DEMO RIDE · NOT LIVE":"TIMETABLE ESTIMATE · NOT GPS";
+ $("status").textContent=onboard?"MY PHONE · NOT TRAIN GPS":demo?"DEMO RIDE · NOT LIVE":trainData.length?"TRAIN POSITIONS ESTIMATED · NOT GPS":"NO SCHEDULED TRAINS · NOT GPS";
 }
 // Follow view remains user-controlled through orbit/zoom offset; no forced reset.
 function updateFollowCamera(){
@@ -541,6 +626,8 @@ function animateTrainMarkers(){
   if(sample){
    const pos=at(metersAtIndex(sample.position),sample.dir);
    entity.position=lonlatPoint(pos,24);
+   const mini=miniTrains.get(id);
+   if(mini){mini.position=lonlatPoint(pos,19);mini.orientation=modelOrientation(pos)}
   }
  }
 }
@@ -587,9 +674,9 @@ function updateNow(t){
  updateSoundCamera(t);
  if(t-lastMapUpdate<45){
   stationMarkers.forEach((e,i)=>{e.show=!ride||i===selectedStation});
-  for(const [id,e] of trainMarkers)e.show=!ride;
+  for(const [id,e] of trainMarkers)e.show=mode==="estimate";
  }
- if(t-etaLast>10000){updateStationText();etaLast=t}
+ if(t-etaLast>10000){updateStationText();if(!radarPanel.hidden)updateTrainRadar();etaLast=t}
  requestAnimationFrame(updateNow);
 }
 // Stream several georeferenced, OSM-footprint 3D station neighborhoods together.
@@ -939,7 +1026,7 @@ function setQuality(level,notify=false){
 }
 $("quality").addEventListener("click",()=>setQuality((qualityLevel+1)%qModes.length,true));
 $("overview").addEventListener("click",overview);
-$("findTrain").addEventListener("click",findTrain);
+$("findTrain").addEventListener("click",()=>findTrain());
 $("north").addEventListener("click",()=>focusStation(0));
 $("central").addEventListener("click",()=>focusStation(10));
 $("south").addEventListener("click",()=>focusStation(15));
@@ -961,7 +1048,7 @@ $("follow").addEventListener("click",()=>{
 $("pause").addEventListener("click",()=>{
  if(mode==="onboard"){endPhoneGPS();clearViewLock();playing=true;updateModeControls();return;}
  mode=mode==="estimate"?"demo":"estimate";playing=true;refreshTrainMarkerPositions();updateModeControls();
- if(mode==="estimate"&&!trainData.length){mode="demo";updateModeControls();announce("এখন অনুমিত চলমান ট্রেন নেই; Demo ride চলছে।")}
+ if(mode==="estimate"&&!trainData.length){updateModeControls();openTrainRadar(true);announce("সময়সূচি অনুযায়ী এখন ট্রেন নেই। Demo Train কেবল আলাদা করে চালু হয়।",7600)}
 });
 $("speed").addEventListener("click",()=>{rate=rate===1?2:rate===2?4:1;updateModeControls()});
 $("stationLevels").addEventListener("click",showNextStationLevel);
