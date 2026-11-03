@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 const p="assets/agargaon-station.gltf";
 const m=JSON.parse(readFileSync(p,"utf8"));
 assert.equal(m.asset.version,"2.0");
-assert(m.extras?.count>=2000,"Expected detailed architectural components");
+assert(m.extras?.count>=500,"Expected detailed station architecture instead of empty model");
 assert(m.nodes.length<=4,"Mobile scene must be GPU-batched instead of thousands of draw calls");
 assert(m.meshes.length>=1);
 assert(m.meshes[0].primitives.length<=40,"Too many Cesium draw calls");
@@ -21,9 +21,10 @@ for(const required of [
  "weathered corrugated green canopy panel","red brick wall infill",
  "elevated concrete support pillar","platform exterior blue-tinted glass",
  "individual entrance staircase step","stair safety rail vertical",
- "entrance canopy green curved rib","asphalt carriageway",
- "street vehicle body","bus glazing","autorickshaw rear wheel",
- "Dhaka local mixed-use office or residential block","reflective local water feature"
+ "entrance canopy green curved rib","green line nameplate border"
 ])assert(m.extras.detailedComponents[required]>=1,"Missing Agargaon photo-reference component: "+required);
+for(const removed of ["asphalt carriageway","broken lane stripe","reflective local water feature","street vehicle body","Dhaka local mixed-use office or residential block"]){
+ assert(!m.extras.detailedComponents[removed],"Do not reintroduce non-georeferenced Agargaon scenery: "+removed);
+}
 assert(m.extras?.notReal&&m.extras?.classification,"Need correct accuracy disclaimer");
 console.log("PASS Agargaon photo-referenced detailed station glTF:",m.extras.count,"authored components",m.meshes[0].primitives.length,"batched materials");
