@@ -4,9 +4,9 @@
 
 ## Implemented
 - 241 rail centerline points and 16 station positions derived from OpenStreetMap data (ODbL attribution below).
-- Six-car detailed original procedural **glTF** train (front, intermediate and rear cars), using approximate MRT6 body dimensions and characteristic green/white/red appearance.
+- Six-car detailed original procedural **glTF** train (front, intermediate and rear cars), using approximate MRT6 body dimensions and characteristic green/white/red appearance. 3D model heading correction is applied to align the 19.8 m long cars longitudinally with the OSM track. Artificial minimum-pixel scaling has been disabled to avoid giant disjointed cars.
 - A single station-at-a-time detailed conceptual **glTF** elevated station structure (not an accurate survey of the real station).
-- Esri satellite/aerial imagery base layer, OSM street-map fallback, OSM building-footprint extrusions around selected station (heights may be guessed).
+- Esri satellite/aerial imagery base layer and OSM street-map fallback. **Offline OSM building footprints around all 16 stations** under `data/buildings/0.json` … `15.json` are extruded as 3D buildings without relying on the Overpass API during normal viewing. Some footprints come from an older OSM snapshot and may not match current satellite imagery; most heights are estimates. The app changes building neighborhoods as the Follow camera travels.
 - Simulated, **timetable-estimated positions** for multiple trains and per-station ETA, using Dhaka UTC+6 time. Train marker list, selected train, Find Train and Follow Camera.
 - **My Train GPS** uses optional, user-approved phone geolocation to snap **the user's own position** to the railway only when within roughly 200 m; it is not the actual GPS feed for any other train. The project does not upload phone coordinates to its server.
 - Mobile opens in a train-follow camera with the controls/ETA panel initially collapsed; 3D concrete guideway and separate elevated rails are approximate reconstructions.
