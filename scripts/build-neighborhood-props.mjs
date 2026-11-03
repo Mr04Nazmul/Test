@@ -29,6 +29,25 @@ const locations=['Uttara North','Uttara Center','Uttara South','Pallabi','Mirpur
 function landscape(id){
  const campus=id===13,open=id===8||id===12||id===13,market=id===10||id===11||id===15;
  let treeCount=0,peopleCount=0,lampCount=0;
+ // Original painted road-and-footpath study under the viaduct for ALL 16 stops.
+ // These are deliberately short local sections, not mapped OSM streets or
+ // exact lane positions. Transparent satellite imagery remains outside them.
+ for(const side of [-1,1]){
+   box('asphalt',side*27.3,.010,0,20,.044,266);
+   box('concrete',side*40,.032,0,2.8,.135,266);
+   box('old',side*40,.16,0,.19,.22,266);
+   box('old',side*15.3,.045,0,.55,.20,264);
+   for(let z=-126;z<128;z+=9.2){
+     box('white',side*27.3,.065,z,.17,.021,3.3);
+     box('white',side*35.4,.065,z,.11,.021,2.9);
+   }
+   for(const z of [-95,94]){
+     for(let k=0;k<9;k++)box('white',side*(22+k*1.25),.069,z,.85,.021,2.7);
+   }
+   for(let z=-125;z<125;z+=8){
+     box((Math.floor((z+125)/8)%2===0?'white':'old'),side*40,.174,z,.19,.03,6.9);
+   }
+ }
  // Slender urban street lamps, roadside planters, tactile paving.
  for(const side of [-1,1]){
   for(let z=-120;z<=120;z+=30){
