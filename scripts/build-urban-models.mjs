@@ -30,20 +30,20 @@ function makeFacadeTexture(){
  for(let y=0;y<h;y++){
   const row=y*(w*4+1);pixels[row]=0;
   for(let x=0;x<w;x++){
-   let r=181,g=178,b=168;
+   let r=204,g=200,b=192;
    // plaster, concrete slab line, two reflective glass windows per 4 m x 3.2 m tile
-   if(y<6||y>58){r=151;g=149;b=144}
+   if(y<6||y>58){r=170;g=169;b=164}
    else if((x>=6&&x<=28)||(x>=36&&x<=58)){
     if(y>=15&&y<=51){
      const frame=x<=28?(x<9||x>25||y<18||y>48):(x<39||x>55||y<18||y>48);
-     if(frame){r=71;g=82;b=86}
+     if(frame){r=92;g=104;b=111}
      else {
       const shine=(x+y)%23<4;
-      r=shine?98:55;g=shine?132:99;b=shine?144:117;
+      r=shine?160:98;g=shine?188:143;b=shine?196:159;
       if(y>40){r+=5;g+=5;b+=4}
      }
     }
-   }else if(y>10&&y<55&&x%17===0){r=164;g=161;b=153}
+   }else if(y>10&&y<55&&x%17===0){r=182;g=179;b=172}
    const off=row+1+x*4;pixels[off]=r;pixels[off+1]=g;pixels[off+2]=b;pixels[off+3]=255;
   }
  }
@@ -52,7 +52,7 @@ function makeFacadeTexture(){
    pngChunk('IDAT',deflateSync(pixels,{level:9})),pngChunk('IEND',Buffer.alloc(0))]);
 }
 const facadePNG='data:image/png;base64,'+makeFacadeTexture().toString('base64');
-const colors=['#c2b8a6','#b8b4b1','#d6cbbd','#b4bab8','#d0c7b6','#a6aca9','#d2d0c9','#aaa9a1'];
+const colors=['#e0d4c5','#c3c5c1','#e1c3b4','#c0c9c6','#ddd1bb','#b4b6b3','#e4ddcf','#c1a99c'];
 function rgba(hex){const s=hex.slice(1);return [parseInt(s.slice(0,2),16)/255,parseInt(s.slice(2,4),16)/255,parseInt(s.slice(4,6),16)/255,1]}
 function material(name,hex,texture=false){
  const pbr={baseColorFactor:rgba(hex),metallicFactor:0.02,roughnessFactor:texture?0.78:0.89};
