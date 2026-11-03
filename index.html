@@ -264,6 +264,26 @@ body.panel-hidden .controls{margin-left:auto}
 @media(max-width:700px){.train-radar-panel{left:8px;right:8px;width:auto;bottom:calc(env(safe-area-inset-bottom) + 116px);
  max-height:min(59vh,520px);padding:12px}.radar-train{padding:9px}}
 
+
+.rider-gps-panel[hidden],#riderGPSInvite[hidden]{display:none!important}
+.rider-gps-panel{position:fixed;z-index:23;left:14px;bottom:calc(env(safe-area-inset-bottom) + 124px);
+ width:min(385px,calc(100vw - 28px));max-height:65vh;overflow-y:auto;overscroll-behavior:contain;
+ background:#0a2231f5;backdrop-filter:blur(14px);border:1px solid #4ce6b960;border-radius:19px;
+ padding:14px;color:#f4fffc;font-size:12px;box-shadow:0 15px 40px #001c25d9}
+.rider-title{display:flex;align-items:center;justify-content:space-between}
+.rider-title strong{font-size:16px;color:#86efcf}
+.rider-title button{width:auto;border:1px solid #ffffff55;background:#ffffff19;color:white;border-radius:9px;padding:7px 11px}
+.rider-warning{font-size:11px;line-height:1.6;color:#b6d2d8}
+.rider-gps-panel button:not(.rider-title button){display:block;width:100%;text-align:center;margin:9px 0;padding:11px 8px;
+ background:#0c725f;color:#f2fef9;border:1px solid #5ce6bb;border-radius:10px;font-size:12px}
+.rider-gps-panel button:disabled{opacity:.48}
+.rider-gps-panel .rider-stop{background:#5d3438!important;border-color:#cf8b8b!important}
+.rider-gps-panel label{display:block;margin:10px 0 5px;color:#d2f3e8}
+#riderGPSLink{width:100%;border:1px solid #ffffff60;border-radius:8px;padding:10px;color:white;background:#183749;font-size:11px}
+#riderGPSStatus{line-height:1.65;color:#a6eacb;border-bottom:1px solid #ffffff28;padding-bottom:9px}
+@media(max-width:700px){.rider-gps-panel{left:8px;right:8px;width:auto;max-height:min(59vh,520px);
+ bottom:calc(env(safe-area-inset-bottom) + 115px);padding:12px}}
+
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/";</script>
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
@@ -295,6 +315,7 @@ body.panel-hidden .controls{margin-left:auto}
 <button id="overview" class="ctrl optional-control">◉ পুরো রুট</button>
 <button id="findTrain" class="ctrl primary">🎯 Find Nearest Train</button>
 <button id="trainRadarButton" class="ctrl" type="button" aria-controls="trainRadarPanel" aria-expanded="false">🚆 Train Radar</button>
+<button id="riderGPSButton" class="ctrl" type="button" aria-controls="riderGPSPanel" aria-expanded="false">📍 Private Rider GPS</button>
 <button id="sound" class="ctrl primary" type="button" aria-pressed="false" title="Start locally generated Dhaka 3D audio with your tap">🔊 সাউন্ড চালু</button>
 <button id="soundTest" class="ctrl" type="button" title="Immediate short three-tone audio test">🔔 Test Sound</button>
 <button id="soundOptions" type="button" class="ctrl optional-control" aria-controls="soundPanel" aria-expanded="false">🎚 Sound Zones</button>
@@ -330,6 +351,22 @@ body.panel-hidden .controls{margin-left:auto}
 </div>
 </div>
 
+
+
+<aside id="riderGPSPanel" class="rider-gps-panel" hidden aria-label="Private consenting rider phone GPS">
+ <div class="rider-title"><strong>📍 Private Rider GPS</strong><button type="button" id="riderGPSClose" aria-label="Close rider GPS">✕</button></div>
+ <p class="rider-warning">এটি অফিসিয়াল মেট্রোরেল GPS নয়। কোনো যাত্রী নিজের অনুমতি দিয়ে ট্রেনে বসে GPS শেয়ার করলেই শুধু বাস্তব ফোনের লোকেশন দেখাবে।</p>
+ <button type="button" id="riderGPSStart">🔗 Create Private Sharing Link</button>
+ <div id="riderGPSInvite" hidden>
+ <label for="riderGPSLink">এই লিংকটি শুধু ট্রেনে থাকা বিশ্বাসযোগ্য যাত্রীকে দাও</label>
+ <input type="url" id="riderGPSLink" readonly autocomplete="off" />
+ <button type="button" id="riderGPSCopy">📋 Copy Private Link</button>
+ </div>
+ <p id="riderGPSStatus" role="status" aria-live="polite">Not connected · কারও GPS অনুমতি ছাড়া দেখা যাবে না</p>
+ <button type="button" id="riderGPSFollow" disabled>🎯 Follow Rider Phone GPS</button>
+ <button type="button" id="riderGPSStop" class="rider-stop" disabled>■ End Private Session</button>
+ <p class="rider-warning">ডেটা কেবল এই দুটি browser-এ encrypted WebRTC channel দিয়ে যায়। Link গোপন রাখবে। GPS ২০ সেকেন্ড পুরোনো হলে Live দেখানো বন্ধ হবে। iPhone screen lock বা tab বন্ধ হলে sharing থেমে যেতে পারে।</p>
+</aside>
 
 <aside id="trainRadarPanel" class="train-radar-panel" hidden aria-label="Dhaka Metro estimated train radar">
  <div class="radar-title"><strong>🚆 MRT-6 Train Radar</strong><button type="button" id="trainRadarClose" aria-label="Close train radar">✕</button></div>
@@ -375,8 +412,9 @@ body.panel-hidden .controls{margin-left:auto}
 <p class="fine">Attribution remains visible. Google content may not be extracted or cached. No API key? Free 3D demo map remains available.</p>
 </section>
 </div>
+<script src="./live-rider-p2p.js?v=20261104-private-rider-v2"></script>
 <script src="dhaka-soundscape.js?v=20261104-local-audio-fix-v3"></script>
 <script src="actual-roads.js?v=20261104-osm-geometry-v2"></script>
-<script src="app-v2.js?v=20261104-train-radar-v2"></script>
+<script src="app-v2.js?v=20261104-rider-watch-v3"></script>
 </body>
 </html>
