@@ -38,4 +38,5 @@ assert(app.includes('miniTrains=new Map()'),'Mapped 3D train lead coaches must b
 assert(app.includes('for(const coach of trainEntities)coach.show=visible;'),'Train mesh must be hidden off-hours');
 assert(app.includes('function findTrain(preferredId=null)'),'Nearby train must be selectable');
 assert(app.includes('trainPick.setInputAction'),'Map markers must be clickable');
+assert(!app.includes('gpsMeters=match.along;mode="onboard"'),'Own phone GPS must never be mislabelled as live train tracking');
 console.log('PASS 06:10 no live trains; 06:35 and 07:18 inferred; clickable source-labelled 3D train radar.');
