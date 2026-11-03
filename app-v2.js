@@ -507,6 +507,29 @@ async function satelliteToggle(){
  }catch(e){btn.textContent="◈ Satellite";announce("Satellite imagery load হয়নি; street map ব্যবহার করা হচ্ছে।",6500)}
  finally{btn.disabled=false}
 }
+// User-selectable illustrative day/night illumination, separate from GPS or live weather.
+let daylightMode="day";
+function setDaylightMode(next){
+ daylightMode=next;
+ const night=daylightMode==="night";
+ // Fixed illustrative Dhaka local times; does not assert current sky conditions.
+ viewer.clock.shouldAnimate=false;
+ viewer.clock.currentTime=C.JulianDate.fromDate(
+  new Date(night?"2026-06-01T15:00:00Z":"2026-06-01T06:00:00Z"));
+ viewer.scene.globe.enableLighting=night;
+ viewer.scene.globe.dynamicAtmosphereLighting=false;
+ viewer.scene.globe.dynamicAtmosphereLightingFromSun=false;
+ viewer.scene.backgroundColor=C.Color.fromCssColorString(night?"#071123":"#102736");
+ if(viewer.scene.skyAtmosphere)viewer.scene.skyAtmosphere.show=!night;
+ if(viewer.scene.sun)viewer.scene.sun.show=!night;
+ if(viewer.scene.moon)viewer.scene.moon.show=night;
+ if(viewer.scene.fog)viewer.scene.fog.enabled=!night;
+ $("dayNight").textContent=night?"☾ Night view":"☀ Daylight";
+ $("dayNight").classList.toggle("primary",night);
+ announce(night?"3D Night View: lighting simulation (not live weather).":"3D Day View: illustrative lighting.",4500);
+}
+$("dayNight").addEventListener("click",()=>setDaylightMode(daylightMode==="day"?"night":"day"));
+
 const cameraModes=[
  {id:"chase",label:"▣ Rear Chase"},
  {id:"front",label:"▣ Front View"},
