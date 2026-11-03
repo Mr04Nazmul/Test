@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09121e">
+<title>Dhaka Metro 3D — MRT Line 6 Explorer</title>
+<meta name="description" content="Explore Dhaka Metro Rail Line 6 in interactive 3D with a moving simulated train. Optional official Google Photorealistic 3D Tiles.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Widgets/widgets.css">
+<style>
+:root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#f4f8fe;background:#09121e}
+*{box-sizing:border-box}html,body,#app,#scene{margin:0;width:100%;height:100%;overflow:hidden}
+button,input{font:inherit}button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.4;cursor:wait}
+#scene{background:radial-gradient(circle at 40% 40%,#23435d,#09121e)}
+#scene .cesium-widget-credits{bottom:8px!important;left:8px!important;right:auto!important;max-width:75vw;font-size:10px!important;background:#0a1523a6;border-radius:4px;padding:3px}
+#scene .cesium-viewer-bottom{left:0;bottom:0}
+.shell{pointer-events:none;position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;justify-content:space-between;padding:max(env(safe-area-inset-top),15px) max(env(safe-area-inset-right),14px) max(env(safe-area-inset-bottom),14px) max(env(safe-area-inset-left),14px)}
+.shell>*{pointer-events:auto}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:11px;padding:9px 14px 9px 10px;background:#0a1823dd;border:1px solid #ffffff21;border-radius:18px;box-shadow:0 12px 30px #0006;backdrop-filter:blur(18px)}
+.symbol{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,#11d3a0,#168a83);color:#06241c;font-size:23px;font-weight:900}
+.brand strong{display:block;letter-spacing:.06em;font-size:14px}.brand small{display:block;opacity:.65;font-size:10px;margin-top:3px;letter-spacing:.08em}
+.right-tag{background:#0a1823d9;border:1px solid #ffffff2c;border-radius:999px;padding:10px 14px;font-size:11px;letter-spacing:.06em}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#2cf0b6;margin-right:6px;box-shadow:0 0 9px #2cf0b6}
+.main{display:flex;flex:1;align-items:flex-end;gap:10px;min-height:0;padding-bottom:25px}
+.panel{width:302px;max-height:min(66vh,660px);background:#081522ee;border:1px solid #ffffff2a;border-radius:21px;box-shadow:0 15px 55px #0008;backdrop-filter:blur(22px);overflow:hidden;display:flex;flex-direction:column}
+.hero{padding:18px 18px 10px}.eyebrow{font-size:10px;letter-spacing:.17em;color:#35e6b1;font-weight:750}.hero h1{font-size:23px;margin:7px 0 6px;line-height:1.12;letter-spacing:-.03em}.hero p{font-size:12px;line-height:1.5;color:#bdcedb;margin:0}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:13px 17px}
+.stat{background:#ffffff0a;border:1px solid #ffffff0b;padding:11px 12px;border-radius:13px}.stat b{font-size:18px;display:block}.stat span{font-size:10px;color:#a3b8c8}
+.station-heading{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;color:#f1f8fb;font-size:12px;font-weight:800;border-top:1px solid #ffffff15}
+.station-heading span{color:#7f96a7;font-size:10px;font-weight:500}
+#stationList{overflow:auto;padding:2px 9px 13px;scrollbar-width:thin}
+.station{width:100%;text-align:left;border:0;color:#d9e4ee;background:transparent;padding:10px;border-radius:12px;display:flex;align-items:center;gap:11px}
+.station:hover,.station.active{background:#11dba51e}.station.active{color:#55efc1}
+.station .marker{display:block;width:12px;height:12px;flex-shrink:0;border-radius:100%;border:2px solid #33ddaf;position:relative}
+.station:not(:last-child) .marker:after{content:"";position:absolute;top:11px;left:3px;width:2px;height:24px;background:#2aa58777}
+.station .station-text{flex:1}.station strong{display:block;font-size:12px;font-weight:700}.station small{font-size:10px;color:#849ba9;display:block;margin-top:2px}
+.station .num{color:#728d9a;font-size:11px;font-variant-numeric:tabular-nums}
+.controls{display:flex;flex-direction:column;gap:9px;margin-left:auto;width:max-content;align-items:flex-end}
+.ctrl{background:#091923e8;border:1px solid #ffffff36;border-radius:14px;color:#fff;padding:11px 15px;min-width:104px;box-shadow:0 5px 24px #0005;backdrop-filter:blur(18px);font-size:12px;font-weight:700}
+.ctrl.primary{background:#16b68d;color:#062b22;border-color:#65ecc6}.ctrl:hover{filter:brightness(1.15)}
+.floating-bottom{display:flex;gap:9px;justify-content:center;align-items:center;flex-wrap:wrap;margin-bottom:17px}
+.pill{display:inline-flex;gap:7px;align-items:center;color:#f8fffd;background:#091923ed;padding:11px 15px;border-radius:999px;border:1px solid #ffffff2c;box-shadow:0 4px 20px #0005;font-size:12px;font-weight:700}
+.pill.active{background:#156d60}.pill svg{width:14px;height:14px}
+#notice{position:absolute;left:50%;top:76px;transform:translateX(-50%);max-width:min(620px,94vw);padding:10px 15px;background:#061b2aec;color:#cde5f4;border:1px solid #ffffff22;box-shadow:0 8px 25px #0005;border-radius:12px;text-align:center;font-size:11px;line-height:1.4;pointer-events:none;z-index:6}
+#notice:empty{display:none}
+.backdrop{display:none;position:fixed;inset:0;background:#0009;z-index:20;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)}
+.backdrop.open{display:flex}.modal{width:min(480px,100%);background:#101e2c;border:1px solid #ffffff35;border-radius:20px;padding:24px;box-shadow:0 20px 60px #000b}
+.modal h2{margin:0 0 8px;font-size:21px}.modal p{font-size:13px;color:#aebfd0;line-height:1.7}.modal a{color:#47eec0}
+.modal label{display:block;font-size:12px;font-weight:700;margin-top:14px;margin-bottom:7px}
+.modal input{display:block;width:100%;background:#06121c;border:1px solid #647e8d;border-radius:10px;color:white;padding:12px;outline:none}
+.modal .actions{display:flex;gap:9px;margin-top:18px}.modal .actions button{padding:12px 16px;background:#23d9a2;border:none;color:#08291e;border-radius:10px;font-weight:750;flex:1}
+.modal .actions .secondary{background:#203344;color:#deedf7}
+.modal .fine{font-size:11px;color:#95adbc}
+#status{color:#54efc0}
+@media(max-width:680px){
+.shell{padding-top:max(env(safe-area-inset-top),11px)}
+.brand{padding:7px 10px}.symbol{width:32px;height:32px;font-size:20px}.brand strong{font-size:12px}.right-tag{font-size:10px;padding:9px 10px}
+.main{padding-bottom:70px;align-items:end}
+.panel{width:min(64vw,260px);max-height:40vh;border-radius:16px}
+.hero{padding:13px 12px 6px}.hero h1{font-size:17px}.hero p{font-size:10px}
+.stats{gap:5px;padding:9px}.stat{padding:7px}.stat b{font-size:14px}.stat span{font-size:9px}
+.station-heading{padding:8px 10px}
+.station{padding:7px 8px;gap:8px}.station strong{font-size:11px}.station small{font-size:9px}
+.controls{gap:6px}.ctrl{min-width:84px;font-size:11px;padding:9px 7px}
+.floating-bottom{position:absolute;bottom:max(env(safe-area-inset-bottom),10px);left:10px;right:10px;margin:0;gap:6px}
+.pill{padding:9px 11px;font-size:10px}
+#notice{top:72px;font-size:10px}
+}
+</style>
+<script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/";</script>
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
+</head>
+<body>
+<div id="app"><div id="scene" aria-label="Interactive Dhaka Metro 3D map"></div></div>
+<div id="notice" role="status">মেট্রোরেলের 3D ভিউ লোড হচ্ছে...</div>
+<div class="shell">
+<header>
+ <div class="brand"><div class="symbol">M</div><div><strong>DHAKA METRO 3D</strong><small>MRT LINE 06 · EXPLORER</small></div></div>
+ <div class="right-tag"><i class="live-dot"></i><span id="status">DEMO MAP</span></div>
+</header>
+<div class="main">
+<aside class="panel">
+<div class="hero"><div class="eyebrow">BANGLADESH · DHAKA</div><h1>Explore the Metro.</h1><p>উত্তরা উত্তর থেকে মতিঝিল—বাস্তব অবস্থানে 3D রুট এবং সিমুলেটেড চলমান ট্রেন।</p></div>
+<div class="stats"><div class="stat"><b>16</b><span>স্টেশন</span></div><div class="stat"><b>Line 6</b><span>উড়াল মেট্রোরেল</span></div></div>
+<div class="station-heading">STATIONS <span>SELECT TO FLY</span></div>
+<div id="stationList"></div>
+</aside>
+<div class="controls">
+<button id="overview" class="ctrl primary">◉ পুরো রুট</button>
+<button id="follow" class="ctrl">▣ ট্রেনের সাথে</button>
+<button id="pause" class="ctrl">❚❚ Pause</button>
+<button id="google" class="ctrl">◈ Google 3D</button>
+</div>
+</div>
+<div class="floating-bottom">
+<button id="north" class="pill">◎ Uttara</button>
+<button id="central" class="pill">◎ Farmgate</button>
+<button id="south" class="pill">◎ Motijheel</button>
+<button id="speed" class="pill">▶ 1× Speed</button>
+</div>
+</div>
+<div class="backdrop" id="settings" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+<section class="modal">
+<h2 id="settingsTitle">Google Photorealistic 3D</h2>
+<p>Google Maps Platform-এর official Map Tiles API দিয়ে 3D দৃশ্য দেখার চেষ্টা করবে। এটি <b>Google Earth থেকে 3D model download</b> করে না। ঢাকায় Photorealistic 3D buildings coverage সীমিত বা অনুপস্থিত হতে পারে।</p>
+<p><a href="https://console.cloud.google.com/apis/library/tile.googleapis.com" target="_blank" rel="noopener noreferrer">Google Cloud-এ Map Tiles API চালু করো</a> (billing প্রয়োজন)। Key-টি শুধু এই browser tab-এ ব্যবহার হবে; GitHub-এ সংরক্ষিত হবে না। HTTP referrer এবং API restriction অবশ্যই দেবে।</p>
+<label for="key">Google Maps Platform API Key</label>
+<input id="key" type="password" autocomplete="off" placeholder="Paste restricted Map Tiles API key">
+<div class="actions"><button class="secondary" id="close">Cancel</button><button id="loadGoogle">Load Google 3D</button></div>
+<p class="fine">Attribution remains visible. Google content may not be extracted or cached. No API key? Free 3D demo map remains available.</p>
+</section>
+</div>
+<script>
+(function(){
+"use strict";
+const stations=[
+{n:"Uttara North",bn:"উত্তরা উত্তর",lat:23.86967,lon:90.36763},
+{n:"Uttara Center",bn:"উত্তরা সেন্টার",lat:23.85981,lon:90.36516},
+{n:"Uttara South",bn:"উত্তরা দক্ষিণ",lat:23.84581,lon:90.36311},
+{n:"Pallabi",bn:"পল্লবী",lat:23.82615,lon:90.36427},
+{n:"Mirpur 11",bn:"মিরপুর ১১",lat:23.81924,lon:90.36527},
+{n:"Mirpur 10",bn:"মিরপুর ১০",lat:23.80813,lon:90.36833},
+{n:"Kazipara",bn:"কাজীপাড়া",lat:23.79950,lon:90.37190},
+{n:"Shewrapara",bn:"শেওড়াপাড়া",lat:23.79095,lon:90.37553},
+{n:"Agargaon",bn:"আগারগাঁও",lat:23.77842,lon:90.38015},
+{n:"Bijoy Sarani",bn:"বিজয় সরণি",lat:23.76634,lon:90.38313},
+{n:"Farmgate",bn:"ফার্মগেট",lat:23.75903,lon:90.38635},
+{n:"Karwan Bazar",bn:"কারওয়ান বাজার",lat:23.75154,lon:90.39266},
+{n:"Shahbag",bn:"শাহবাগ",lat:23.73958,lon:90.39601},
+{n:"Dhaka University",bn:"ঢাকা বিশ্ববিদ্যালয়",lat:23.73142,lon:90.39702},
+{n:"Bangladesh Secretariat",bn:"বাংলাদেশ সচিবালয়",lat:23.73001,lon:90.40787},
+{n:"Motijheel",bn:"মতিঝিল",lat:23.72743,lon:90.42018}
+];
+const $=id=>document.getElementById(id);
+const notify=(s,ms=6000)=>{ $("notice").textContent=s; if(ms>0)setTimeout(()=>{if($("notice").textContent===s)$("notice").textContent="";},ms); };
+let viewer, googleTiles=null, osmLayer=null, demoRoofs=[], routeEntities=[], cars=[], playing=true, ride=false, rate=1, distance=0, length=0, previousTime=0, googleMode=false;
+const stationList=$("stationList");
+stations.forEach((s,i)=>{
+ const el=document.createElement("button"); el.type="button"; el.className="station";el.setAttribute("data-index",i);
+ const mark=document.createElement("span");mark.className="marker";
+ const content=document.createElement("span");content.className="station-text";
+ const strong=document.createElement("strong");strong.textContent=s.n;
+ const small=document.createElement("small");small.textContent=s.bn;
+ content.append(strong,small);
+ const num=document.createElement("span");num.className="num";num.textContent=String(i+1).padStart(2,"0");
+ el.append(mark,content,num);
+ el.addEventListener("click",()=>focusStation(i));
+ stationList.append(el);
+});
+if(!window.Cesium){notify("3D library load হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করো।",0);return;}
+try{
+ Cesium.Ion.defaultAccessToken=undefined;
+ viewer=new Cesium.Viewer("scene",{
+  baseLayer:false,baseLayerPicker:false,geocoder:false,homeButton:false,sceneModePicker:false,
+  navigationHelpButton:false,animation:false,timeline:false,fullscreenButton:false,
+  selectionIndicator:false,infoBox:false,shouldAnimate:true
+ });
+ viewer.scene.globe.enableLighting=false;
+ viewer.scene.globe.depthTestAgainstTerrain=false;
+ viewer.scene.screenSpaceCameraController.enableCollisionDetection=false;
+ viewer.scene.skyAtmosphere.show=true;
+ viewer.scene.backgroundColor=Cesium.Color.fromCssColorString("#143147");
+ osmLayer=viewer.imageryLayers.addImageryProvider(new Cesium.OpenStreetMapImageryProvider({url:"https://tile.openstreetmap.org/"}));
+ viewer.camera.setView({destination:Cesium.Cartesian3.fromDegrees(90.393,23.789,24000),orientation:{heading:0,pitch:Cesium.Math.toRadians(-68),roll:0}});
+}catch(err){notify("3D viewer শুরু হয়নি: "+err.message,0);return;}
+const cart=(p,h=20)=>Cesium.Cartesian3.fromDegrees(p.lon,p.lat,h);
+const lineCoords=stations.map(s=>s.lon).length;
+const coords=stations.flatMap(s=>[s.lon,s.lat,19]);
+routeEntities.push(viewer.entities.add({name:"MRT Line-6 (approximate alignment)",polyline:{positions:Cesium.Cartesian3.fromDegreesArrayHeights(coords),width:9,material:new Cesium.PolylineGlowMaterialProperty({glowPower:.15,color:Cesium.Color.fromCssColorString("#14dcb4")})}}));
+routeEntities.push(viewer.entities.add({name:"Railway guideway (approximate)",polyline:{positions:Cesium.Cartesian3.fromDegreesArrayHeights(stations.flatMap(s=>[s.lon,s.lat,18.7])),width:3,material:Cesium.Color.fromCssColorString("#fafbfc")}}));
+const geodesics=[], cum=[0];
+for(let i=0;i<stations.length-1;i++){
+ const a=Cesium.Cartographic.fromDegrees(stations[i].lon,stations[i].lat);
+ const b=Cesium.Cartographic.fromDegrees(stations[i+1].lon,stations[i+1].lat);
+ const g=new Cesium.EllipsoidGeodesic(a,b);geodesics.push(g);cum.push(cum[i]+g.surfaceDistance);
+}length=cum[cum.length-1];
+function at(d){
+ let val=Math.max(0,Math.min(d,length-0.01)),i=0;
+ for(;i<geodesics.length-1&&cum[i+1]<val;i++){}
+ const g=geodesics[i], fraction=(val-cum[i])/(g.surfaceDistance||1);
+ const p=g.interpolateUsingFraction(fraction);
+ return {lat:Cesium.Math.toDegrees(p.latitude),lon:Cesium.Math.toDegrees(p.longitude),heading:g.startHeading};
+}
+function stationHeading(i){
+ const g=geodesics[Math.min(i,geodesics.length-1)];
+ return g.startHeading;
+}
+stations.forEach((s,i)=>{
+ const stationColor=i===0||i===15?"#f9d66d":"#45eac2";
+ viewer.entities.add({
+  id:"st"+i,name:s.n,
+  position:cart(s,23),
+  point:{pixelSize:13,color:Cesium.Color.fromCssColorString(stationColor),outlineColor:Cesium.Color.fromCssColorString("#09241d"),outlineWidth:3,disableDepthTestDistance:1e7},
+  label:{text:s.n,font:"bold 13px sans-serif",fillColor:Cesium.Color.WHITE,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,-23),distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,13500),disableDepthTestDistance:1e7}
+ });
+ const color=Cesium.Color.fromCssColorString("#1b936f").withAlpha(.82);
+ const roof=viewer.entities.add({
+  name:s.n+" (illustrative roof)",position:cart(s,24),
+  orientation:Cesium.Transforms.headingPitchRollQuaternion(cart(s,24),new Cesium.HeadingPitchRoll(stationHeading(i),0,0)),
+  box:{dimensions:new Cesium.Cartesian3(24,66,5),material:color,outline:true,outlineColor:Cesium.Color.WHITE.withAlpha(.65)}
+ });demoRoofs.push(roof);
+ const pole=viewer.entities.add({name:"Support (illustrative)",position:cart(s,8),cylinder:{length:16,topRadius:1.8,bottomRadius:2.8,material:Cesium.Color.fromCssColorString("#a1aab0")}});demoRoofs.push(pole);
+});
+for(let i=0;i<6;i++){
+ const coach=viewer.entities.add({
+  name:"Simulated MRT-6 coach "+(i+1),position:cart(stations[0],22),
+  box:{dimensions:new Cesium.Cartesian3(3.4,17.5,3.5),material:Cesium.Color.fromCssColorString(i===0?"#0cbf8d":"#d9e4eb"),outline:true,outlineColor:Cesium.Color.fromCssColorString("#19896e")}
+ });
+ cars.push(coach);
+}
+function setActive(i){
+ stationList.querySelectorAll(".station").forEach(el=>el.classList.toggle("active",Number(el.dataset.index)===i));
+}
+function focusStation(i){
+ ride=false;$("follow").classList.remove("primary");
+ setActive(i);
+ const s=stations[i];
+ viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(s.lon,s.lat,950),orientation:{heading:0,pitch:Cesium.Math.toRadians(-47),roll:0},duration:1.4});
+ notify(s.bn+" · "+s.n,3000);
+}
+function overview(){
+ ride=false;$("follow").classList.remove("primary");
+ stationList.querySelectorAll(".station").forEach(el=>el.classList.remove("active"));
+ viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(90.3915,23.789,25500),orientation:{heading:0,pitch:Cesium.Math.toRadians(-69),roll:0},duration:1.7});
+}
+function renderTrain(){
+ for(let i=0;i<cars.length;i++){
+  const p=at((distance-i*20+length)%length);
+  const pos=cart(p,22.2);
+  cars[i].position=pos;
+  cars[i].orientation=Cesium.Transforms.headingPitchRollQuaternion(pos,new Cesium.HeadingPitchRoll(p.heading,0,0));
+ }
+}
+function loop(t){
+ const dt=Math.min(0.07,Math.max(0,(t-previousTime)/1000||0));previousTime=t;
+ if(playing){distance=(distance+dt*13.5*rate)%length;renderTrain();}
+ if(ride){
+  const p=at(distance),target=cart(p,24);
+  viewer.camera.lookAt(target,new Cesium.HeadingPitchRange(p.heading, Cesium.Math.toRadians(-24),150));
+ }
+ requestAnimationFrame(loop);
+}
+renderTrain();requestAnimationFrame(loop);
+$("overview").addEventListener("click",overview);
+$("north").addEventListener("click",()=>focusStation(0));
+$("central").addEventListener("click",()=>focusStation(10));
+$("south").addEventListener("click",()=>focusStation(15));
+$("follow").addEventListener("click",()=>{
+ ride=!ride;$("follow").classList.toggle("primary",ride);
+ if(ride)notify("ট্রেনের সাথে ক্যামেরা চলছে।",3000);else overview();
+});
+$("pause").addEventListener("click",()=>{
+ playing=!playing;$("pause").textContent=playing?"❚❚ Pause":"▶ Play";
+});
+$("speed").addEventListener("click",()=>{
+ rate=rate===1?2:rate===2?4:1;$("speed").textContent="▶ "+rate+"× Speed";
+});
+const modal=$("settings");
+$("google").addEventListener("click",()=>{
+ if(googleMode){googleMode=false;viewer.scene.globe.show=true;if(osmLayer)osmLayer.show=true;if(googleTiles)googleTiles.show=false;demoRoofs.forEach(x=>x.show=true);$("status").textContent="DEMO MAP";$("google").textContent="◈ Google 3D";notify("Free 3D demo map enabled.");return;}
+ modal.classList.add("open");$("key").focus();
+});
+$("close").addEventListener("click",()=>modal.classList.remove("open"));
+modal.addEventListener("click",e=>{if(e.target===modal)modal.classList.remove("open");});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")modal.classList.remove("open");});
+$("loadGoogle").addEventListener("click",async()=>{
+ const key=$("key").value.trim();
+ if(!key){notify("Map Tiles API key দাও।");return;}
+ const button=$("loadGoogle");button.disabled=true;button.textContent="Loading...";
+ try{
+  if(!googleTiles){
+   const url="https://tile.googleapis.com/v1/3dtiles/root.json?key="+encodeURIComponent(key);
+   googleTiles=await Cesium.Cesium3DTileset.fromUrl(url,{showCreditsOnScreen:true,maximumScreenSpaceError:16});
+   viewer.scene.primitives.add(googleTiles);
+  }else googleTiles.show=true;
+  googleMode=true;viewer.scene.globe.show=false;
+  if(osmLayer)osmLayer.show=false;
+  demoRoofs.forEach(x=>x.show=false);
+  $("status").textContent="GOOGLE 3D API";
+  $("google").textContent="◈ Demo Map";
+  modal.classList.remove("open");$("key").value="";
+  notify("Google 3D Tiles চালু হয়েছে। ঢাকার এলাকায় surface 3D coverage না থাকলে ভবন নাও দেখা যেতে পারে।",11000);
+  overview();
+ }catch(err){
+  googleMode=false;viewer.scene.globe.show=true;if(osmLayer)osmLayer.show=true;
+  notify("Google 3D লোড হয়নি: "+(err.message||"API key / billing / coverage check করো"),15000);
+ }finally{button.disabled=false;button.textContent="Load Google 3D";}
+});
+notify("OpenStreetMap demo mode: রুট ও ট্রেন 3D সিমুলেশন; বাস্তব Google 3D দেখতে API key প্রয়োজন।",11000);
+})();
+</script>
+</body>
+</html>
