@@ -135,6 +135,10 @@ function make(i){
  gNow=materialColors.map(()=>({p:[],n:[],ind:[]}));
  counts={buildings:0,tank:0,stair:0,ac:0,solar:0,shops:0};
  for(const item of (city.buildings||[]).slice(0,450))decorateBuilding(item,i,center,track);
+ // Keep an intentionally invisible valid glTF placeholder if OSM data is too
+ // sparse for any rooftop details; never invent a mapped building location.
+ const noMappedDetails=!gNow.some(g=>g.ind.length);
+ if(noMappedDetails)box('stair-core',0,-1000,0,.05,.05,.05);
  const buffers=[],views=[],accessors=[],primitives=[];let off=0,triangles=0;
  function add(v,type,size,bounds=false){
   const b=type===5126?Buffer.from(new Float32Array(v).buffer):Buffer.from(new Uint32Array(v).buffer);
@@ -155,7 +159,7 @@ function make(i){
  meshes:[{primitives}],materials,
  buffers:[{uri:'data:application/octet-stream;base64,'+binary.toString('base64'),byteLength:binary.length}],
  bufferViews:views,accessors,extras:{station:i,footprintsSource:city.buildings.length,
- detailCounts:{...counts},triangles,
+ detailCounts:{...counts},noMappedDetails,triangles,
  attribution:'© OpenStreetMap contributors ODbL 1.0',
  warning:'Building footprints from OSM; architectural fixtures and signage are estimates, not surveyed observations'}};
  writeFileSync(join(output,i+'.gltf'),JSON.stringify(gltf));
