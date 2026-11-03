@@ -22,7 +22,9 @@ function cleanWays(raw){
   if(points.length<2)continue;
   const id=String(item.id??points[0].join(","));
   if(seen.has(id))continue;
-  seen.add(id);ways.push({id,kind,points});
+  const tagged=Number(item.width);
+  const measured=Number.isFinite(tagged)&&tagged>=1.8&&tagged<=40?tagged:null;
+  seen.add(id);ways.push({id,kind,points,measuredWidth:measured});
  }
  return ways.slice(0,250);
 }
@@ -84,7 +86,7 @@ function draw(viewer,ways,center){
    name:"OSM verified alignment: "+w.kind+" road (width estimated)",
    corridor:{
     positions:C.Cartesian3.fromDegreesArray(coords),
-    width:widths[w.kind]||5.5,height:0.35,
+    width:w.measuredWidth||widths[w.kind]||5.5,height:0.35,
     material:C.Color.fromCssColorString(minor?"#9d9c91":"#62656a").withAlpha(minor?.72:.86),
     outline:false
    }
