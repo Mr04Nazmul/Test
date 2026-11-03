@@ -201,14 +201,14 @@ function makeModel(data,index){
  if(!center||center.length!==2)throw Error('Missing map anchor for station '+index);
  const cx=center[0],cy=center[1],lonScale=111320*Math.cos(cy*Math.PI/180),latScale=111320;
  const groups=materials.map(newGroup);
- // Cesium uses local ENU (east/north/up). In a Y-up glTF, X=east, Z=south.
- // The previous [-north,east] transform rotated mapped blocks off the imagery.
- const routeXY=trackNodes.map(([lat,lon])=>[(lon-cx)*lonScale,-(lat-cy)*latScale]);
+ // Cesium ModelGraphics defaults: Y-up glTF is upright, with +Z facing east and +X facing north.
+ // Map the OSM north/east displacements to those local axes; do not flip north.
+ const routeXY=trackNodes.map(([lat,lon])=>[(lat-cy)*latScale,(lon-cx)*lonScale]);
  const merged=mergeOSMFootprints(data,index),allBuildings=merged.items;
  let count=0,known=0,triangles=0,clearedNearTrack=0;
  for(const item of allBuildings.slice(0,900)){
   if(!Array.isArray(item.p)||item.p.length<4)continue;
-  const coords=item.p.map(([lon,lat])=>[(lon-cx)*lonScale,-(lat-cy)*latScale]);
+  const coords=item.p.map(([lon,lat])=>[(lat-cy)*latScale,(lon-cx)*lonScale]);
   if(coords.length>3&&Math.hypot(coords[0][0]-coords.at(-1)[0],coords[0][1]-coords.at(-1)[1])<.15)coords.pop();
   if(coords.length<3||coords.length>150)continue;
   // Safety clearance around metro track and camera: OSM footprints are still
@@ -368,7 +368,7 @@ function makeModel(data,index){
   bufferViews,accessors,
   extras:{station:index,buildingFootprints:count,knownHeights:known,inferredHeights:count-known,legacyOSMBuildingCandidates:merged.legacyCount,
    addedIllustrativeDetails:'shopfront glass and sunshades, balcony slabs, rooftop tanks and AC fixtures',
-   anchor:{longitude:cx,latitude:cy},coordinateSystem:'local glTF X=east, Y=up, Z=south',provenance:data.source,license:'ODbL 1.0 © OpenStreetMap contributors',
+   anchor:{longitude:cx,latitude:cy},coordinateSystem:'Cesium entity glTF X=north Y=up Z=east',provenance:data.source,license:'ODbL 1.0 © OpenStreetMap contributors',
    clearedNearTrack,roadSegments:streetSegments,mappedTreeNodes:treeCount,
    caveat:'Real mapped footprints, visually excluded shapes near train corridor to reduce occlusion; approximate heights/windows are not real building imagery.'}
  };
