@@ -99,8 +99,12 @@ const materials=[
  material('balcony-metal-railing','#59666d'),
  material('rooftop-black-water-tank','#33383b'),
  material('rooftop-airconditioning','#879292'),
- material('small-roof-greenery','#506f54')
+ material('small-roof-greenery','#506f54'),
+ material('osm-road-asphalt','#555658'),material('osm-lane-markings','#e7e2cb'),
+ material('osm-tree-bark','#7a583f'),material('osm-tree-leaves','#3b754c'),
+ material('osm-tree-leaves-light','#5d8c5d')
 ];
+const osmMaterials={road:materials.length-5,lane:materials.length-4,trunk:materials.length-3,leaf:materials.length-2,leafLight:materials.length-1};
 const detailMaterials={shop:11,awningGreen:12,awningRed:13,balcony:14,rail:15,tank:16,aircon:17,green:18};
 
 function newGroup(){return {positions:[],normals:[],uv:[],indices:[]}}
@@ -246,6 +250,51 @@ function makeModel(data,index){
   }
   count++;
  }
+ // Geospatial linework follows real mapped OpenStreetMap highway centerlines.
+ // The widths, colors, curb/marking patterns are illustrative, not engineering survey.
+ let streetSegments=0,treeCount=0;
+ const xy=([lon,lat])=>[(lon-cx)*lonScale,-(lat-cy)*latScale];
+ const roadGroup=groups[osmMaterials.road],laneGroup=groups[osmMaterials.lane];
+ for(const road of (data.roads||[]).slice(0,350)){
+  if(!Array.isArray(road.p)||road.p.length<2)continue;
+  const width=road.type==='primary'?10:road.type==='secondary'?8.2:road.type==='tertiary'?7:road.type==='residential'?5.4:4.1;
+  for(let j=1;j<road.p.length;j++){
+   const a=xy(road.p[j-1]),b=xy(road.p[j]),dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz);
+   if(len<1.2||len>350)continue;
+   const nx=-dz/len,nz=dx/len,half=width/2;
+   appendQuad(roadGroup,[a[0]-nx*half,.12,a[1]-nz*half],
+     [a[0]+nx*half,.12,a[1]+nz*half],[b[0]+nx*half,.12,b[1]+nz*half],
+     [b[0]-nx*half,.12,b[1]-nz*half],[0,1,0],len/5,1);
+   if(width>=7&&len>=11){
+    const count=Math.floor(len/8);
+    for(let k=0;k<count;k++){
+     const t0=(k+.13)/count,t1=Math.min(1,(k+.49)/count);
+     const x0=a[0]+dx*t0,z0=a[1]+dz*t0,x1=a[0]+dx*t1,z1=a[1]+dz*t1;
+     appendQuad(laneGroup,[x0-nx*.065,.142,z0-nz*.065],
+      [x0+nx*.065,.142,z0+nz*.065],[x1+nx*.065,.142,z1+nz*.065],
+      [x1-nx*.065,.142,z1-nz*.065],[0,1,0]);
+    }
+   }
+   streetSegments++;
+  }
+ }
+ // Individual mapped natural=tree OSM nodes become original faceted 3D crowns.
+ for(const tree of (data.trees||[]).slice(0,450)){
+  if(!Array.isArray(tree.p)||tree.p.length!==2)continue;
+  const [x,z]=xy(tree.p),seed=Math.abs(Number(tree.id)||17),height=4.5+seed%28/10;
+  const trunk=groups[osmMaterials.trunk],leaves=groups[osmMaterials.leaf],light=groups[osmMaterials.leafLight];
+  box(trunk,x,0,z,.35,height*.72,.35);
+  const crownCenter=height*.76,r=1.6+seed%13/9;
+  for(let k=0;k<8;k++){
+   const a=2*Math.PI*k/8,b=2*Math.PI*(k+1)/8;
+   const pa=[x+Math.cos(a)*r,crownCenter,z+Math.sin(a)*r],
+    pb=[x+Math.cos(b)*r,crownCenter,z+Math.sin(b)*r],
+    top=[x,crownCenter+r*.95,z],base=[x,crownCenter-r*.70,z];
+   appendTri(k%2?light:leaves,pa,pb,top,[0,1,0]);
+   appendTri(leaves,pb,pa,base,[0,-1,0]);
+  }
+  treeCount++;
+ }
  const blobs=[],bufferViews=[],accessors=[],primitives=[];
  let byteCursor=0;
  function pushArray(arr,type){
@@ -292,7 +341,7 @@ function makeModel(data,index){
   extras:{station:index,buildingFootprints:count,knownHeights:known,inferredHeights:count-known,
    addedIllustrativeDetails:'shopfront glass and sunshades, balcony slabs, rooftop tanks and AC fixtures',
    anchor:{longitude:cx,latitude:cy},coordinateSystem:'local glTF X=east, Y=up, Z=south',provenance:data.source,license:'ODbL 1.0 © OpenStreetMap contributors',
-   clearedNearTrack,
+   clearedNearTrack,roadSegments:streetSegments,mappedTreeNodes:treeCount,
    caveat:'Real mapped footprints, visually excluded shapes near train corridor to reduce occlusion; approximate heights/windows are not real building imagery.'}
  };
  return {model,count,known,triangles};
@@ -304,7 +353,7 @@ for(let index=0;index<16;index++){
  const data=JSON.parse(readFileSync(path,'utf8'));
  const {model,count,known,triangles}=makeModel(data,index);
  const name=index+'.gltf';writeFileSync(join(destination,name),JSON.stringify(model));
- report.push({index,name,buildings:count,knownHeights:known,approximateHeights:count-known,triangles,anchor:model.extras.anchor,source:model.extras.provenance,clearedNearTrack:model.extras.clearedNearTrack});
+ report.push({index,name,buildings:count,knownHeights:known,approximateHeights:count-known,triangles,anchor:model.extras.anchor,source:model.extras.provenance,clearedNearTrack:model.extras.clearedNearTrack,roadSegments:model.extras.roadSegments,mappedTreeNodes:model.extras.mappedTreeNodes});
 }
 writeFileSync(join(destination,'manifest.json'),JSON.stringify({generatedBy:'scripts/build-urban-models.mjs',source:'OpenStreetMap ODbL + procedural surfaces',models:report},null,2));
 console.log('Generated',report.length,'MRT-6 surrounding-area glTF 3D models:',report.map(x=>x.index+':'+x.buildings).join(', '));
