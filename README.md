@@ -84,3 +84,31 @@ To regenerate locally: run `node scripts/build-urban-models.mjs` from the reposi
 - The added **DU Station 3D** shortcut switches the map camera directly to Dhaka University while keeping existing satellite imagery, OSM buildings, selected train follow and 360° controls intact.
 - The generator batches many elements into material draw groups for mobile performance; the resulting `assets/dhaka-university-landmark.gltf` is generated as a workflow artifact and published with Pages.
 - Architectural dimensions, precise station entrance positions and many material details remain *approximations*, **not** a scanned/surveyed exact replica. Traffic and trains continue to be estimates/simulations, not GPS. Source geometry is original, not extracted from Google Earth.
+
+
+## Farmgate neighborhood micro-detail bundle (stage 3)
+
+Nine additional self-contained, material-batched glTF 2.0 model files are built by
+`node scripts/build-farmgate-details.mjs` and are used automatically when
+selecting **◎ Farmgate** in the 360° viewer:
+
+- `assets/farmgate-shopfronts.gltf`: shops, windows, metal frames and storefront bands
+- `assets/farmgate-buildings.gltf`: stylized nearby tower facades, balconies, rooftop equipment and AC
+- `assets/farmgate-street-market.gltf`: vendor stands, merchandise, market umbrellas
+- `assets/farmgate-pedestrians.gltf`: human-shaped 3D geometry (illustrative people, not identities)
+- `assets/farmgate-greenery.gltf`: trees and planted road medians
+- `assets/farmgate-utility-network.gltf`: overhead wires, utility poles and transformers
+- `assets/farmgate-streetlights.gltf`: roadside lamps
+- `assets/farmgate-rail-power.gltf`: gantries and over-track electric infrastructure
+- `assets/farmgate-road-markings.gltf`: lane dashes, crossings and curbs
+
+Existing station, train, bus, car and rickshaw models are retained; a separate
+`assets/dhaka-motorcycle.gltf` with rider has been added for simulated traffic.
+
+The generator produces all 9 details with about **57,000 triangles**, and CI runs
+`node scripts/check-farmgate-details.mjs` for asset existence, valid glTF accessors,
+positions and byte bounds. The assets are **conceptual approximations derived
+from a single photo**, not surveyed terrain or true architectural replicas. Other
+existing OSM building-footprint models can visually overlap these illustrative
+facades, especially when viewed from above. Actual DMTCL live vehicle GPS is
+not provided. Google Photorealistic mode hides the conceptual details.
