@@ -129,6 +129,39 @@ st.forEach((s,i)=>{
 // glTF 2.0 uses +Z-forward; Cesium converts it to +X. Adjust -90 degrees to
 // make the longitudinal axis of all train and station glTF files follow the rail's compass bearing.
 function modelOrientation(p){return C.Transforms.headingPitchRollQuaternion(lonlatPoint(p,0),new C.HeadingPitchRoll(p.heading-C.Math.PI_OVER_TWO,0,0))}
+// Photo-inspired original Farmgate street details. Separate glTF asset per category;
+// locations/appearance are approximate, not measured or GPS-observed.
+let farmgateDetails=[];
+function removeFarmgateDetails(){
+ for(const e of farmgateDetails)viewer.entities.remove(e);
+ farmgateDetails=[];
+}
+function addFarmgateDetails(index){
+ removeFarmgateDetails();
+ if(index!==10||googleMode)return;
+ const s=st[index],p=at(stopMeters[index]),pos=lonlatPoint(s,0),direction=modelOrientation(p);
+ const kinds=["shopfronts","buildings","street-market","pedestrians","greenery","utility-network","streetlights","rail-power","road-markings"];
+ for(const kind of kinds){
+  farmgateDetails.push(viewer.entities.add({
+   name:"Farmgate — "+kind+" (original approximate 3D model)",
+   position:pos,orientation:direction,
+   model:{uri:"assets/farmgate-"+kind+".gltf",scale:1,minimumPixelSize:0,maximumScale:1,
+    distanceDisplayCondition:new C.DistanceDisplayCondition(0,kind==="buildings"?2500:1800)}
+  }));
+ }
+ // Local bilingual signs: these are scene labels, not copied signage textures.
+ const matrix=C.Matrix4.fromTranslationQuaternionRotationScale(pos,direction,new C.Cartesian3(1,1,1),new C.Matrix4());
+ for(const [name,x,y,z] of [
+  ["ফার্মগেট বাজার",45,6.4,58],["Janata Bank / জনতা ব্যাংক",-68,13,-44],
+  ["Islami Bank / ইসলামী ব্যাংক",-80,20,7]]){
+  const place=C.Matrix4.multiplyByPoint(matrix,new C.Cartesian3(x,y,z),new C.Cartesian3());
+  farmgateDetails.push(viewer.entities.add({name:name+" (illustrative sign)",position:place,
+   label:{text:name,font:"bold 14px sans-serif",fillColor:C.Color.WHITE,
+    style:C.LabelStyle.FILL_AND_OUTLINE,outlineColor:C.Color.fromCssColorString("#182b30"),
+    outlineWidth:4,distanceDisplayCondition:new C.DistanceDisplayCondition(15,340),
+    disableDepthTestDistance:0}}));
+ }
+}
 function renderStructure(index){
  if(stationStructure)viewer.entities.remove(stationStructure);
  const s=st[index],p=at(stopMeters[index]);
@@ -142,6 +175,7 @@ function renderStructure(index){
   model:{uri:university?"assets/dhaka-university-landmark.gltf":agargaon?"assets/agargaon-station.gltf":farmgate?"assets/farmgate-landmark.gltf":"assets/mrt6-station-concept.gltf",
    scale:1,minimumPixelSize:0,maximumScale:1}});
  setupStreetTraffic(index);
+ addFarmgateDetails(index);
 }
 // Illustrated traffic near the detailed Farmgate landmark.
 // Separately modeled buses, rickshaws and cars; animation is a visual demo,
@@ -322,6 +356,7 @@ function updateFollowCamera(){
  // building geometry near the station. Detailed station stays visible.
  const nearStation=Math.abs(focused.distance-stopMeters[selectedStation])<175;
  for(const b of buildings)b.show=showBuildings&&!googleMode&&!(ride&&cameraStyle==="front"&&nearStation);
+ for(const e of farmgateDetails){const hideFront=ride&&cameraStyle==="front"&&nearStation&&e.name.includes(" — buildings ");e.show=!googleMode&&!(hideFront||(!showBuildings&&(e.name.includes(" — buildings ")||e.name.includes(" — shopfronts "))));}
  if(!ride)return;
  if(cameraStyle==="front"){
   // Camera at the train nose looking along the real mapped track; NOT video.
@@ -648,6 +683,7 @@ $("buildings").addEventListener("click",()=>{
  showBuildings=!showBuildings;
  $("buildings").textContent=showBuildings?"▥ Hide Buildings":"▥ 3D Buildings";
  $("buildings").classList.toggle("primary",showBuildings);
+ for(const e of farmgateDetails)e.show=showBuildings||!(e.name.includes(" — buildings ")||e.name.includes(" — shopfronts "));
  if(showBuildings)loadBuildings(selectedStation);
  else{loadTicket++;if(bldgRequest)bldgRequest.abort();buildings.forEach(e=>viewer.entities.remove(e));buildings=[]}
 });
@@ -660,6 +696,7 @@ $("google").addEventListener("click",()=>{
   if(googleTiles)googleTiles.show=false;
   buildings.forEach(e=>e.show=showBuildings);
   if(stationStructure)stationStructure.show=true;
+  for(const e of farmgateDetails)e.show=true;
   $("google").textContent="◈ Google 3D";return;
  }
  modal.classList.add("open");
@@ -680,6 +717,7 @@ $("loadGoogle").addEventListener("click",async()=>{
   if(osmLayer)osmLayer.show=false;if(satLayer)satLayer.show=false;
    if(roadsLayer)roadsLayer.show=false;if(labelsLayer)labelsLayer.show=false;
   buildings.forEach(e=>e.show=false);if(stationStructure)stationStructure.show=false;
+  farmgateDetails.forEach(e=>e.show=false);
   $("google").textContent="◈ Exit Google 3D";$("key").value="";modal.classList.remove("open");
   announce("Google 3D tiles চালু হয়েছে; ঢাকায় পূর্ণ photorealistic coverage নিশ্চিত নয়।",8000);
  }catch(e){announce("Google 3D load হয়নি। API key, billing অথবা coverage পরীক্ষা করো।",10000)}
