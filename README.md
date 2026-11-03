@@ -11,7 +11,7 @@ Mobile-friendly 3D map prototype of Dhaka Metro Rail MRT Line 6, Uttara North to
 - Responsive iPhone / Android / desktop controls
 
 ## Important limitations
-- The station point coordinates originate from [citylines.co Dhaka Metro source data](https://www.citylines.co/api/dhaka/raw_source/stations) and the station sequence is cross-checked against [DMTCL](https://dmtcl.gov.bd/pages/static-pages/6922ddb2933eb65569e15eb8).
+- Station coordinates are approximate illustrative locations and have not yet been independently validated against an official route geometry. The station names reflect the MRT Line 6 corridor; check [DMTCL](https://dmtcl.gov.bd/) for official information.
 - The route line is an approximation connecting stations; this is **not** a survey-accurate railway alignment. The simulated train and station structures are not imported or extracted from Google Earth.
 - Google photorealistic surface 3D coverage may be unavailable for this Dhaka location; fallback map still runs.
 - Google imagery is accessed via the official API only, is not downloaded or cached, and Google map attribution must remain visible.
