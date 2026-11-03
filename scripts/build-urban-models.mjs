@@ -115,8 +115,20 @@ function box(g,x,y,z,sx,sy,sz){
   appendQuad(g,a,b,c,d,n);
  }
 }
+// Some archival OSM snapshot JSON files omit center; use surveyed route
+// station anchor coordinates already bundled in data/mrt6-track.js.
+const stationCenters=[
+ [90.3676821,23.8690849],[90.3651273,23.8597088],[90.3630841,23.8459106],
+ [90.3642123,23.8261574],[90.3653075,23.819103],[90.3682791,23.8083683],
+ [90.3720193,23.7992485],[90.375542,23.7909718],[90.3801611,23.7784483],
+ [90.3831212,23.7663912],[90.3870783,23.7590775],[90.3928149,23.7513044],
+ [90.3961548,23.7400564],[90.3968427,23.7316979],[90.4075587,23.7300419],
+ [90.4190709,23.7280844]
+];
 function makeModel(data,index){
- const cx=data.center[0],cy=data.center[1],lonScale=111320*Math.cos(cy*Math.PI/180),latScale=111320;
+ const center=data.center||stationCenters[index];
+ if(!center||center.length!==2)throw Error('Missing map anchor for station '+index);
+ const cx=center[0],cy=center[1],lonScale=111320*Math.cos(cy*Math.PI/180),latScale=111320;
  const groups=materials.map(newGroup);
  let count=0,known=0,triangles=0;
  for(const item of (data.buildings||[]).slice(0,450)){
