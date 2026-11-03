@@ -28,6 +28,8 @@ jobs:
         run: |
           node --check data/metro-schedule.js
           node --check app-v2.js
+          node --check scripts/build-farmgate-landmark.mjs
+          node --check scripts/build-dhaka-traffic.mjs
           node scripts/check-metro-quality.mjs
       - name: Build textured Dhaka station-area glTF meshes
         run: node scripts/build-urban-models.mjs
@@ -38,6 +40,8 @@ jobs:
           node --check scripts/build-agargaon-station.mjs
           node scripts/build-agargaon-station.mjs
           node scripts/check-agargaon-station.mjs
+      - name: Generate Dhaka vehicles
+        run: node scripts/build-dhaka-traffic.mjs
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
