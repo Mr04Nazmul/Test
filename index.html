@@ -22,6 +22,14 @@ button,input{font:inherit}button{cursor:pointer;touch-action:manipulation}button
 .camera-toolbar .camera-hint{font-size:9px;white-space:nowrap;color:#d0e2eb;display:none}
 .feed-status{padding:7px 15px;font-size:10px;line-height:1.4;color:#c4d3e1;background:#ffffff09;border-bottom:1px solid #ffffff12}
 @media(min-width:900px){.camera-toolbar .camera-hint{display:block;margin-right:6px}}
+@media(max-width:680px){
+ .floating-bottom{display:flex;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;white-space:nowrap;scrollbar-width:none;max-width:100vw}
+ .floating-bottom .pill{flex:0 0 auto}
+ .controls{max-width:132px;max-height:min(56vh,510px);overflow-y:auto;padding:3px;scrollbar-width:none}
+ .controls .ctrl{max-width:128px;white-space:nowrap;min-width:0}
+ body:not(.mobile-controls-expanded) .controls .optional-control{display:none}
+ #moreControls{font-size:11px;background:#132e3e}
+}
 @media(max-width:680px){.camera-toolbar{bottom:calc(env(safe-area-inset-bottom) + 68px);padding:5px;gap:4px;border-radius:13px}.cam-action{height:33px;min-width:32px;padding:0 6px;font-size:15px}.cam-action.mode{min-width:77px;font-size:10px}.cam-action.quality{min-width:36px}}
 #scene .cesium-widget-credits{bottom:8px!important;left:8px!important;right:auto!important;max-width:75vw;font-size:10px!important;background:#0a1523a6;border-radius:4px;padding:3px}
 #scene .cesium-viewer-bottom{left:0;bottom:0}
@@ -128,14 +136,15 @@ body.panel-hidden .controls{margin-left:auto}
 <div id="stationList"></div>
 </aside>
 <div class="controls">
-<button id="overview" class="ctrl">◉ পুরো রুট</button>
+<button id="overview" class="ctrl optional-control">◉ পুরো রুট</button>
 <button id="findTrain" class="ctrl primary">🚆 Find Train</button>
 <button id="satellite" class="ctrl">◈ Satellite</button>
 <button id="follow" class="ctrl">▣ ট্রেনের সাথে</button>
-<button id="myGPS" class="ctrl">📍 My Phone GPS</button>
-<button id="pause" class="ctrl">▶ Demo Ride</button>
-<button id="buildings" class="ctrl">▥ 3D Buildings</button>
-<button id="google" class="ctrl">◈ Google 3D</button>
+<button id="myGPS" class="ctrl optional-control">📍 My Phone GPS</button>
+<button id="pause" class="ctrl optional-control">▶ Demo Ride</button>
+<button id="buildings" class="ctrl optional-control">▥ 3D Buildings</button>
+<button id="google" class="ctrl optional-control">◈ Google 3D</button>
+<button id="moreControls" class="ctrl">☷ More tools</button>
 </div>
 </div>
 <div class="camera-toolbar" aria-label="360-degree train camera and zoom controls">
@@ -150,6 +159,7 @@ body.panel-hidden .controls{margin-left:auto}
 <div class="floating-bottom">
 <button id="north" class="pill">◎ Uttara</button>
 <button id="central" class="pill">◎ Farmgate</button>
+<button id="agargaon" class="pill">◎ Agargaon 3D</button>
 <button id="south" class="pill">◎ Motijheel</button>
 <button id="togglePanel" class="pill">▤ Hide Panel</button>
 <button id="speed" class="pill">▶ 1× demo speed</button>
@@ -166,6 +176,6 @@ body.panel-hidden .controls{margin-left:auto}
 <p class="fine">Attribution remains visible. Google content may not be extracted or cached. No API key? Free 3D demo map remains available.</p>
 </section>
 </div>
-<script src="app-v2.js?v=20261104-smooth-hybrid-360-v3"></script>
+<script src="app-v2.js?v=20261104-agargaon-refined-v4"></script>
 </body>
 </html>
