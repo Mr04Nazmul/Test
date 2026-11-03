@@ -60,3 +60,9 @@ To regenerate locally: run `node scripts/build-urban-models.mjs` from the reposi
 - The generator `scripts/build-farmgate-landmark.mjs` produces `assets/farmgate-landmark.gltf` in both GitHub Pages deployment workflows. Mobile users do not need to install anything.
 - Visual architecture is inspired by public photographs of the real station, not a licensed survey. Roads, bridge offsets and facade geometry are illustrative; these models do **not** duplicate the exact real-world shapes or every local shop.
 - In the web viewer, choose **Farmgate** to see the new landmark. All original camera controls, map imagery and train-follow functions remain intact.
+
+## Farmgate road traffic (stage 2)
+- Generative 3D meshes for a Dhaka-style painted city bus, decorated cycle rickshaw, and sedan; source: `scripts/build-dhaka-traffic.mjs`.
+- The build produces `assets/dhaka-bus.gltf`, `assets/dhaka-rickshaw.gltf`, and `assets/dhaka-car.gltf` automatically, with no extra npm packages or paid asset API.
+- Ten traffic models appear at illustrative local roads around Farmgate station. Their low-speed street animation is a **simulation only**, not actual traffic or observed vehicle positions.
+- Traffic hides in Google Photorealistic 3D mode to reduce mismatches between illustrative streets and real tiles.
