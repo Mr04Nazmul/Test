@@ -14,10 +14,11 @@ function announce(message,ms=6500){
 if(!C||!route||!svc){announce("ম্যাপ বা রুটের তথ্য লোড হয়নি। Refresh করো।",0);return}
 const st=route.stations,pts=route.points,stops=route.stationBreaks;
 const slate=C.Color.fromCssColorString("#14354d"),green=C.Color.fromCssColorString("#0de9ad");
-let viewer,osmLayer=null,satLayer=null,googleTiles=null,googleMode=false,satelliteOn=false;
+let viewer,osmLayer=null,satLayer=null,roadsLayer=null,labelsLayer=null,googleTiles=null,googleMode=false,satelliteOn=false;
 let selectedStation=10,mode="estimate",selectedTrain="",trainData=[],focused=null;
 let playing=true,demoMeters=0,rate=1,ride=false,worldModels=[],buildings=[],showBuildings=true;
-let lastFrame=0,lastMapUpdate=0,etaLast=0,stationStructure=null,trainEntities=[],trainMarkers=new Map();
+let cameraStyle="chase",orbitYaw=0,orbitPitch=-0.27,followDistance=105,gpsDisplayMeters=null;
+let lastFrame=0,lastMapUpdate=0,lastMarkerAnimation=0,etaLast=0,stationStructure=null,trainEntities=[],trainMarkers=new Map();
 let loadTicket=0,bldgRequest=null,gpsWatchId=null,gpsMeters=null,gpsMark=null;
 const nameFor=i=>(st[i]&&st[i].bn)||"";
 const carLength=19.8;
@@ -31,15 +32,19 @@ for(let i=1;i<pts.length;i++){
 }
 const trackLength=cum[cum.length-1],stopMeters=stops.map(k=>cum[k]);
 demoMeters=stopMeters[10]+110;
-function at(meters,travel="south"){
+// Derive the tangent over 36 metres to avoid heading jitter at OSM vertices.
+function trackPoint(meters){
  const d=clamp(meters,0,trackLength-.01);
  let lo=0,hi=cum.length-1;
  while(lo+1<hi){const mid=(lo+hi)>>1;if(cum[mid]<=d)lo=mid;else hi=mid}
  const f=(d-cum[lo])/(cum[lo+1]-cum[lo]||1);
  const a=pts[lo],b=pts[lo+1];
- const lat=a[0]+f*(b[0]-a[0]),lon=a[1]+f*(b[1]-a[1]);
- const ang=Math.atan2((b[1]-a[1])*Math.cos(C.Math.toRadians(lat)),b[0]-a[0]);
- return {lat,lon,heading:ang+(travel==="north"?Math.PI:0),distance:d};
+ return {lat:a[0]+f*(b[0]-a[0]),lon:a[1]+f*(b[1]-a[1]),distance:d};
+}
+function at(meters,travel="south"){
+ const p=trackPoint(meters),prev=trackPoint(p.distance-18),next=trackPoint(p.distance+18);
+ const h=Math.atan2((next.lon-prev.lon)*Math.cos(C.Math.toRadians(p.lat)),next.lat-prev.lat);
+ return {...p,heading:h+(travel==="north"?Math.PI:0)};
 }
 function metersAtIndex(progress){
  const p=clamp(progress,0,st.length-1),i=Math.min(14,Math.floor(p)),f=p-i;
@@ -55,7 +60,13 @@ try{
  viewer.scene.globe.depthTestAgainstTerrain=false;
  viewer.scene.screenSpaceCameraController.enableCollisionDetection=false;
  viewer.scene.backgroundColor=C.Color.fromCssColorString("#102736");
- viewer.resolutionScale=Math.min(window.devicePixelRatio>=3?.87:1,1);
+ // High-resolution map without running the iPhone GPU at excessive native DPR.
+ viewer.resolutionScale=window.innerWidth<700?1.16:1.35;
+ viewer.scene.globe.maximumScreenSpaceError=1.6;
+ if(viewer.scene.postProcessStages.fxaa)viewer.scene.postProcessStages.fxaa.enabled=true;
+ if(viewer.scene.fog)viewer.scene.fog.enabled=true;
+ viewer.scene.screenSpaceCameraController.minimumZoomDistance=3;
+ viewer.scene.screenSpaceCameraController.maximumZoomDistance=600000;
  osmLayer=viewer.imageryLayers.addImageryProvider(new C.OpenStreetMapImageryProvider({url:"https://tile.openstreetmap.org/"}));
  const s=st[10];
  viewer.camera.setView({destination:C.Cartesian3.fromDegrees(s.lon,s.lat,470),
@@ -210,17 +221,23 @@ function updateTrainsUI(){
   area.append(btn);
  });
 }
-function activeFocus(){
+function activeFocus(dt=0.016){
  if(mode==="estimate"){
+  const sampled=svc.positionFor&&svc.positionFor(selectedTrain);
+  if(sampled)return {m:metersAtIndex(sampled.position),dir:sampled.dir};
   const t=trainData.find(x=>x.id===selectedTrain);
-  if(t){const m=metersAtIndex(t.position);return {m,dir:t.dir};}
+  if(t)return {m:metersAtIndex(t.position),dir:t.dir};
  }
- if(mode==="onboard"&&gpsMeters!==null)return {m:gpsMeters,dir:"south"};
+ if(mode==="onboard"&&gpsMeters!==null){
+  if(gpsDisplayMeters===null||Math.abs(gpsDisplayMeters-gpsMeters)>400)gpsDisplayMeters=gpsMeters;
+  gpsDisplayMeters+=(gpsMeters-gpsDisplayMeters)*(1-Math.exp(-5*dt));
+  return {m:gpsDisplayMeters,dir:"south"};
+ }
  return {m:demoMeters,dir:"south"};
 }
-function renderCoachSet(){
- const focus=activeFocus(),dir=focus.dir;
- focused=at(focus.m,dir);
+function renderCoachSet(dt=0.016){
+ const focus=activeFocus(dt),dir=focus.dir;
+ focused={...at(focus.m,dir),dir};
  for(let i=0;i<trainEntities.length;i++){
   const m=clamp(focus.m+(dir==="south"?-1:1)*i*carLength,0,trackLength-.1),p=at(m,dir);
   const pos=lonlatPoint(p,19.0);
