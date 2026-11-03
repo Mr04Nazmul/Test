@@ -37,6 +37,11 @@ jobs:
           node --check scripts/build-dhaka-audio.mjs
           node scripts/build-dhaka-audio.mjs
           node scripts/check-dhaka-local-audio.mjs
+      - name: Optional genuine Dhaka street recording (CC BY-SA, source attribution)
+        continue-on-error: true
+        run: |
+          node --check scripts/import-dhaka-real-audio.mjs
+          node scripts/import-dhaka-real-audio.mjs
       - name: Refresh mapped buildings, roads and trees for busiest 3 station neighborhoods
         # Optional network refresh: static Pages deployments use the committed offline OSM cache.
         # Public Overpass may take minutes or be rate limited; don't block each commit.
