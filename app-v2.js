@@ -256,6 +256,7 @@ function renderNeighborhoodProps(index){
  });
 }
 function renderStructure(index){
+ if(window.DhakaSoundscape)window.DhakaSoundscape.setStation(index);
  if(stationStructure)viewer.entities.remove(stationStructure);
  const s=st[index],p=at(stopMeters[index]);
  // Farmgate (index 10) gets its own original landmark geometry: curved
@@ -865,6 +866,26 @@ $("cityCoverage").addEventListener("click",()=>{
   :"পারফরম্যান্স মোড: কাছের 3D এলাকাগুলো দেখানো হবে।",5600);
 });
 
+// WebAudio starts only on a direct tap; no background recording or autoplay.
+function reflectSoundState(){
+ const btn=$("sound"),enabled=!!window.DhakaSoundscape?.active;
+ btn.textContent=enabled?"🔊 Sound On":"🔇 City Sound";
+ btn.setAttribute("aria-pressed",String(enabled));
+ btn.classList.toggle("primary",enabled);
+}
+$("sound").addEventListener("click",async()=>{
+ const engine=window.DhakaSoundscape;
+ if(!engine){announce("Audio engine unavailable. Refresh করে আবার চেষ্টা করো।",5000);return}
+ if(engine.active){engine.stop();reflectSoundState();return}
+ try{
+  engine.setStation(selectedStation);
+  await engine.start();
+  reflectSoundState();
+  announce("বাংলাদেশি শহরের পরিবেশের সাউন্ড চালু (সিন্থেসাইজড; আসল রেকর্ডিং নয়)।",5500);
+ }catch(err){engine.stop();reflectSoundState();announce("Sound চালু হয়নি: "+err.message,6000)}
+});
+window.addEventListener("dhaka-sound-muted",reflectSoundState);
+reflectSoundState();
 $("buildings").addEventListener("click",()=>{
  if(googleMode){announce("Google mode-এ আলাদা OSM ভবন বন্ধ।");return}
  showBuildings=!showBuildings;
