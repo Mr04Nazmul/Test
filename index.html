@@ -13,6 +13,16 @@
 *{box-sizing:border-box}html,body,#app,#scene{margin:0;width:100%;height:100%;overflow:hidden}
 button,input{font:inherit}button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.4;cursor:wait}
 #scene{background:radial-gradient(circle at 40% 40%,#23435d,#09121e)}
+#scene canvas{touch-action:none}
+.camera-toolbar{position:fixed;z-index:9;left:50%;bottom:calc(env(safe-area-inset-bottom) + 74px);transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:5px;max-width:calc(100vw - 16px);padding:7px 8px;background:#081b28e8;border:1px solid #ffffff3b;border-radius:18px;box-shadow:0 12px 36px #0008;backdrop-filter:blur(20px)}
+.cam-action{min-width:35px;height:38px;padding:0 8px;background:#ffffff15;border:1px solid #ffffff27;border-radius:11px;color:#f6fffc;font-size:17px;font-weight:750;touch-action:manipulation}
+.cam-action:active{background:#56edc0;color:#032e22}
+.cam-action.mode{min-width:88px;white-space:nowrap;font-size:11px;color:#42f4b9}
+.cam-action.quality{min-width:43px;font-size:11px;color:#ffe1a1}
+.camera-toolbar .camera-hint{font-size:9px;white-space:nowrap;color:#d0e2eb;display:none}
+.feed-status{padding:7px 15px;font-size:10px;line-height:1.4;color:#c4d3e1;background:#ffffff09;border-bottom:1px solid #ffffff12}
+@media(min-width:900px){.camera-toolbar .camera-hint{display:block;margin-right:6px}}
+@media(max-width:680px){.camera-toolbar{bottom:calc(env(safe-area-inset-bottom) + 68px);padding:5px;gap:4px;border-radius:13px}.cam-action{height:33px;min-width:32px;padding:0 6px;font-size:15px}.cam-action.mode{min-width:77px;font-size:10px}.cam-action.quality{min-width:36px}}
 #scene .cesium-widget-credits{bottom:8px!important;left:8px!important;right:auto!important;max-width:75vw;font-size:10px!important;background:#0a1523a6;border-radius:4px;padding:3px}
 #scene .cesium-viewer-bottom{left:0;bottom:0}
 .shell{pointer-events:none;position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;justify-content:space-between;padding:max(env(safe-area-inset-top),15px) max(env(safe-area-inset-right),14px) max(env(safe-area-inset-bottom),14px) max(env(safe-area-inset-left),14px)}
@@ -111,6 +121,7 @@ body.panel-hidden .controls{margin-left:auto}
 <div class="hero"><div class="eyebrow">BANGLADESH · DHAKA</div><h1>Explore the Metro.</h1><p>উত্তরা থেকে মতিঝিল—বাস্তব OSM রুটে 3D ট্রেন, স্টেশন ও আনুমানিক ETA। GPS tracking নয়।</p></div>
 <div class="stats"><div class="stat"><b>16</b><span>স্টেশন</span></div><div class="stat"><b>Line 6</b><span>উড়াল মেট্রোরেল</span></div></div>
 <div class="station-heading">TRAIN TRACKER <span>ESTIMATE · NOT GPS</span></div>
+<div class="feed-status">Official train GPS: no verified public feed · My Phone GPS is private.</div>
 <div id="etaPanel" aria-live="polite"></div>
 <div id="trainList" aria-label="Estimated train positions"></div>
 <div class="station-heading">STATIONS <span>SELECT TO FLY</span></div>
@@ -121,11 +132,20 @@ body.panel-hidden .controls{margin-left:auto}
 <button id="findTrain" class="ctrl primary">🚆 Find Train</button>
 <button id="satellite" class="ctrl">◈ Satellite</button>
 <button id="follow" class="ctrl">▣ ট্রেনের সাথে</button>
-<button id="myGPS" class="ctrl">📍 My Train GPS</button>
+<button id="myGPS" class="ctrl">📍 My Phone GPS</button>
 <button id="pause" class="ctrl">▶ Demo Ride</button>
 <button id="buildings" class="ctrl">▥ 3D Buildings</button>
 <button id="google" class="ctrl">◈ Google 3D</button>
 </div>
+</div>
+<div class="camera-toolbar" aria-label="360-degree train camera and zoom controls">
+<span class="camera-hint">Drag to rotate 360° · pinch to zoom</span>
+<button id="camMode" class="cam-action mode" aria-label="Change camera mode">▣ Chase</button>
+<button id="orbitLeft" class="cam-action" aria-label="Rotate camera left">↶</button>
+<button id="orbitRight" class="cam-action" aria-label="Rotate camera right">↷</button>
+<button id="zoomIn" class="cam-action" aria-label="Zoom in">＋</button>
+<button id="zoomOut" class="cam-action" aria-label="Zoom out">－</button>
+<button id="quality" class="cam-action quality" aria-label="Rendering quality">HD</button>
 </div>
 <div class="floating-bottom">
 <button id="north" class="pill">◎ Uttara</button>
@@ -146,6 +166,6 @@ body.panel-hidden .controls{margin-left:auto}
 <p class="fine">Attribution remains visible. Google content may not be extracted or cached. No API key? Free 3D demo map remains available.</p>
 </section>
 </div>
-<script src="app-v2.js?v=20261103-train-building-fix"></script>
+<script src="app-v2.js?v=20261104-smooth-hybrid-360-v3"></script>
 </body>
 </html>
