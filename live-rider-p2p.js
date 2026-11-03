@@ -10,6 +10,20 @@ const listeners=new Set();
 let watcher=null,watchConnection=null,sender=null,senderConnection=null,senderGPS=null;
 let watchState="idle",senderState="idle",watchLink="",callback=null;
 const maxFreshMs=20000;
+let loadingPeer=null;
+function loadPeer(){
+ if(window.Peer)return Promise.resolve();
+ if(loadingPeer)return loadingPeer;
+ loadingPeer=new Promise((resolve,reject)=>{
+  const script=document.createElement("script");
+  script.src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js";
+  script.crossOrigin="anonymous";
+  script.onload=()=>window.Peer?resolve():reject(Error("PeerJS missing after load"));
+  script.onerror=()=>reject(Error("PeerJS CDN unavailable"));
+  document.head.appendChild(script);
+ }).catch(e=>{loadingPeer=null;throw e});
+ return loadingPeer;
+}
 const status=(state,detail={})=>{
  watchState=state;for(const fn of listeners)try{fn({state,...detail})}catch(e){console.warn(e)}
 };
@@ -32,8 +46,8 @@ function stopWatch(){
  if(watcher){try{watcher.destroy()}catch(e){}watcher=null}
  watchLink="";callback=null;status("idle");
 }
-function startWatch(onPosition){
- if(!window.Peer)return Promise.reject(Error("PeerJS could not load. Internet is required."));
+async function startWatch(onPosition){
+ await loadPeer();
  stopWatch();
  callback=onPosition;const id=randomID();
  return new Promise((resolve,reject)=>{
@@ -72,9 +86,9 @@ function stopShare(){
  if(sender){try{sender.destroy()}catch(e){}sender=null}
  senderState="idle";return senderState;
 }
-function startShare(peerId,onStatus){
- if(!/^mrt6-[0-9a-f]{32}$/.test(String(peerId)))return Promise.reject(Error("Invalid private watch invite."));
- if(!window.Peer)return Promise.reject(Error("PeerJS could not load."));
+async function startShare(peerId,onStatus){
+ if(!/^mrt6-[0-9a-f]{32}$/.test(String(peerId)))throw Error("Invalid private watch invite.");
+ await loadPeer();
  if(!navigator.geolocation)return Promise.reject(Error("GPS unavailable. HTTPS + location permission required."));
  stopShare();senderState="connecting";onStatus?.("Connecting to private viewer…");
  return new Promise((resolve,reject)=>{
