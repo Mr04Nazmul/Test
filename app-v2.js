@@ -577,7 +577,6 @@ async function loadBuildings(i){
       distanceDisplayCondition:new C.DistanceDisplayCondition(0,5500)}
     }));
     appendAdjacentUrbanTiles(i);
-  appendNeighborhoodFurnishings(i);
     appendNeighborhoodFurnishings(i);
     announce(s.n+" — বাস্তব OSM footprint-এর 3D building mesh। জানালা/অজানা উচ্চতা আনুমানিক।",9500);
     return;
@@ -638,6 +637,7 @@ async function loadBuildings(i){
    }}));
   }
   appendAdjacentUrbanTiles(i);
+  appendNeighborhoodFurnishings(i);
   announce(buildings.length+"টি বাস্তব OSM footprint থেকে 3D ভবন তৈরি ("+(offline?"লোকাল ক্যাশ":"অনলাইন")+"). Height অনেকে আনুমানিক।",8500);
  }catch(e){if(!bldgRequest.signal.aborted)announce("Building data unavailable for this station. অন্য স্টেশন নির্বাচন করো।",8000)}
 }
