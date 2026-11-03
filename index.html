@@ -212,6 +212,30 @@ body.panel-hidden .controls{margin-left:auto}
  .camera-toolbar .cam-action.mode {min-width:72px}
 }
 
+
+.sound-panel[hidden]{display:none!important}
+.sound-panel{position:fixed;z-index:21;left:14px;bottom:calc(env(safe-area-inset-bottom) + 135px);
+ width:min(340px,calc(100vw - 30px));max-height:min(65vh,520px);overflow:auto;overscroll-behavior:contain;
+ border:1px solid #8dd9c04a;background:#0a2230f2;color:#f7fffd;backdrop-filter:blur(18px);
+ border-radius:19px;box-shadow:0 14px 48px #00151ad9;padding:14px;font-size:12px}
+.sound-panel-title{display:flex;justify-content:space-between;align-items:center;padding:0!important}
+.sound-panel-title strong{font-size:14px;color:#7df6d3}
+.sound-panel-title button{border:1px solid #ffffff50;background:#ffffff19;color:white;padding:7px 11px;border-radius:9px}
+.sound-panel label{display:block;margin:11px 0 6px;font-size:11px}
+.sound-panel select{width:100%;padding:10px 8px;border-radius:10px;border:1px solid #ffffff42;background:#102f3f;color:white;outline:none;font:inherit}
+.sound-panel input[type="range"]{width:100%;accent-color:#4eddbb}
+.sound-panel .sound-action{width:100%;padding:10px;border-radius:10px;background:#128d76;border:1px solid #63d9ba;color:white;margin-top:9px;font-size:12px}
+.sound-panel .sound-check{display:flex;gap:7px;align-items:center;padding:7px 0}
+.sound-panel .sound-check input{accent-color:#3de1b3}
+.sound-panel .sound-note{font-size:10px;color:#b7cad2;line-height:1.5;margin:9px 0 0}
+.sound-panel .sound-note a{color:#8de8cd;text-decoration:underline}
+#soundState{font-size:11px;color:#97dec9;margin:9px 0 14px}
+#soundVolumeValue{float:right;color:#6ff3c6}
+@media(max-width:700px){.sound-panel{left:8px;right:8px;width:auto;bottom:calc(env(safe-area-inset-bottom) + 115px);
+ max-height:min(52vh,460px);padding:11px;border-radius:15px}
+ .sound-panel select{font-size:12px}
+}
+
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/";</script>
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
@@ -241,6 +265,7 @@ body.panel-hidden .controls{margin-left:auto}
 <button id="overview" class="ctrl optional-control">◉ পুরো রুট</button>
 <button id="findTrain" class="ctrl primary">🚆 Find Train</button>
 <button id="sound" class="ctrl" type="button" aria-pressed="false" title="Optional original synthesized Dhaka city ambience, not field audio">🔇 City Sound</button>
+<button id="soundOptions" type="button" class="ctrl optional-control" aria-controls="soundPanel" aria-expanded="false">🎚 Sound Zones</button>
 <button id="satellite" class="ctrl">◈ Satellite</button>
 <button id="follow" class="ctrl">▣ ট্রেনের সাথে</button>
 <button id="myGPS" class="ctrl optional-control">📍 My Phone GPS</button>
@@ -271,6 +296,27 @@ body.panel-hidden .controls{margin-left:auto}
 <button id="speed" class="pill">▶ 1× demo speed</button>
 </div>
 </div>
+
+<aside id="soundPanel" class="sound-panel" hidden aria-label="Dhaka station 3D sound settings">
+ <header class="sound-panel-title"><strong>🎧 Dhaka 3D Audio</strong><button id="soundClose" type="button" aria-label="Close sound settings">✕</button></header>
+ <p id="soundState" aria-live="polite">Sound OFF · tap City Sound first</p>
+ <label for="soundZone">কোথাকার সাউন্ড শুনবে?</label>
+ <select id="soundZone" aria-label="Choose automatic or manual audio zone">
+  <option value="auto">AUTO · Camera অনুযায়ী</option>
+  <option value="street">🚦 রাস্তা · হর্ন / রিকশা</option>
+  <option value="hall">🎫 স্টেশনের ভেতর · গেট / মানুষ</option>
+  <option value="platform">🚉 প্ল্যাটফর্ম · PA / ট্রেন</option>
+  <option value="track">🚆 ট্রেনের বাইরে · চলার শব্দ</option>
+  <option value="train">🚇 ট্রেনের ভেতর · মোটর / দরজা</option>
+  <option value="roof">🌳 স্টেশনের উপরে · বাতাস / পাখি</option>
+ </select>
+ <label for="soundVolume">🔉 Sound Volume <output id="soundVolumeValue">55%</output></label>
+ <input id="soundVolume" type="range" min="0" max="100" step="1" value="55" />
+ <button id="demoPA" type="button" class="sound-action">📢 ডেমো বাংলা Announcement</button>
+ <label class="sound-check" for="recordedRail"><input id="recordedRail" type="checkbox"/> 🎙️ Real train recording (not Dhaka)</label>
+ <p class="sound-note">সিন্থেসাইজড পরিবেশ—official MRT6 audio নয়। Real train clip আলাদা দেশের, CC BY 4.0, অনলাইনে লোড হবে। <a href="https://orangefreesounds.com/train-sound-effect/" target="_blank" rel="noopener noreferrer">Recording credit: Alexander / Orange Free Sounds</a></p>
+</aside>
+
 <div class="backdrop" id="settings" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
 <section class="modal">
 <h2 id="settingsTitle">Google Photorealistic 3D</h2>
@@ -282,7 +328,7 @@ body.panel-hidden .controls{margin-left:auto}
 <p class="fine">Attribution remains visible. Google content may not be extracted or cached. No API key? Free 3D demo map remains available.</p>
 </section>
 </div>
-<script src="dhaka-soundscape.js?v=20261104-audio-v1"></script>
-<script src="app-v2.js?v=20261104-sound-city-v4"></script>
+<script src="dhaka-soundscape.js?v=20261104-station-audio-zones-v2"></script>
+<script src="app-v2.js?v=20261104-station-audio-zones-v2"></script>
 </body>
 </html>
