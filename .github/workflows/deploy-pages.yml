@@ -33,6 +33,12 @@ jobs:
           node scripts/check-metro-quality.mjs
       - name: Build textured Dhaka station-area glTF meshes
         run: node scripts/build-urban-models.mjs
+      - name: Generate OSM-aware whole-neighborhood vegetation and fixtures
+        run: |
+          node --check scripts/build-neighborhood-details.mjs
+          node scripts/build-neighborhood-details.mjs
+          test -s assets/neighborhood/10.gltf
+          test -s assets/neighborhood/13.gltf
       - name: Generate Farmgate landmark 3D model
         run: node scripts/build-farmgate-landmark.mjs
       - name: Generate Dhaka University station 3D model
