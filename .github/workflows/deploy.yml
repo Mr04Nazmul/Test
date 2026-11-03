@@ -44,6 +44,11 @@ jobs:
           node --check scripts/build-urban-rooftops.mjs
           node scripts/build-urban-rooftops.mjs
           node scripts/check-urban-rooftops.mjs
+      - name: Generate and validate street, ticket-concourse and platform 3D for all stations
+        run: |
+          node --check scripts/build-station-details.mjs
+          node scripts/build-station-details.mjs
+          node scripts/check-station-details.mjs
       - name: Generate and check thirteen distinct MRT-6 station structures
         run: |
           node --check scripts/build-station-family.mjs
