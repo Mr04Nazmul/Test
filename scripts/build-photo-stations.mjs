@@ -31,6 +31,24 @@ const materials=C.map(name=>{
 });
 const mIndex=Object.fromEntries(C.map((x,i)=>[x,i]));
 function build(d){
+ // Use the observed station-specific roof/brick palette, not one green for
+ // all sixteen structures. Remaining material colours are illustrative.
+ const toRGB=h=>[1,3,5].map(k=>parseInt(h.slice(k,k+2),16)/255);
+ const scale=(hex,factor)=>{
+  const rgb=toRGB(hex).map(x=>Math.min(.98,x*factor));
+  return [...rgb,1];
+ };
+ const localMaterials=materials.map(m=>{
+  const copy={...m,pbrMetallicRoughness:{...m.pbrMetallicRoughness}};
+  const name=m.name;
+  if(name==="roof")copy.pbrMetallicRoughness.baseColorFactor=[...toRGB(d.roofTone),1];
+  if(name==="roofShine")copy.pbrMetallicRoughness.baseColorFactor=scale(d.roofTone,1.16);
+  if(name==="roofEdge")copy.pbrMetallicRoughness.baseColorFactor=scale(d.roofTone,.65);
+  if(name==="red")copy.pbrMetallicRoughness.baseColorFactor=[...toRGB(d.accent),1];
+  if(name==="redEdge")copy.pbrMetallicRoughness.baseColorFactor=scale(d.accent,.7);
+  if(name==="brick")copy.pbrMetallicRoughness.baseColorFactor=scale(d.accent,1.06);
+  return copy;
+ });
  const groups=C.map(()=>({p:[],n:[],i:[]}));const components={};
  function addTri(mat,a,b,c){
   const g=groups[mIndex[mat]],q=g.p.length/3;
@@ -266,18 +284,19 @@ function build(d){
  const blob=Buffer.concat(buffers);
  const data={asset:{version:"2.0",generator:"Dhaka MRT-6 Daily Star aerial reference study (original geometry)"},
   scenes:[{nodes:[0]}],scene:0,nodes:[{name:"Station "+d.id+" photo-informed architecture and surroundings",mesh:0}],
-  meshes:[{primitives}],materials,buffers:[{byteLength:blob.length,
+  meshes:[{primitives}],materials:localMaterials,buffers:[{byteLength:blob.length,
     uri:"data:application/octet-stream;base64,"+blob.toString("base64")}],
   bufferViews,accessors,
   extras:{id:d.id,station:d.n,scene:d.scene,roof:d.roof,
    officialDesignWidthM:d.width,proposedArchitectureType:d.type,
+   photoRoofColor:d.roofTone,photoAccentColor:d.accent,
    referenceURL:d.photo,sourceGallery:dataset.gallery,
    sourcePhotoCreditedTo:dataset.photographer,sourceCopyrightOwner:dataset.publication,
    precision:"Visual likeness only. Shapes/colors approximate. Not a scanned/surveyed 1:1 replica.",
    photographsEmbedded:false,components,triangles:triangleCount,drawGroups:primitives.length}
  };
  writeFileSync(baseDir+"/"+d.id+".gltf",JSON.stringify(data));
- return {id:d.id,name:d.n,roof:d.roof,scene:d.scene,components:Object.values(components).reduce((a,b)=>a+b,0),triangles:triangleCount,drawGroups:primitives.length,bytes:blob.length,
+ return {id:d.id,name:d.n,roof:d.roof,roofTone:d.roofTone,accent:d.accent,scene:d.scene,components:Object.values(components).reduce((a,b)=>a+b,0),triangles:triangleCount,drawGroups:primitives.length,bytes:blob.length,
   referenceURL:d.photo,verifiedDirectPhotoURL:!!d.photo};
 }
 const manifest=P.map(build);
