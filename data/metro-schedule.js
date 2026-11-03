@@ -76,5 +76,16 @@ Individual station running durations and dwell estimates are approximations. */
   }
   return rows.sort((a,b)=>a.inMinutes-b.inMinutes).slice(0,6);
  }
- window.MRT_SCHEDULE={active,arrivals,dhakaClock,dayType,total,departureList,DAYS,formatMin,source:"DMTCL official 2026 schedule; intermediary times are estimated, not verified live"};
+ // Sample any scheduled train at the CURRENT fractional minute (including seconds).
+ // Unlike one-second marker polling, this stays continuous on every animation frame.
+ function positionFor(trainId, now=dhakaClock()){
+  const match=/^([SN])(\\d{2}):(\\d{2})$/.exec(String(trainId||""));
+  if(!match)return null;
+  const dir=match[1]==="S"?"south":"north";
+  const dep=Number(match[2])*60+Number(match[3]);
+  const elapsed=now.minute-dep;
+  if(elapsed<0||elapsed>total)return null;
+  return {dir,position:elapsedToPosition(elapsed,dir),elapsed};
+ }
+ window.MRT_SCHEDULE={active,positionFor,arrivals,dhakaClock,dayType,total,departureList,DAYS,formatMin,source:"DMTCL official 2026 schedule; intermediary times are estimated, not verified live"};
 })();
