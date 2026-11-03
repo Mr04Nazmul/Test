@@ -500,6 +500,32 @@ function updateNow(t){
  if(t-etaLast>10000){updateStationText();etaLast=t}
  requestAnimationFrame(updateNow);
 }
+// Stream several georeferenced, OSM-footprint 3D station neighborhoods together.
+// Each station tile is anchored to its own real route coordinate. These are
+// mapped building footprints + illustrative walls, not complete photographic scans.
+// Only nearby tiles are mounted to avoid running out of GPU memory on phones.
+let extendedCityCoverage=false;
+function adjacentUrbanTileIndices(focus){
+ const maxGap=extendedCityCoverage?3:(window.innerWidth<700?1:2);
+ const order=[];
+ for(let delta=1;delta<=maxGap;delta++){
+  if(focus-delta>=0)order.push(focus-delta);
+  if(focus+delta<st.length)order.push(focus+delta);
+ }
+ return order;
+}
+function appendAdjacentUrbanTiles(focus){
+ for(const j of adjacentUrbanTileIndices(focus)){
+  const station=st[j];
+  buildings.push(viewer.entities.add({
+   name:station.n+" — nearby georeferenced OSM 3D neighborhood (illustrative heights)",
+   position:lonlatPoint(station,0),
+   model:{uri:"./assets/urban/"+j+".gltf",scale:1,minimumPixelSize:0,maximumScale:1,
+    distanceDisplayCondition:new C.DistanceDisplayCondition(0,6500)}
+  }));
+ }
+}
+
 async function loadBuildings(i){
  if(!showBuildings||googleMode)return;
  const token=++loadTicket,s=st[i];
@@ -522,6 +548,7 @@ async function loadBuildings(i){
      model:{uri:url,scale:1,minimumPixelSize:0,
       distanceDisplayCondition:new C.DistanceDisplayCondition(0,5500)}
     }));
+    appendAdjacentUrbanTiles(i);
     announce(s.n+" — বাস্তব OSM footprint-এর 3D building mesh। জানালা/অজানা উচ্চতা আনুমানিক।",9500);
     return;
    }
@@ -580,6 +607,7 @@ async function loadBuildings(i){
     outline:false
    }}));
   }
+  appendAdjacentUrbanTiles(i);
   announce(buildings.length+"টি বাস্তব OSM footprint থেকে 3D ভবন তৈরি ("+(offline?"লোকাল ক্যাশ":"অনলাইন")+"). Height অনেকে আনুমানিক।",8500);
  }catch(e){if(!bldgRequest.signal.aborted)announce("Building data unavailable for this station. অন্য স্টেশন নির্বাচন করো।",8000)}
 }
@@ -766,6 +794,16 @@ $("pause").addEventListener("click",()=>{
  if(mode==="estimate"&&!trainData.length){mode="demo";updateModeControls();announce("এখন অনুমিত চলমান ট্রেন নেই; Demo ride চলছে।")}
 });
 $("speed").addEventListener("click",()=>{rate=rate===1?2:rate===2?4:1;updateModeControls()});
+$("cityCoverage").addEventListener("click",()=>{
+ extendedCityCoverage=!extendedCityCoverage;
+ $("cityCoverage").textContent=extendedCityCoverage?"🏙 Local 3D":"🏙 Wider 3D";
+ $("cityCoverage").classList.toggle("primary",extendedCityCoverage);
+ if(showBuildings&&!googleMode)loadBuildings(selectedStation);
+ announce(extendedCityCoverage
+  ?"বিস্তৃত 3D: এই স্টেশনের আগে ও পরে সর্বোচ্চ ৩টি করে OSM বিল্ডিং এলাকা দেখানো হবে।"
+  :"পারফরম্যান্স মোড: কাছের 3D এলাকাগুলো দেখানো হবে।",5600);
+});
+
 $("buildings").addEventListener("click",()=>{
  if(googleMode){announce("Google mode-এ আলাদা OSM ভবন বন্ধ।");return}
  showBuildings=!showBuildings;
