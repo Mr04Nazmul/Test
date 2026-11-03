@@ -154,3 +154,23 @@ Grounding sources: [DMTCL operational/track FAQ](https://dmtcl.gov.bd/pages/stat
 - Trees, street vendors, people, lamps and storefronts remain original geometric approximations. More distant buildings are streamed from neighboring OSM tiles via **Wider 3D**; this is intentionally optional to keep mobile performance usable.
 - The visible **🔇 City Sound** button starts an original **Web Audio synthesized** ambient bed (cars, distant hubbub, vehicle pass-bys, horns, rickshaw bells and birds). Sounds vary by station category but **are not real location recordings**. Sound defaults to OFF, requires a user gesture, and automatically mutes when the browser tab is hidden. There is no microphone, tracking, upload, third-party music or recorded conversation.
 - GitHub Actions verifies both the glTF structures and the no-autoplay audio/HTML hooks with `node scripts/check-dhaka-environment.mjs`.
+
+
+## 2026-11-04 — Dhaka station 3D spatial sound system
+
+The public website contains a manually enabled, scene-aware audio mixer in `dhaka-soundscape.js`. The **City Sound** button is silent by default and must be clicked on iPhone/Android/desktop. The **Sound Zones** menu allows **Auto** or independent zone previews:
+
+- **Street/outside:** engine rumble, horns, cycle-rickshaw-like bells, passing vehicles and distant activity
+- **Station hall:** crowd-like filtered ambience, footsteps, entry-gate beeps and distant PA chimes
+- **Platform:** announcements' generic chime, doors, brake hiss, train motor and footsteps
+- **Train exterior / rail viaduct:** synthetic motor drive/rail movement with distant street traffic
+- **Inside train:** enclosed train motor, ventilation-like wash, door warning and hiss
+- **Roof/outside upper level:** wind-like wash, birds and distant street activity
+
+In Auto, sound zones depend on the Cesium camera position, height and whether the view follows a train. This is spatially contextual *sound design*, not a recorded 3D acoustic measurement. Volume, Off and manually chosen zones are available. The **demo Bangla PA** attempts device-supplied Bengali text-to-speech only; if no Bengali voice exists it plays an original chime with no fabricated official announcement. The app uses no microphone permission, stores no recordings, and pauses on hidden tab.
+
+**Optional real (not Dhaka) recording:** `Train Sound Effect` by Alexander, Orange Free Sounds, Creative Commons Attribution 4.0 International, used as a remote, separate opt-in clip for platform/train listening. Source: https://orangefreesounds.com/train-sound-effect/ ; license: https://creativecommons.org/licenses/by/4.0/ . This clip is not recorded aboard Dhaka Metro, and network/hotlink compatibility is not guaranteed; the original synthesizer remains the fallback. Attribution is shown inside the audio mixer.
+
+**Authentic Bangladesh recordings investigated, not bundled:** AcousticSceneBD, an East West University 2026 research dataset of field recordings of Dhaka buses, metro, metro stations, park and university environments, CC BY 4.0: https://data.mendeley.com/datasets/bynmzy4dp6/1 (DOI 10.17632/bynmzy4dp6.1). It is 4.87 GB in total, and exact clips have **not** been transferred, so the current synthetic sounds must never be marketed as those recordings. Another Dhaka street sample on Freesound was licensed CC BY-NC 4.0, so it was **not** used on a potentially monetized site.
+
+Smoke test: `node scripts/check-dhaka-audio.mjs`. Synthetic audio has no copyrighted music or automated background playback.
