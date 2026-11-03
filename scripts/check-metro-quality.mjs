@@ -32,6 +32,9 @@ assert(app.includes('assets/farmgate-landmark.gltf'),'Farmgate landmark is not l
 assert(html.includes('id="dayNight"'),'Day/night UI is missing');
 assert(app.includes('$("dayNight").addEventListener'),'Day/night UI is not connected');
 assert(html.includes('NOT GPS'),'Simulated data must not be labelled as official GPS');
-for(const vehicle of ['bus','rickshaw','car'])assert(app.includes('assets/dhaka-'+vehicle+'.gltf'),'Missing '+vehicle+' model hook');
+const trafficBuilder=readFileSync('scripts/build-dhaka-traffic.mjs','utf8');
+assert(app.includes('"assets/dhaka-"+kind+".gltf"'),'Dynamic Dhaka vehicle asset loader missing');
+for(const vehicle of ['bus','rickshaw','car'])
+ assert(trafficBuilder.includes("model('dhaka-"+vehicle+"'"),'Missing '+vehicle+' model generator');
 assert(app.includes('animateStreetTraffic(dt);'),'Street traffic must animate every frame');
 console.log('PASS smooth train samples, route camera hooks, 360°/zoom/quality controls and map-source accuracy.');
