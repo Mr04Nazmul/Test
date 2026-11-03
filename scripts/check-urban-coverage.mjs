@@ -3,7 +3,8 @@
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync,statSync} from 'node:fs';
 const raw=readFileSync('data/mrt6-track.js','utf8');
-const j=JSON.parse(raw.split('window.MRT_TRACK=')[1].trim().replace(/;.*$/,''));
+const routeText=raw.split('window.MRT_TRACK=')[1].trim();
+const j=JSON.parse(routeText.endsWith(';')?routeText.slice(0,-1):routeText);
 const n=j.stations.length;
 assert.equal(n,16,'MRT-6 station data changed: inspect tile generation');
 const app=readFileSync('app-v2.js','utf8');
