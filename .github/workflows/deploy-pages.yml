@@ -33,6 +33,11 @@ jobs:
         run: node scripts/build-urban-models.mjs
       - name: Generate Farmgate landmark 3D model
         run: node scripts/build-farmgate-landmark.mjs
+      - name: Build Agargaon photo-referenced detailed station model
+        run: |
+          node --check scripts/build-agargaon-station.mjs
+          node scripts/build-agargaon-station.mjs
+          node scripts/check-agargaon-station.mjs
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
