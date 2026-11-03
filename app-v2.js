@@ -214,8 +214,8 @@ function focusStation(i){
  selectedStation=i;clearViewLock();renderStructure(i);updateStationText();
  if(showBuildings&&!googleMode)loadBuildings(i);
  const s=st[i];
- viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(s.lon,s.lat,430),
- orientation:{heading:at(stopMeters[i]).heading,pitch:C.Math.toRadians(-48),roll:0},duration:1.1});
+ viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(s.lon,s.lat,i===8?255:380),
+ orientation:{heading:at(stopMeters[i]).heading+C.Math.toRadians(22),pitch:C.Math.toRadians(i===8?-54:-48),roll:0},duration:1.15});
  announce(nameFor(i)+" — স্টেশনের 3D মডেল ও আনুমানিক ট্রেনের সময়",5000);
 }
 function overview(){
@@ -243,7 +243,7 @@ function refreshTrainMarkerPositions(){
     outlineColor:C.Color.BLACK,outlineWidth:2,disableDepthTestDistance:Number.POSITIVE_INFINITY},
     label:{text:"🚆 "+t.id,font:"bold 11px sans-serif",fillColor:C.Color.WHITE,
      outlineColor:C.Color.BLACK,outlineWidth:3,style:C.LabelStyle.FILL_AND_OUTLINE,
-     pixelOffset:new C.Cartesian2(0,-18),distanceDisplayCondition:new C.DistanceDisplayCondition(0,6000),
+     pixelOffset:new C.Cartesian2(0,-18),distanceDisplayCondition:new C.DistanceDisplayCondition(0,900),
      disableDepthTestDistance:Number.POSITIVE_INFINITY}});
    trainMarkers.set(t.id,e);
   }else e.position=position;
@@ -317,7 +317,12 @@ function updateModeControls(){
 }
 // Follow view remains user-controlled through orbit/zoom offset; no forced reset.
 function updateFollowCamera(){
- if(!ride||!focused)return;
+ if(!focused)return;
+ // Avoid dark near-field blocks when the first-person camera enters mapped
+ // building geometry near the station. Detailed station stays visible.
+ const nearStation=Math.abs(focused.distance-stopMeters[selectedStation])<175;
+ for(const b of buildings)b.show=showBuildings&&!googleMode&&!(ride&&cameraStyle==="front"&&nearStation);
+ if(!ride)return;
  if(cameraStyle==="front"){
   // Camera at the train nose looking along the real mapped track; NOT video.
   if(typeof originalCameraFov==="number")viewer.camera.frustum.fov=C.Math.toRadians(clamp(followDistance*1.1,23,95));
@@ -365,6 +370,10 @@ function updateNow(t){
   }
  }
  updateFollowCamera();
+ if(t-lastMapUpdate<45){
+  stationMarkers.forEach((e,i)=>{e.show=!ride||i===selectedStation});
+  for(const [id,e] of trainMarkers)e.show=!ride;
+ }
  if(t-etaLast>10000){updateStationText();etaLast=t}
  requestAnimationFrame(updateNow);
 }
@@ -590,6 +599,11 @@ $("findTrain").addEventListener("click",findTrain);
 $("north").addEventListener("click",()=>focusStation(0));
 $("central").addEventListener("click",()=>focusStation(10));
 $("south").addEventListener("click",()=>focusStation(15));
+$("agargaon").addEventListener("click",()=>focusStation(8));
+$("moreControls").addEventListener("click",()=>{
+ document.body.classList.toggle("mobile-controls-expanded");
+ $("moreControls").textContent=document.body.classList.contains("mobile-controls-expanded")?"✕ Less tools":"☷ More tools";
+});
 $("satellite").addEventListener("click",satelliteToggle);
 $("togglePanel").addEventListener("click",()=>{
  document.body.classList.toggle("panel-hidden");
