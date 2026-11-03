@@ -264,7 +264,8 @@ body.panel-hidden .controls{margin-left:auto}
 <div class="controls">
 <button id="overview" class="ctrl optional-control">◉ পুরো রুট</button>
 <button id="findTrain" class="ctrl primary">🚆 Find Train</button>
-<button id="sound" class="ctrl" type="button" aria-pressed="false" title="Optional original synthesized Dhaka city ambience, not field audio">🔇 City Sound</button>
+<button id="sound" class="ctrl primary" type="button" aria-pressed="false" title="Start locally generated Dhaka 3D audio with your tap">🔊 সাউন্ড চালু</button>
+<button id="soundTest" class="ctrl" type="button" title="Immediate short three-tone audio test">🔔 Test Sound</button>
 <button id="soundOptions" type="button" class="ctrl optional-control" aria-controls="soundPanel" aria-expanded="false">🎚 Sound Zones</button>
 <button id="satellite" class="ctrl">◈ Satellite</button>
 <button id="follow" class="ctrl">▣ ট্রেনের সাথে</button>
@@ -300,7 +301,8 @@ body.panel-hidden .controls{margin-left:auto}
 
 <aside id="soundPanel" class="sound-panel" hidden aria-label="Dhaka station 3D sound settings">
  <header class="sound-panel-title"><strong>🎧 Dhaka 3D Audio</strong><button id="soundClose" type="button" aria-label="Close sound settings">✕</button></header>
- <p id="soundState" aria-live="polite">Sound OFF · tap City Sound first</p>
+ <p id="soundState" aria-live="polite">Sound OFF · 🔊 সাউন্ড চালু চাপো</p>
+<p class="sound-note">🔊 Test Sound ট্যাপ করলে সঙ্গে সঙ্গে তিনবার বিপ শোনার কথা। সাউন্ড চালু হলে আশপাশের অডিও নিজস্ব WAV ফাইল থেকে চলবে।</p>
  <label for="soundZone">কোথাকার সাউন্ড শুনবে?</label>
  <select id="soundZone" aria-label="Choose automatic or manual audio zone">
   <option value="auto">AUTO · Camera অনুযায়ী</option>
@@ -329,7 +331,7 @@ body.panel-hidden .controls{margin-left:auto}
 <p class="fine">Attribution remains visible. Google content may not be extracted or cached. No API key? Free 3D demo map remains available.</p>
 </section>
 </div>
-<script src="dhaka-soundscape.js?v=20261104-station-audio-zones-v2"></script>
-<script src="app-v2.js?v=20261104-station-audio-zones-v2"></script>
+<script src="dhaka-soundscape.js?v=20261104-local-audio-fix-v3"></script>
+<script src="app-v2.js?v=20261104-local-audio-fix-v3"></script>
 </body>
 </html>
