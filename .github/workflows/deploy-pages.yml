@@ -31,6 +31,8 @@ jobs:
           node scripts/check-metro-quality.mjs
       - name: Build textured Dhaka station-area glTF meshes
         run: node scripts/build-urban-models.mjs
+      - name: Generate Farmgate landmark 3D model
+        run: node scripts/build-farmgate-landmark.mjs
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
