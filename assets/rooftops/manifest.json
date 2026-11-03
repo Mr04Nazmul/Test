@@ -1,0 +1,166 @@
+{
+  "generator": "scripts/build-urban-rooftops.mjs",
+  "provenance": "OSM building footprints, procedural illustrative rooftop fixtures",
+  "models": [
+    {
+      "station": 0,
+      "buildings": 31,
+      "tank": 31,
+      "stair": 7,
+      "ac": 11,
+      "solar": 7,
+      "shops": 19,
+      "triangles": 2420
+    },
+    {
+      "station": 1,
+      "buildings": 13,
+      "tank": 13,
+      "stair": 1,
+      "ac": 2,
+      "solar": 1,
+      "shops": 8,
+      "triangles": 860
+    },
+    {
+      "station": 2,
+      "buildings": 2,
+      "tank": 2,
+      "stair": 0,
+      "ac": 0,
+      "solar": 0,
+      "shops": 1,
+      "triangles": 112
+    },
+    {
+      "station": 3,
+      "buildings": 49,
+      "tank": 49,
+      "stair": 25,
+      "ac": 34,
+      "solar": 16,
+      "shops": 45,
+      "triangles": 5036
+    },
+    {
+      "station": 4,
+      "buildings": 56,
+      "tank": 56,
+      "stair": 25,
+      "ac": 30,
+      "solar": 20,
+      "shops": 41,
+      "triangles": 5248
+    },
+    {
+      "station": 5,
+      "buildings": 122,
+      "tank": 122,
+      "stair": 43,
+      "ac": 54,
+      "solar": 32,
+      "shops": 79,
+      "triangles": 10360
+    },
+    {
+      "station": 6,
+      "buildings": 71,
+      "tank": 71,
+      "stair": 27,
+      "ac": 33,
+      "solar": 10,
+      "shops": 25,
+      "triangles": 5404
+    },
+    {
+      "station": 7,
+      "buildings": 73,
+      "tank": 73,
+      "stair": 20,
+      "ac": 45,
+      "solar": 18,
+      "shops": 28,
+      "triangles": 5876
+    },
+    {
+      "station": 8,
+      "buildings": 12,
+      "tank": 12,
+      "stair": 4,
+      "ac": 4,
+      "solar": 3,
+      "shops": 5,
+      "triangles": 912
+    },
+    {
+      "station": 9,
+      "buildings": 17,
+      "tank": 17,
+      "stair": 10,
+      "ac": 12,
+      "solar": 8,
+      "shops": 8,
+      "triangles": 1660
+    },
+    {
+      "station": 10,
+      "buildings": 121,
+      "tank": 121,
+      "stair": 35,
+      "ac": 45,
+      "solar": 14,
+      "shops": 66,
+      "triangles": 9164
+    },
+    {
+      "station": 11,
+      "buildings": 58,
+      "tank": 58,
+      "stair": 20,
+      "ac": 30,
+      "solar": 15,
+      "shops": 34,
+      "triangles": 4928
+    },
+    {
+      "station": 12,
+      "buildings": 37,
+      "tank": 37,
+      "stair": 11,
+      "ac": 17,
+      "solar": 6,
+      "shops": 18,
+      "triangles": 2876
+    },
+    {
+      "station": 13,
+      "buildings": 9,
+      "tank": 9,
+      "stair": 3,
+      "ac": 5,
+      "solar": 4,
+      "shops": 4,
+      "triangles": 780
+    },
+    {
+      "station": 14,
+      "buildings": 52,
+      "tank": 52,
+      "stair": 18,
+      "ac": 29,
+      "solar": 13,
+      "shops": 37,
+      "triangles": 4616
+    },
+    {
+      "station": 15,
+      "buildings": 62,
+      "tank": 62,
+      "stair": 32,
+      "ac": 43,
+      "solar": 16,
+      "shops": 41,
+      "triangles": 5896
+    }
+  ]
+}

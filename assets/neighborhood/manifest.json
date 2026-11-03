@@ -1,0 +1,134 @@
+{
+  "provenance": "OSM building exclusion; all scenery approximate",
+  "generatedBy": "scripts/build-neighborhood-details.mjs",
+  "models": [
+    {
+      "station": 0,
+      "trees": 70,
+      "lamps": 15,
+      "benches": 0,
+      "stalls": 0,
+      "triangles": 7170
+    },
+    {
+      "station": 1,
+      "trees": 70,
+      "lamps": 20,
+      "benches": 0,
+      "stalls": 0,
+      "triangles": 7320
+    },
+    {
+      "station": 2,
+      "trees": 70,
+      "lamps": 20,
+      "benches": 0,
+      "stalls": 0,
+      "triangles": 7320
+    },
+    {
+      "station": 3,
+      "trees": 70,
+      "lamps": 20,
+      "benches": 0,
+      "stalls": 0,
+      "triangles": 7320
+    },
+    {
+      "station": 4,
+      "trees": 70,
+      "lamps": 16,
+      "benches": 0,
+      "stalls": 0,
+      "triangles": 7200
+    },
+    {
+      "station": 5,
+      "trees": 70,
+      "lamps": 14,
+      "benches": 0,
+      "stalls": 12,
+      "triangles": 7500
+    },
+    {
+      "station": 6,
+      "trees": 70,
+      "lamps": 20,
+      "benches": 0,
+      "stalls": 0,
+      "triangles": 7320
+    },
+    {
+      "station": 7,
+      "trees": 70,
+      "lamps": 15,
+      "benches": 0,
+      "stalls": 0,
+      "triangles": 7170
+    },
+    {
+      "station": 8,
+      "trees": 95,
+      "lamps": 18,
+      "benches": 22,
+      "stalls": 0,
+      "triangles": 10540
+    },
+    {
+      "station": 9,
+      "trees": 70,
+      "lamps": 20,
+      "benches": 0,
+      "stalls": 0,
+      "triangles": 7320
+    },
+    {
+      "station": 10,
+      "trees": 55,
+      "lamps": 14,
+      "benches": 0,
+      "stalls": 14,
+      "triangles": 6120
+    },
+    {
+      "station": 11,
+      "trees": 70,
+      "lamps": 8,
+      "benches": 0,
+      "stalls": 8,
+      "triangles": 7200
+    },
+    {
+      "station": 12,
+      "trees": 70,
+      "lamps": 16,
+      "benches": 0,
+      "stalls": 0,
+      "triangles": 7200
+    },
+    {
+      "station": 13,
+      "trees": 140,
+      "lamps": 18,
+      "benches": 18,
+      "stalls": 0,
+      "triangles": 14700
+    },
+    {
+      "station": 14,
+      "trees": 70,
+      "lamps": 13,
+      "benches": 0,
+      "stalls": 0,
+      "triangles": 7110
+    },
+    {
+      "station": 15,
+      "trees": 70,
+      "lamps": 3,
+      "benches": 0,
+      "stalls": 0,
+      "triangles": 6810
+    }
+  ]
+}

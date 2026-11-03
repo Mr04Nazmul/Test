@@ -1,0 +1,183 @@
+{
+  "generatedBy": "scripts/build-urban-details.mjs",
+  "source": "Cached OpenStreetMap footprints ODbL and original illustrative 3D details",
+  "limitations": "Shops, trees, awnings, water tanks and lamps are artist-created approximations; OSM coverage is limited",
+  "models": [
+    {
+      "station": 0,
+      "buildings": 84,
+      "shops": 68,
+      "trees": 16,
+      "tanks": 32,
+      "lamps": 9,
+      "shapes": 747,
+      "triangles": 10272,
+      "byteLength": 862848
+    },
+    {
+      "station": 1,
+      "buildings": 68,
+      "shops": 53,
+      "trees": 15,
+      "tanks": 22,
+      "lamps": 7,
+      "shapes": 494,
+      "triangles": 6849,
+      "byteLength": 575316
+    },
+    {
+      "station": 2,
+      "buildings": 4,
+      "shops": 4,
+      "trees": 0,
+      "tanks": 1,
+      "lamps": 0,
+      "shapes": 34,
+      "triangles": 444,
+      "byteLength": 37296
+    },
+    {
+      "station": 3,
+      "buildings": 171,
+      "shops": 138,
+      "trees": 30,
+      "tanks": 44,
+      "lamps": 17,
+      "shapes": 1463,
+      "triangles": 19434,
+      "byteLength": 1632456
+    },
+    {
+      "station": 4,
+      "buildings": 167,
+      "shops": 138,
+      "trees": 27,
+      "tanks": 52,
+      "lamps": 20,
+      "shapes": 1481,
+      "triangles": 19965,
+      "byteLength": 1677060
+    },
+    {
+      "station": 5,
+      "buildings": 162,
+      "shops": 130,
+      "trees": 30,
+      "tanks": 55,
+      "lamps": 17,
+      "shapes": 1401,
+      "triangles": 19086,
+      "byteLength": 1603224
+    },
+    {
+      "station": 6,
+      "buildings": 169,
+      "shops": 137,
+      "trees": 31,
+      "tanks": 68,
+      "lamps": 10,
+      "shapes": 1455,
+      "triangles": 20121,
+      "byteLength": 1690164
+    },
+    {
+      "station": 7,
+      "buildings": 164,
+      "shops": 122,
+      "trees": 41,
+      "tanks": 69,
+      "lamps": 17,
+      "shapes": 1384,
+      "triangles": 19419,
+      "byteLength": 1631196
+    },
+    {
+      "station": 8,
+      "buildings": 25,
+      "shops": 20,
+      "trees": 5,
+      "tanks": 10,
+      "lamps": 4,
+      "shapes": 221,
+      "triangles": 3075,
+      "byteLength": 258300
+    },
+    {
+      "station": 9,
+      "buildings": 55,
+      "shops": 43,
+      "trees": 12,
+      "tanks": 17,
+      "lamps": 8,
+      "shapes": 472,
+      "triangles": 6408,
+      "byteLength": 538272
+    },
+    {
+      "station": 10,
+      "buildings": 173,
+      "shops": 143,
+      "trees": 29,
+      "tanks": 62,
+      "lamps": 15,
+      "shapes": 1436,
+      "triangles": 19731,
+      "byteLength": 1657404
+    },
+    {
+      "station": 11,
+      "buildings": 157,
+      "shops": 121,
+      "trees": 31,
+      "tanks": 57,
+      "lamps": 15,
+      "shapes": 1328,
+      "triangles": 18261,
+      "byteLength": 1533924
+    },
+    {
+      "station": 12,
+      "buildings": 98,
+      "shops": 67,
+      "trees": 18,
+      "tanks": 37,
+      "lamps": 8,
+      "shapes": 754,
+      "triangles": 10530,
+      "byteLength": 884520
+    },
+    {
+      "station": 13,
+      "buildings": 34,
+      "shops": 11,
+      "trees": 4,
+      "tanks": 10,
+      "lamps": 5,
+      "shapes": 141,
+      "triangles": 2124,
+      "byteLength": 178416
+    },
+    {
+      "station": 14,
+      "buildings": 146,
+      "shops": 115,
+      "trees": 28,
+      "tanks": 50,
+      "lamps": 13,
+      "shapes": 1251,
+      "triangles": 17052,
+      "byteLength": 1432368
+    },
+    {
+      "station": 15,
+      "buildings": 172,
+      "shops": 138,
+      "trees": 32,
+      "tanks": 53,
+      "lamps": 14,
+      "shapes": 1462,
+      "triangles": 19716,
+      "byteLength": 1656144
+    }
+  ]
+}

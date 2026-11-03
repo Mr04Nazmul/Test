@@ -1,0 +1,278 @@
+{
+  "generatedBy": "scripts/build-urban-models.mjs",
+  "source": "OpenStreetMap ODbL + procedural surfaces",
+  "models": [
+    {
+      "index": 0,
+      "name": "0.gltf",
+      "buildings": 84,
+      "knownHeights": 0,
+      "approximateHeights": 84,
+      "legacyOSMBuildingCandidates": 0,
+      "triangles": 1766,
+      "anchor": {
+        "longitude": 90.3676821,
+        "latitude": 23.8690849
+      },
+      "source": "© OpenStreetMap contributors (ODbL 1.0)",
+      "clearedNearTrack": 1,
+      "roadSegments": 0,
+      "mappedTreeNodes": 0
+    },
+    {
+      "index": 1,
+      "name": "1.gltf",
+      "buildings": 68,
+      "knownHeights": 0,
+      "approximateHeights": 68,
+      "legacyOSMBuildingCandidates": 0,
+      "triangles": 1186,
+      "anchor": {
+        "longitude": 90.3651273,
+        "latitude": 23.8597088
+      },
+      "source": "© OpenStreetMap contributors, ODbL 1.0; Geofabrik/WWHGD ArcGIS hosted OSM snapshot (2020), not current satellite survey",
+      "clearedNearTrack": 0,
+      "roadSegments": 0,
+      "mappedTreeNodes": 0
+    },
+    {
+      "index": 2,
+      "name": "2.gltf",
+      "buildings": 8,
+      "knownHeights": 0,
+      "approximateHeights": 8,
+      "legacyOSMBuildingCandidates": 0,
+      "triangles": 116,
+      "anchor": {
+        "longitude": 90.3630841,
+        "latitude": 23.8459106
+      },
+      "source": "© OpenStreetMap contributors, ODbL 1.0; Geofabrik/WWHGD ArcGIS hosted OSM snapshot (2020), not current satellite survey",
+      "clearedNearTrack": 0,
+      "roadSegments": 0,
+      "mappedTreeNodes": 0
+    },
+    {
+      "index": 3,
+      "name": "3.gltf",
+      "buildings": 178,
+      "knownHeights": 0,
+      "approximateHeights": 178,
+      "legacyOSMBuildingCandidates": 0,
+      "triangles": 3420,
+      "anchor": {
+        "longitude": 90.3642123,
+        "latitude": 23.8261574
+      },
+      "source": "© OpenStreetMap contributors, ODbL 1.0; Geofabrik/WWHGD ArcGIS hosted OSM snapshot (2020), not current satellite survey",
+      "clearedNearTrack": 2,
+      "roadSegments": 0,
+      "mappedTreeNodes": 0
+    },
+    {
+      "index": 4,
+      "name": "4.gltf",
+      "buildings": 180,
+      "knownHeights": 0,
+      "approximateHeights": 180,
+      "legacyOSMBuildingCandidates": 0,
+      "triangles": 3607,
+      "anchor": {
+        "longitude": 90.3653075,
+        "latitude": 23.819103
+      },
+      "source": "© OpenStreetMap contributors, ODbL 1.0; Geofabrik/WWHGD ArcGIS hosted OSM snapshot (2020), not current satellite survey",
+      "clearedNearTrack": 0,
+      "roadSegments": 0,
+      "mappedTreeNodes": 0
+    },
+    {
+      "index": 5,
+      "name": "5.gltf",
+      "buildings": 426,
+      "knownHeights": 12,
+      "approximateHeights": 414,
+      "legacyOSMBuildingCandidates": 0,
+      "triangles": 8328,
+      "anchor": {
+        "longitude": 90.3682791,
+        "latitude": 23.8083683
+      },
+      "source": "© OpenStreetMap contributors (ODbL 1.0)",
+      "clearedNearTrack": 8,
+      "roadSegments": 0,
+      "mappedTreeNodes": 0
+    },
+    {
+      "index": 6,
+      "name": "6.gltf",
+      "buildings": 178,
+      "knownHeights": 0,
+      "approximateHeights": 178,
+      "legacyOSMBuildingCandidates": 0,
+      "triangles": 3519,
+      "anchor": {
+        "longitude": 90.3720193,
+        "latitude": 23.7992485
+      },
+      "source": "© OpenStreetMap contributors, ODbL 1.0; Geofabrik/WWHGD ArcGIS hosted OSM snapshot (2020), not current satellite survey",
+      "clearedNearTrack": 2,
+      "roadSegments": 0,
+      "mappedTreeNodes": 0
+    },
+    {
+      "index": 7,
+      "name": "7.gltf",
+      "buildings": 174,
+      "knownHeights": 0,
+      "approximateHeights": 174,
+      "legacyOSMBuildingCandidates": 0,
+      "triangles": 3619,
+      "anchor": {
+        "longitude": 90.375542,
+        "latitude": 23.7909718
+      },
+      "source": "© OpenStreetMap contributors, ODbL 1.0; Geofabrik/WWHGD ArcGIS hosted OSM snapshot (2020), not current satellite survey",
+      "clearedNearTrack": 6,
+      "roadSegments": 0,
+      "mappedTreeNodes": 0
+    },
+    {
+      "index": 8,
+      "name": "8.gltf",
+      "buildings": 30,
+      "knownHeights": 3,
+      "approximateHeights": 27,
+      "legacyOSMBuildingCandidates": 0,
+      "triangles": 950,
+      "anchor": {
+        "longitude": 90.3801611,
+        "latitude": 23.7784483
+      },
+      "source": "© OpenStreetMap contributors (ODbL 1.0)",
+      "clearedNearTrack": 5,
+      "roadSegments": 0,
+      "mappedTreeNodes": 0
+    },
+    {
+      "index": 9,
+      "name": "9.gltf",
+      "buildings": 59,
+      "knownHeights": 0,
+      "approximateHeights": 59,
+      "legacyOSMBuildingCandidates": 0,
+      "triangles": 1207,
+      "anchor": {
+        "longitude": 90.3831212,
+        "latitude": 23.7663912
+      },
+      "source": "© OpenStreetMap contributors, ODbL 1.0; Geofabrik/WWHGD ArcGIS hosted OSM snapshot (2020), not current satellite survey",
+      "clearedNearTrack": 0,
+      "roadSegments": 0,
+      "mappedTreeNodes": 0
+    },
+    {
+      "index": 10,
+      "name": "10.gltf",
+      "buildings": 345,
+      "knownHeights": 31,
+      "approximateHeights": 314,
+      "legacyOSMBuildingCandidates": 0,
+      "triangles": 8145,
+      "anchor": {
+        "longitude": 90.3870783,
+        "latitude": 23.7590775
+      },
+      "source": "© OpenStreetMap contributors, Open Database License ODbL 1.0",
+      "clearedNearTrack": 1,
+      "roadSegments": 0,
+      "mappedTreeNodes": 0
+    },
+    {
+      "index": 11,
+      "name": "11.gltf",
+      "buildings": 165,
+      "knownHeights": 18,
+      "approximateHeights": 147,
+      "legacyOSMBuildingCandidates": 0,
+      "triangles": 3679,
+      "anchor": {
+        "longitude": 90.3928149,
+        "latitude": 23.7513044
+      },
+      "source": "© OpenStreetMap contributors ODbL 1.0",
+      "clearedNearTrack": 4,
+      "roadSegments": 0,
+      "mappedTreeNodes": 0
+    },
+    {
+      "index": 12,
+      "name": "12.gltf",
+      "buildings": 100,
+      "knownHeights": 37,
+      "approximateHeights": 63,
+      "legacyOSMBuildingCandidates": 0,
+      "triangles": 2744,
+      "anchor": {
+        "longitude": 90.3961548,
+        "latitude": 23.7400564
+      },
+      "source": "© OpenStreetMap contributors ODbL 1.0",
+      "clearedNearTrack": 3,
+      "roadSegments": 0,
+      "mappedTreeNodes": 0
+    },
+    {
+      "index": 13,
+      "name": "13.gltf",
+      "buildings": 36,
+      "knownHeights": 29,
+      "approximateHeights": 7,
+      "legacyOSMBuildingCandidates": 0,
+      "triangles": 1230,
+      "anchor": {
+        "longitude": 90.3968427,
+        "latitude": 23.7316979
+      },
+      "source": "© OpenStreetMap contributors ODbL 1.0",
+      "clearedNearTrack": 1,
+      "roadSegments": 0,
+      "mappedTreeNodes": 0
+    },
+    {
+      "index": 14,
+      "name": "14.gltf",
+      "buildings": 160,
+      "knownHeights": 6,
+      "approximateHeights": 154,
+      "legacyOSMBuildingCandidates": 0,
+      "triangles": 3300,
+      "anchor": {
+        "longitude": 90.4075587,
+        "latitude": 23.7300419
+      },
+      "source": "© OpenStreetMap contributors ODbL 1.0",
+      "clearedNearTrack": 5,
+      "roadSegments": 0,
+      "mappedTreeNodes": 0
+    },
+    {
+      "index": 15,
+      "name": "15.gltf",
+      "buildings": 201,
+      "knownHeights": 7,
+      "approximateHeights": 194,
+      "legacyOSMBuildingCandidates": 0,
+      "triangles": 3978,
+      "anchor": {
+        "longitude": 90.4190709,
+        "latitude": 23.7280844
+      },
+      "source": "© OpenStreetMap contributors (ODbL 1.0)",
+      "clearedNearTrack": 1,
+      "roadSegments": 0,
+      "mappedTreeNodes": 0
+    }
+  ]
+}
