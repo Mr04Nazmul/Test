@@ -141,12 +141,59 @@ function ground(){
  }
 }
 ground();roof();sign(-1,2);sign(1,-2);entrance(-1,-39);entrance(1,39);
-const binary=Buffer.concat(buffers);
+// Bake hundreds of separate cubic components into one batched glTF mesh.
+// Material batching dramatically reduces draw calls on mobile WebGL/Cesium.
+// This preserves all source architectural parts and visual colors.
+const originalPartCount=nodes.length;
+const groups=mats.map(()=>({positions:[],normals:[],indices:[]}));
+for(const piece of nodes){
+ const g=groups[piece.mesh],scale=piece.scale,offset=piece.translation,
+  angle=2*Math.atan2(piece.rotation[2],piece.rotation[3]),cs=Math.cos(angle),sn=Math.sin(angle);
+ const start=g.positions.length/3;
+ for(let v=0;v<vertices.length;v+=3){
+  const lx=vertices[v]*scale[0],ly=vertices[v+1]*scale[1],lz=vertices[v+2]*scale[2];
+  g.positions.push(offset[0]+lx*cs-ly*sn,offset[1]+lx*sn+ly*cs,offset[2]+lz);
+  const nx=normals[v],ny=normals[v+1],nz=normals[v+2];
+  g.normals.push(nx*cs-ny*sn,nx*sn+ny*cs,nz);
+ }
+ for(const id of ids)g.indices.push(start+id);
+}
+const data=[],viewsOut=[],accessorsOut=[],primitives=[];
+let byteOffset=0;
+function append(dataArray,componentType,components,isPosition=false){
+ const typed=componentType===5126?new Float32Array(dataArray):new Uint32Array(dataArray);
+ const bytes=Buffer.from(typed.buffer),view=viewsOut.length;
+ viewsOut.push({buffer:0,byteOffset,byteLength:bytes.length,
+  target:componentType===5126?34962:34963});
+ data.push(bytes);byteOffset+=bytes.length;
+ const accessor={bufferView:view,componentType,count:dataArray.length/components,
+  type:components===3?'VEC3':'SCALAR'};
+ if(isPosition){
+  accessor.min=[Infinity,Infinity,Infinity];accessor.max=[-Infinity,-Infinity,-Infinity];
+  for(let k=0;k<dataArray.length;k++){
+   const axis=k%3,val=dataArray[k];
+   accessor.min[axis]=Math.min(accessor.min[axis],val);
+   accessor.max[axis]=Math.max(accessor.max[axis],val);
+  }
+ }
+ return accessorsOut.push(accessor)-1;
+}
+let totalTris=0;
+for(let matIndex=0;matIndex<groups.length;matIndex++){
+ const g=groups[matIndex];if(!g.indices.length)continue;
+ const p=append(g.positions,5126,3,true),n=append(g.normals,5126,3),
+  id=append(g.indices,5125,1);
+ primitives.push({attributes:{POSITION:p,NORMAL:n},indices:id,material:matIndex,mode:4});
+ totalTris+=g.indices.length/3;
+}
+const binary=Buffer.concat(data);
 const gltf={
- asset:{version:'2.0',generator:'original Farmgate metro landmark generator',copyright:'Dhaka Metro 3D — original illustrative reconstruction'},
- scene:0,scenes:[{nodes:nodes.map((_,i)=>i)}],nodes,meshes,materials:mats,
- buffers:[{uri:'data:application/octet-stream;base64,'+binary.toString('base64'),byteLength:binary.length}],bufferViews:views,accessors,
- extras:{station:'Farmgate MRT Line 6',accuracy:'Illustrative reconstruction; geometry and nearby roads not surveyed',reference:'real Farmgate station architecture',modelParts:nodes.length}
+ asset:{version:'2.0',generator:'original Farmgate procedural landmark; mobile GPU batched',copyright:'Original conceptual model'},
+ scene:0,scenes:[{nodes:[0]}],nodes:[{name:'Farmgate original detailed station landmark',mesh:0}],
+ meshes:[{name:'Farmgate architectural elements grouped by material',primitives}],materials:mats,
+ buffers:[{uri:'data:application/octet-stream;base64,'+binary.toString('base64'),byteLength:binary.length}],
+ bufferViews:viewsOut,accessors:accessorsOut,
+ extras:{station:'Farmgate MRT Line 6',accuracy:'Illustrative reconstruction, not measured',modelParts:originalPartCount,drawBatches:primitives.length,triangles:totalTris}
 };
 writeFileSync(dir+'/farmgate-landmark.gltf',JSON.stringify(gltf));
-console.log('Wrote detailed Farmgate station model:',nodes.length,'pieces');
+console.log('Farmgate glTF:',originalPartCount,'architectural parts in',primitives.length,'material batches and',totalTris,'triangles');
