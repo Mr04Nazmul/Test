@@ -71,6 +71,11 @@ jobs:
           node --check scripts/build-farmgate-details.mjs
           node scripts/build-farmgate-details.mjs
           node scripts/check-farmgate-details.mjs
+      - name: Generate all sixteen OSM-anchored 3D urban facade and rooftop detail models
+        run: |
+          node --check scripts/build-urban-details.mjs
+          node scripts/build-urban-details.mjs
+          node scripts/check-urban-details.mjs
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
