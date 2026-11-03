@@ -19,6 +19,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      - name: Test MRT smooth train positions and UI
+        run: |
+          node --check data/metro-schedule.js
+          node --check app-v2.js
+          node scripts/check-metro-quality.mjs
       - name: Build realistic city-footprint 3D models
         run: node scripts/build-urban-models.mjs
       - uses: actions/upload-pages-artifact@v4
