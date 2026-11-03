@@ -1,50 +1,31 @@
-# Dhaka Metro 3D — MRT Line-6 Tracker (Prototype)
+# Dhaka MRT Line 6 — Current 3D build (v2)
 
-A mobile-friendly interactive 3D view and **timetable-based estimated train tracker** for Dhaka MRT Line-6: Uttara North → Motijheel.
-
-## Live preview
-
-https://mr04nazmul.github.io/Test/
+**Web:** https://mr04nazmul.github.io/Test/
 
 ## Implemented
+- 241 rail centerline points and 16 station positions derived from OpenStreetMap data (ODbL attribution below).
+- Six-car detailed original procedural **glTF** train (front, intermediate and rear cars), using approximate MRT6 body dimensions and characteristic green/white/red appearance.
+- A single station-at-a-time detailed conceptual **glTF** elevated station structure (not an accurate survey of the real station).
+- Esri satellite/aerial imagery base layer, OSM street-map fallback, OSM building-footprint extrusions around selected station (heights may be guessed).
+- Simulated, **timetable-estimated positions** for multiple trains and per-station ETA, using Dhaka UTC+6 time. Train marker list, selected train, Find Train and Follow Camera.
+- Optional official Google Map Tiles API photorealistic 3D mode with restricted user-provided API key (Google data never scraped, extracted or cached).
 
-- **241-point real railway centerline** from OpenStreetMap-based MRT-6 track data, covering the 16 current stations, not a straight station-to-station polyline. OSM geometry is reusable under ODbL with attribution.
-- Satellite/aerial imagery (Esri) and a street-map toggle; satellite access depends on the tile provider.
-- **Original 3D glTF railcar assets**: `assets/mrt6-front.gltf`, `assets/mrt6-middle.gltf`, `assets/mrt6-rear.gltf`. Built to approximately match the manufacturer specifications: each car **19.8 m × 2.95 m × 4.1 m**; 6-car train; green/white/red exterior, tinted windows, sliding doors, bogies and roof AC.
-- 3D guideway supports and **illustrative** 3D platforms/canopies for 16 stations. These architectural shapes are not photogrammetric reconstructions and should not be mistaken for exact DMTCL building CAD.
-- Approximate 3D building extrusions from OSM building footprints near the selected station. Heights may be estimates, and data availability varies by area.
-- Bangladesh Standard Time (UTC+6) 2026 **timetable-based train position estimates** for both directions, other-train map markers, next-train ETA estimates, train selection, train-follow camera and Find Train button.
-- Phone-first layout; station/ETA panel starts minimized on narrow screens.
-- Optional Google Photorealistic 3D Tiles support via official Map Tiles API with a billing-enabled, referrer-restricted key. Google **does not guarantee coverage for Dhaka**.
+## Accurate labeling and limits
+**This is NOT a GPS/official live tracking system.** DMTCL has not made a usable public realtime train positioning feed available. Even though the train markers update with the clock, all locations are *predictions based on a schedule*, not observed vehicle locations. Delays, breakdowns and service interruptions are unknown.
+Station-to-station travel time, station model details, support columns and some building heights are approximate. Actual published departures can change; official source: https://dmtcl.gov.bd/pages/static-pages/6922df5f933eb65569e218ed .
+The 3D station model is an original illustration, not a photogrammetric reconstruction of the real buildings.
+Photorealistic Google 3D coverage in Dhaka is not guaranteed.
 
-## What is NOT provided
+## Data and acknowledgements
+- © OpenStreetMap contributors, ODbL 1.0: https://www.openstreetmap.org/copyright . Rail track and station OSM points adapted from https://github.com/imamhossain94/dhaka-metro-live-map/blob/main/src/realRoute.js ; *data* remains ODbL and is attributed.
+- Schedule source: DMTCL operator website (individual intermediate arrivals are independently calculated).
+- Maps: Esri World Imagery and imagery contributors (provider attribution must be retained); check allowed use before monetizing.
+- The original 3D models in `assets/` were modeled for this prototype and are not copied from Google Earth.
 
-- **No official real-time GPS or live telemetry feed.** DMTCL does not appear to publish a public GTFS-RT / train-position API. The displayed movements are estimates from departure schedules, not verified train locations; delays and emergency disruptions cannot be detected.
-- No official manufacturer model, blueprint, interior scan, measured station 3D reconstruction, or Google Earth data extraction. The glTF assets and station canopies are original approximate reconstructions.
-- No permission to use Google Earth as an extractable 3D asset library. Respect official Map Tiles terms.
-- No guarantee of current official arrival times at individual stations; terminal departures and published headways are combined with estimated segment running/dwell times. Confirm travel at https://dmtcl.gov.bd/.
+## Use
+Hosted statically with GitHub Pages, or serve folder via a local HTTP server.
+Files: `index.html`, `app-v2.js`, `data/mrt6-track.js`, `data/metro-schedule.js`, `assets/*.gltf`.
+For native GPS positions in the future: request an official DMTCL feed/license or build a consent-based reporting system with clear quality/confidence warnings. Never label estimates as verified realtime telemetry.
 
-## Sources, license and attribution
-
-- Kawasaki train dimensions & car build: https://global.kawasaki.com/en/corp/newsroom/news/detail/?f=20210304_8861
-- DMTCL 2026 timetable: https://dmtcl.gov.bd/pages/static-pages/6922df5f933eb65569e218ed
-- OSM railway centerline and station stop coordinates: OSM contributors, [ODbL](https://www.openstreetmap.org/copyright), via source record https://github.com/imamhossain94/dhaka-metro-live-map/blob/main/src/realRoute.js ; independently modeled app implementation. Underlying OSM-derived data must remain compliant with the ODbL.
-- CesiumJS engine: https://cesium.com/cesiumjs/
-- Satellite basemap: Esri World Imagery, attribution visible at bottom right/left in app.
-- OSM building polygons: © OpenStreetMap contributors (ODbL).
-
-There are public open-source and third-party train-map projects with similar features; none cited here grants access to actual DMTCL GPS positions.
-
-## Hosting / usage
-
-Static HTML + CesiumJS + glTF 2.0, works on GitHub Pages with no backend.
-Open `index.html` through a local static web server or public GitHub Pages.
-For deployment, GitHub Pages needs to be configured to use GitHub Actions at **Settings → Pages**. The included `.github/workflows/deploy.yml` deploys on pushes to `main`.
-
-## Next steps to reach truly realistic 3D
-
-- Acquire properly licensed 3D photogrammetry/architectural models for the selected stations and surroundings.
-- Add a direct **authorized** real-time feed from DMTCL, or a consent-based passenger GPS-sharing backend with sufficient active participants, anti-spoofing, privacy policy and explicit location permissions.
-- Validate all model alignments in a mobile browser, including iPhone Safari WebGL rendering.
-
-**Do not label timetable estimates as live GPS.**
+## Deployment
+GitHub repository Settings > Pages > Source: GitHub Actions. Workflow: `.github/workflows/deploy.yml`.
