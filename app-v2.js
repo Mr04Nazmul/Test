@@ -1209,6 +1209,7 @@ function nearestTrackPoint(lat,lon){
 function endPhoneGPS(){
  if(gpsWatchId!==null&&navigator.geolocation)navigator.geolocation.clearWatch(gpsWatchId);
  gpsWatchId=null;gpsMeters=null;gpsDisplayMeters=null;
+ delete $("myGPS").dataset.reported;
  if(gpsMark){viewer.entities.remove(gpsMark);gpsMark=null;}
  $("myGPS").textContent="📍 My Phone GPS";
  $("myGPS").classList.remove("primary");
@@ -1226,16 +1227,15 @@ $("myGPS").addEventListener("click",()=>{
     point:{pixelSize:14,color:C.Color.CYAN,outlineColor:C.Color.WHITE,outlineWidth:3,disableDepthTestDistance:Number.POSITIVE_INFINITY}});
    gpsMark.position=C.Cartesian3.fromDegrees(lon,lat,32);
    const match=nearestTrackPoint(lat,lon);
-   if(match.distance<200&&accuracy<350){
-    gpsMeters=match.along;mode="onboard";playing=true;ride=true;
-    $("follow").classList.add("primary");
-    $("myGPS").textContent="📍 My GPS ON";$("myGPS").classList.add("primary");
-    renderCoachSet();updateModeControls();
-   }else{
-    if(mode==="onboard"){mode="estimate";refreshTrainMarkerPositions();}
-    gpsMeters=null;$("myGPS").textContent="📍 GPS active";
-    $("myGPS").classList.remove("primary");updateModeControls();
-    announce("তোমার ফোন MRT-6 থেকে "+Math.round(match.distance)+"m দূরে; ট্রেনের অবস্থান হিসেবে ব্যবহার হচ্ছে না।",6000);
+   // This is the phone owner's own position, NOT train telemetry.
+   // Merely being close to the railway must never spawn a "live" train.
+   gpsMeters=match.distance<200&&accuracy<100?match.along:null;
+   $("myGPS").textContent=match.distance<200?"📍 Phone near MRT":"📍 My GPS active";
+   $("myGPS").classList.add("primary");
+   updateModeControls();
+   if(!$("myGPS").dataset.reported){
+    $("myGPS").dataset.reported="yes";
+    announce("এটি শুধু তোমার ফোনের GPS। MRT-6 থেকে আনুমানিক "+Math.round(match.distance)+"m দূরে। কোনো ট্রেনের GPS বলে দেখানো হবে না।",10000);
    }
   },
   err=>{announce("Location permission / GPS error: "+err.message,9000);endPhoneGPS();},
