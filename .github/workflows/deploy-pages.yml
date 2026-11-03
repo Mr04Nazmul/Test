@@ -50,6 +50,10 @@ jobs:
           node --check scripts/build-agargaon-station.mjs
           node scripts/build-agargaon-station.mjs
           node scripts/check-agargaon-station.mjs
+      - name: Generate all 16 station neighborhood 3D scenes
+        run: |
+          node --check scripts/build-neighborhood-props.mjs
+          node scripts/build-neighborhood-props.mjs
       - name: Generate Dhaka vehicles
         run: node scripts/build-dhaka-traffic.mjs
       - name: Build and validate Farmgate street micro-models
