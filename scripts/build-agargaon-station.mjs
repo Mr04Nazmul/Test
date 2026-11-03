@@ -397,12 +397,80 @@ for(const x of [-51,51])for(let z=-116;z<=118;z+=33){
  box("small shop counter","concreteLight",x,1.28,z,3.2,1.0,2.1);
 }
 
-const meshBuffer=Buffer.concat(bytes);
+// Bake all architectural boxes into a small number of meshes, one primitive
+// per material. Three thousand Cesium glTF nodes would otherwise trigger
+// thousands of iPhone GPU draw calls; baking keeps detail but greatly reduces
+// rendering overhead. The original named components remain in generator source.
+function rotatePoint(v,q){
+ const [x,y,z,w]=q;
+ const tx=2*(y*v[2]-z*v[1]),ty=2*(z*v[0]-x*v[2]),tz=2*(x*v[1]-y*v[0]);
+ return [v[0]+w*tx+(y*tz-z*ty),v[1]+w*ty+(z*tx-x*tz),v[2]+w*tz+(x*ty-y*tx)];
+}
+function bakeScene(){
+ const groups=materials.map(()=>({positions:[],normals:[],uv:[],indices:[]}));
+ const counts={};
+ for(const part of nodes){
+  const g=groups[part.mesh],rotation=part.rotation||[0,0,0,1],
+   scale=part.scale,translation=part.translation;
+  counts[part.name]=(counts[part.name]||0)+1;
+  for(const f of face){
+   const base=g.positions.length/3;
+   for(const v of f.v){
+    const local=[v[0]*scale[0],v[1]*scale[1],v[2]*scale[2]];
+    const p=rotatePoint(local,rotation);
+    g.positions.push(p[0]+translation[0],p[1]+translation[1],p[2]+translation[2]);
+    g.normals.push(...rotatePoint(f.n,rotation));
+    // Physically tiled UV scale (rather than stretching one brick texture
+    // over an entire 160 m roof).
+    const n=f.n;
+    const uu=Math.abs(n[0])?v[2]*scale[2]/3.7:v[0]*scale[0]/3.7;
+    const vv=Math.abs(n[1])?v[2]*scale[2]/3.7:v[1]*scale[1]/2.9;
+    g.uv.push(uu,vv);
+   }
+   g.indices.push(base,base+1,base+2,base,base+2,base+3);
+  }
+ }
+ const chunks=[],views=[],acs=[],primitives=[];
+ let byteLength=0;
+ function append(values,componentType,components,bounds=false){
+  const typed=componentType===5126?new Float32Array(values):new Uint32Array(values);
+  const raw=Buffer.from(typed.buffer);
+  const viewIndex=views.length;
+  views.push({buffer:0,byteOffset:byteLength,byteLength:raw.length});
+  chunks.push(raw);byteLength+=raw.length;
+  const ac={bufferView:viewIndex,componentType,count:values.length/components,
+   type:components===3?"VEC3":components===2?"VEC2":"SCALAR"};
+  if(bounds){
+   ac.min=Array(components).fill(Infinity);ac.max=Array(components).fill(-Infinity);
+   for(let i=0;i<values.length;i++){
+    const k=i%components;
+    ac.min[k]=Math.min(ac.min[k],values[i]);ac.max[k]=Math.max(ac.max[k],values[i]);
+   }
+  }
+  acs.push(ac);return acs.length-1;
+ }
+ for(let i=0;i<groups.length;i++){
+  const g=groups[i];
+  if(!g.indices.length)continue;
+  const p=append(g.positions,5126,3,true),
+    n=append(g.normals,5126,3),uv=append(g.uv,5126,2),
+    ix=append(g.indices,5125,1);
+  primitives.push({attributes:{POSITION:p,NORMAL:n,TEXCOORD_0:uv},
+   indices:ix,material:i,mode:4});
+ }
+ const data=Buffer.concat(chunks);
+ return {views,acs,primitives,counts,byteLength:data.length,
+  dataURI:"data:application/octet-stream;base64,"+data.toString("base64")};
+}
+const baked=bakeScene();
 const gltf={
  asset:{version:"2.0",generator:"Agargaon MRT-6 photo-referenced textural urban architecture v2"},
- scene:0,scenes:[{nodes:nodes.map((_,i)=>i)}],nodes,meshes,materials,images,textures,samplers,
- buffers:[{byteLength:meshBuffer.length,uri:"data:application/octet-stream;base64,"+meshBuffer.toString("base64")}],
- bufferViews,accessors,
+ scene:0,scenes:[{nodes:[0]}],
+ nodes:[{name:"Agargaon photoreferenced urban station – batched",mesh:0}],
+ meshes:[{name:"Single batched MRT6 Agargaon urban scene",primitives:baked.primitives}],
+ materials,images,textures,samplers,
+ buffers:[{byteLength:baked.byteLength,uri:baked.dataURI}],
+ bufferViews:baked.views,accessors:baked.acs,
  extras:{
   subject:"Agargaon elevated metro station (MRT Line 6), Dhaka, Bangladesh",
   classification:"textured photo-referenced architectural approximation, not a surveyed 3D scan",
@@ -413,9 +481,12 @@ const gltf={
    "https://commons.wikimedia.org/wiki/File:Agargaon_metro_station_entrance_15.jpg",
    "https://commons.wikimedia.org/wiki/Category:Agargaon_metro_station"
   ],
-  count:nodes.length
+  count:nodes.length,
+  renderedDrawCalls:baked.primitives.length,
+  detailedComponents:baked.counts,
+  optimization:"One geometry batch per PBR material for mobile Safari/WebGL"
  }
 };
 const output=join(assets,"agargaon-station.gltf");
 writeFileSync(output,JSON.stringify(gltf));
-console.log("Agargaon 3D station created:",output,"nodes="+nodes.length,"meshes="+meshes.length);
+console.log("Agargaon textured PBR station:",output,"authored parts="+nodes.length,"draw calls="+baked.primitives.length,"asset bytes="+baked.byteLength);
