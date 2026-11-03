@@ -323,7 +323,7 @@ $("follow").addEventListener("click",()=>{
  if(!ride)clearViewLock();
 });
 $("pause").addEventListener("click",()=>{
- if(mode==="onboard")endPhoneGPS();
+ if(mode==="onboard"){endPhoneGPS();clearViewLock();playing=true;updateModeControls();return;}
  mode=mode==="estimate"?"demo":"estimate";playing=true;refreshTrainMarkerPositions();updateModeControls();
  if(mode==="estimate"&&!trainData.length){mode="demo";updateModeControls();announce("এখন অনুমিত চলমান ট্রেন নেই; Demo ride চলছে।")}
 });
@@ -392,7 +392,7 @@ function endPhoneGPS(){
  if(mode==="onboard"){mode="estimate";refreshTrainMarkerPositions();updateModeControls();}
 }
 $("myGPS").addEventListener("click",()=>{
- if(gpsWatchId!==null){endPhoneGPS();announce("ফোন GPS mode বন্ধ। GPS তথ্য কোথাও আপলোড করা হয়নি।",5000);return;}
+ if(gpsWatchId!==null){endPhoneGPS();clearViewLock();announce("ফোন GPS mode বন্ধ। GPS তথ্য কোথাও আপলোড করা হয়নি।",5000);return;}
  if(!navigator.geolocation){announce("এই ব্রাউজারে GPS পাওয়া যায়নি। HTTPS ও location permission লাগবে।",8000);return;}
  announce("ফোনের GPS অনুমতি দাও। শুধু এই ডিভাইসে location দেখানো হবে, সার্ভারে পাঠানো হবে না।",9500);
  $("myGPS").textContent="📍 GPS locating…";
