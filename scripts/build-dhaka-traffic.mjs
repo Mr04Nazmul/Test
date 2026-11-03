@@ -154,3 +154,27 @@ model('dhaka-car',(b,w)=>{
   b('tail-lamp-'+side,'tail-light',side*.69,.91,-2.17,.3,.16,.1);
  }
 });
+
+model('dhaka-motorcycle',(b,w)=>{
+  // Lightweight original two-wheeled motorcycle plus rider, moving only in simulation.
+  for(const z of [-.93,.93]){
+    w('motorcycle-tire-'+z,'rubber',0,.45,z,.20,.91);
+    w('motorcycle-hub-'+z,'chrome',.13,.45,z,.045,.46);
+  }
+  b('bike-main-frame','car-black',0,.93,0,.42,.31,1.95);
+  b('fuel-tank','bus-red',0,1.08,.28,.64,.42,.78);
+  b('seat','rubber',0,1.15,-.56,.52,.17,.92);
+  b('rear-lamp','tail-light',0,.88,-1.12,.34,.16,.13);
+  b('headlight','light',0,1.09,1.07,.33,.27,.18);
+  b('front-fork','chrome',0,.84,.89,.13,.88,.13);
+  b('rear-shock','chrome',0,.84,-.84,.12,.66,.13);
+  b('handle-bar','chrome',0,1.45,.75,1,.08,.12);
+  b('driver-torso','clothing',0,1.68,-.22,.65,.76,.42);
+  b('driver-head','skin',0,2.23,.01,.35,.42,.34);
+  b('driver-helmet','bus-dark',0,2.48,.01,.43,.20,.44);
+  for(const side of [-1,1]){
+    b('handle-grip-'+side,'rubber',side*.48,1.44,.75,.2,.12,.12);
+    b('rider-arm-'+side,'skin',side*.41,1.50,.31,.17,.48,.18);
+    b('rider-leg-'+side,'car-black',side*.25,1.03,-.40,.20,.67,.24);
+  }
+});
