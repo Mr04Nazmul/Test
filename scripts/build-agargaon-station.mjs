@@ -237,12 +237,16 @@ for(const side of [-1,1]){
   box("red brick outer facade post","brickLight",side*16.03,16.55,z,.72,5.15,.85);
 }
 // Green sweeping convex station canopy roof.
-const curve=x=>27.45+3.65*(1-Math.pow(clamp(x/17,-1,1),2));
+const curve=x=>27.45+2.6*(1-Math.pow(clamp(x/17,-1,1),2));
 for(let i=-13;i<=13;i++){
  const x=i*1.20;
  const ya=curve(x-.6),yb=curve(x+.6),angle=Math.atan2(yb-ya,1.2);
- box("corrugated green arched roof strip",i%3===0?"roofLight":"roof",x,(ya+yb)/2,0,1.27,.22,167,rotationZ(angle));
- box("metal longitudinal roof seam","roofDark",x,(ya+yb)/2+.12,0,.055,.07,167,rotationZ(angle));
+ for(let z=-79.5;z<=79.5;z+=9.1){
+  // Scale the original ribbed roof texture in modular 9 m lengths.
+  box("weathered corrugated green canopy panel",i%3===0?"roofLight":"roof",
+   x,(ya+yb)/2,z,1.27,.22,9.18,rotationZ(angle));
+ }
+ box("dark green long roof rib","roofDark",x,(ya+yb)/2+.12,0,.042,.08,167,rotationZ(angle));
 }
 for(let z=-81;z<=81;z+=10.0){
  link("roof steel truss bottom tie","metal",[-15.5,26.70,z],[15.5,26.70,z],.22,.26);
@@ -317,15 +321,91 @@ rickshaw(28,64);
 rickshaw(-26,101);
 rickshaw(16,-85);
 for(const x of [-38,38])for(const z of [-85,86])greenery(x,z,4.4);
+
+ // Photo-informed local Agargaon neighborhood character:
+ // compact offices/shops to the west, mixed civic buildings, a pond and
+ // vegetation to the east. Locations ARE ILLUSTRATIVE, not cadastral geometry.
+function localBlock(x,z,w,d,floors,style=0){
+ const material=style%3===0?"brickLight":style%3===1?"concreteLight":"concrete";
+ const height=floors*3.05+1.1;
+ box("Dhaka local mixed-use office or residential block",material,x,height*.50,z,w,height,d);
+ box("flat rooftop parapet","concreteDark",x,height+.15,z,w+.26,.33,d+.24);
+ box("weathered roof sheet","concreteLight",x,height+.35,z,w-.6,.12,d-.4);
+ const direction=x<0?1:-1;
+ const streetFace=x+direction*(w/2+.08);
+ const columns=Math.max(2,Math.min(5,Math.round(d/3.5)));
+ for(let level=0;level<floors;level++){
+  const y=2.4+level*3.05;
+  for(let j=0;j<columns;j++){
+   const dz=(j-(columns-1)/2)*(d-2)/columns;
+   box("green-tinted reflective facade opening",style%2?"glassDark":"glass",
+     streetFace,y,z+dz,.13,1.45,Math.min(2.25,(d-2)/columns*.76));
+   box("sunshade over each glazed opening","concreteDark",
+     streetFace+direction*.27,y+.95,z+dz,.65,.12,Math.min(2.5,(d-2)/columns*.83));
+  }
+  if(level>0&&level%2===0){
+   box("flat residential balcony slab","concreteLight",
+    streetFace+direction*.55,y-1.04,z,.92,.17,d*.73);
+   box("balcony black metal rail","metal",
+    streetFace+direction*1.02,y-.57,z,.12,.76,d*.73);
+  }
+ }
+ if(style%2===0){
+  box("groundfloor shopfront glazing","glassDark",
+   streetFace,1.50,z,.20,2.32,Math.max(4,d-3));
+  box("shop awning with coloured trim","roofDark",
+   streetFace+direction*.58,3.06,z,1.4,.22,Math.max(4,d-2));
+ }
+ for(const zz of [-d*.25,d*.28]){
+  box("roof tank / utility structure","concreteDark",x-1.3,height+1.18,z+zz,2.4,1.35,2.1);
+ }
+}
+const structures=[
+ [-85,-114,20,24,5,0],[-89,-68,22,20,6,1],[-78,-14,23,24,8,2],
+ [-103,43,25,25,5,3],[-82,97,21,19,8,4],[-138,-120,27,23,10,5],
+ [-143,-49,25,30,7,1],[-150,36,26,26,9,0],[-146,110,21,18,5,2],
+ [69,114,18,22,5,5],[93,70,23,20,8,3],[151,97,28,21,10,1],
+ [152,-112,26,24,7,2],[185,-38,26,24,12,0]
+];
+for(const item of structures)localBlock(...item);
+// Reflective urban pond and shaded trees are inspired by nearby green spaces,
+// but are NOT represented as a surveyed waterbody outline.
+box("green landscaped park near metro", "plantLight",111,.06,-33,104,.12,99);
+box("reflective local water feature","glassDark",110,.12,-32,73,.035,67);
+for(const edge of [-1,1]){
+ box("pond pedestrian edge kerb","concreteLight",110+edge*38,.25,-32,1.2,.25,69);
+ box("pond perimeter walk","asphaltLight",110+edge*41,.05,-32,4,.10,77);
+}
+for(let i=0;i<37;i++){
+ const t=i/37*Math.PI*2,rx=59,rz=54;
+ const x=111+Math.cos(t)*rx,z=-33+Math.sin(t)*rz;
+ greenery(x,z,3.5+((i*7)%5)*.47);
+ if(i%4===0){
+  box("roadside soil bed","concreteDark",x,.08,z,2.5,.16,1.8);
+ }
+}
+for(const x of [-43,43])for(let z=-139;z<145;z+=22){
+ greenery(x,z,3.7+((z*3)%5)*.23);
+ box("low roadside planter edge","concreteDark",x,.12,z,2.8,.19,2.9);
+}
+// Lower utility wires, shop canopies and seasonal greens are schematic street
+// clutter, never real address / live traffic.
+for(const x of [-51,51])for(let z=-116;z<=118;z+=33){
+ box("covered roadside vendor roof","roofDark",x,3.12,z,4.6,.16,5.3);
+ for(const side of [-1,1])
+  box("vendor stall steel support","metal",x+side*1.9,1.58,z,.09,3.14,.12);
+ box("small shop counter","concreteLight",x,1.28,z,3.2,1.0,2.1);
+}
+
 const meshBuffer=Buffer.concat(bytes);
 const gltf={
- asset:{version:"2.0",generator:"Agargaon MRT-6 photographed-feature procedural architecture v1"},
+ asset:{version:"2.0",generator:"Agargaon MRT-6 photo-referenced textural urban architecture v2"},
  scene:0,scenes:[{nodes:nodes.map((_,i)=>i)}],nodes,meshes,materials,images,textures,samplers,
  buffers:[{byteLength:meshBuffer.length,uri:"data:application/octet-stream;base64,"+meshBuffer.toString("base64")}],
  bufferViews,accessors,
  extras:{
   subject:"Agargaon elevated metro station (MRT Line 6), Dhaka, Bangladesh",
-  classification:"photo-referenced architectural approximation, not a surveyed 3D scan",
+  classification:"textured photo-referenced architectural approximation, not a surveyed 3D scan",
   orientation:"local glTF Z is longitudinal rail direction; same layout convention as original MRT6 model",
   facade:"green curved roof, brick/concrete facade, platform glass, stair entrances, covered footbridges",
   notReal:"vehicle traffic is static decoration, roads and geometry are approximated; do not infer actual building measurements",
