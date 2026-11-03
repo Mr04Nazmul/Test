@@ -198,3 +198,16 @@ To refresh Agargaon roads locally: `node scripts/refresh-real-roads.mjs --statio
 - The app keeps the explicit **ESTIMATED · NOT GPS** label. A 3D model moving continuously on OSM coordinates is **not** proof that a train is really there. Public DMTCL train-location GPS/GTFS-RT telemetry is not available. See [DMTCL official schedule](https://dmtcl.gov.bd/pages/static-pages/6922df5f933eb65569e218ed). Train headways can change due to disruptions or holiday notices.
 - Current backend: no trusted live train observation provider connected. Supporting *real* locations will require a data-sharing agreement with a train-position provider or explicit opted-in passengers on a secure, separately configured backend with authentication, minimal location retention and source freshness controls. Do not borrow an unrelated Supabase database or silently infer "real" from a user's phone.
 - Validation: `node scripts/check-train-radar.mjs`, run as part of GitHub Actions.
+
+
+## Private real GPS from a consenting MRT-6 rider (2026-11-04)
+
+The website now offers **📍 Private Rider GPS** alongside the schedule-only **Train Radar**. Click Create Private Sharing Link to start an ephemeral WebRTC viewer session. Send the generated capability link only to a trusted person who is currently on an MRT-6 train. They must open `share-live.html#watch=<random-session-id>`, explicitly confirm they are onboard, press **Start Sharing My GPS**, and grant the browser location permission. Only then will their **actual phone GPS** appear as an independent cyan marker labelled *RIDER PHONE GPS · NOT TRAIN TELEMETRY* on the original OSM MRT-6 alignment.
+
+- A third-party PeerJS Cloud broker is used only for WebRTC connection signaling (PeerJS 1.5.5, MIT). The browser-to-browser WebRTC data channel is encrypted. No central trip-history, passenger ID, database write, geolocation request before consent, or public train position feed is used.
+- The private capability is placed in the URL **fragment** to avoid sending it in standard HTTP requests. Anyone who has the link can attempt to join the session, so users must share it privately; the viewer accepts only one rider connection.
+- Every GPS sample carries sender-reported latitude/longitude, accuracy and timestamp. Viewer validates Dhaka bounds, sample age <=20 seconds, accuracy <=80 meters and proximity <=130 meters to the OSM MRT-6 route. A failure displays an explicit warning rather than claiming a confirmed train location.
+- The passenger may stop at any time. Closing/backgrounding the passenger page stops sending, and viewer automatically hides stale phone markers after 20 seconds. iPhone tab suspension, internet/NAT restrictions or the free PeerJS signaling service may prevent or interrupt sharing.
+- The viewer may select **Follow Rider Phone GPS** for the received coordinates in its 3D map, independently of the simulated timetable train. Rider self-attestation and position near the line **do not verify the phone is actually onboard**.
+- This is opt-in **one-to-one rider tracking** only. There is no operator telemetry, official live fleet-wide GPS feed or unlimited multi-user live train location map. DMTCL still has no accessible public official API, and schedule-based train markers remain distinctly labelled estimates.
+- QA: `node scripts/check-private-gps.mjs` in GitHub Actions.
