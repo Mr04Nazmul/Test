@@ -62,6 +62,11 @@ jobs:
           node --check scripts/build-station-family.mjs
           node scripts/build-station-family.mjs
           node scripts/check-station-family.mjs
+      - name: Create 16 Daily Star aerial-reference MRT6 3D station scenes
+        run: |
+          node --check scripts/build-photo-stations.mjs
+          node scripts/build-photo-stations.mjs
+          node scripts/check-photo-stations.mjs
       - name: Generate Farmgate landmark 3D model
         run: node scripts/build-farmgate-landmark.mjs
       - name: Generate Dhaka University station 3D model
