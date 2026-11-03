@@ -542,6 +542,17 @@ function appendAdjacentUrbanTiles(focus){
  }
 }
 
+// Rooftop equipment and local shop overhangs follow cached mapped building
+// footprints. Individual details are illustrative, not surveyed storefronts.
+function appendBuildingRoofDetails(index){
+ const station=st[index];
+ buildings.push(viewer.entities.add({
+  name:station.n+" — mapped-building 3D rooftops, AC units, awnings (illustrative)",
+  position:lonlatPoint(station,0),
+  model:{uri:"./assets/rooftops/"+index+".gltf",scale:1,minimumPixelSize:0,maximumScale:1,
+   distanceDisplayCondition:new C.DistanceDisplayCondition(0,1850)}
+ }));
+}
 function appendNeighborhoodFurnishings(index){
  // Procedural scene props around this selected station. They use OSM
  // building footprints for placement exclusion, but are NOT a real tree survey.
@@ -596,6 +607,7 @@ async function loadBuildings(i){
       });
     }
     appendNeighborhoodFurnishings(i);
+    appendBuildingRoofDetails(i);
     announce(s.n+" — বাস্তব OSM footprint-এর 3D building mesh। জানালা/অজানা উচ্চতা আনুমানিক।",9500);
     return;
    }
