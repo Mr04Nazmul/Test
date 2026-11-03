@@ -18,7 +18,7 @@ let viewer,osmLayer=null,satLayer=null,roadsLayer=null,labelsLayer=null,googleTi
 let selectedStation=8,mode="estimate",selectedTrain="",trainData=[],focused=null;
 let playing=true,demoMeters=0,rate=1,ride=false,worldModels=[],buildings=[],showBuildings=true;
 let cameraStyle="chase",orbitYaw=0,orbitPitch=-0.74,followDistance=220,gpsDisplayMeters=null;
-let lastFrame=0,lastMapUpdate=0,lastMarkerAnimation=0,etaLast=0,stationStructure=null,trainEntities=[],trainMarkers=new Map();
+let lastFrame=0,lastMapUpdate=0,lastMarkerAnimation=0,etaLast=0,lastAudioSceneUpdate=0,stationStructure=null,trainEntities=[],trainMarkers=new Map();
 const stationMarkers=[];
 let loadTicket=0,bldgRequest=null,gpsWatchId=null,gpsMeters=null,gpsMark=null;
 const nameFor=i=>(st[i]&&st[i].bn)||"";
@@ -479,6 +479,22 @@ function animateTrainMarkers(){
   }
  }
 }
+// Sound zones follow the actual 3D camera, not an invented train GPS feed.
+function updateSoundCamera(t){
+ const engine=window.DhakaSoundscape;
+ if(!engine?.active||t-lastAudioSceneUpdate<430)return;
+ lastAudioSceneUpdate=t;
+ const camera=viewer.camera.positionCartographic;
+ if(!camera)return;
+ const s=st[selectedStation],lat=C.Math.toDegrees(camera.latitude),lon=C.Math.toDegrees(camera.longitude);
+ const east=(lon-s.lon)*111320*Math.cos(C.Math.toRadians(s.lat));
+ const north=(lat-s.lat)*111320;
+ const distance=Math.hypot(east,north);
+ engine.updateScene({
+  station:selectedStation,following:ride,height:Math.max(0,camera.height),
+  distance,moving:mode==="estimate"||mode==="onboard"||playing
+ });
+}
 function updateNow(t){
  // Train + 3D camera rendered per animation frame. Schedule lookup is fractional-time.
  const dt=lastFrame?Math.min(.06,Math.max(0,(t-lastFrame)/1000)):0.016;
@@ -503,6 +519,7 @@ function updateNow(t){
   }
  }
  updateFollowCamera();
+ updateSoundCamera(t);
  if(t-lastMapUpdate<45){
   stationMarkers.forEach((e,i)=>{e.show=!ride||i===selectedStation});
   for(const [id,e] of trainMarkers)e.show=!ride;
@@ -874,11 +891,58 @@ $("sound").addEventListener("click",async()=>{
   engine.setStation(selectedStation);
   await engine.start();
   reflectSoundState();
-  announce("বাংলাদেশি শহরের পরিবেশের সাউন্ড চালু (সিন্থেসাইজড; আসল রেকর্ডিং নয়)।",5500);
+  announce("Dhaka 3D sound zones চালু। রাস্তা, স্টেশন, প্ল্যাটফর্ম ও ট্রেনের সাউন্ড ক্যামেরা অনুযায়ী বদলাবে।",6000);
  }catch(err){engine.stop();reflectSoundState();announce("Sound চালু হয়নি: "+err.message,6000)}
 });
 window.addEventListener("dhaka-sound-muted",reflectSoundState);
 reflectSoundState();
+// Optional compact sound mixer, with no autoplay or microphone permissions.
+const audioPanel=$("soundPanel"),zoneControl=$("soundZone"),audioStatus=$("soundState");
+function toggleAudioPanel(open){
+ audioPanel.hidden=!open;
+ $("soundOptions").setAttribute("aria-expanded",String(open));
+}
+$("soundOptions").addEventListener("click",()=>toggleAudioPanel(audioPanel.hidden));
+$("soundClose").addEventListener("click",()=>toggleAudioPanel(false));
+zoneControl.addEventListener("change",()=>{
+ window.DhakaSoundscape?.setZone(zoneControl.value);
+});
+$("soundVolume").addEventListener("input",()=>{
+ const level=Number($("soundVolume").value);
+ $("soundVolumeValue").textContent=level+"%";
+ window.DhakaSoundscape?.setVolume(level/100);
+});
+$("recordedRail").addEventListener("change",()=>{
+ const engine=window.DhakaSoundscape;
+ if(!engine){$("recordedRail").checked=false;return}
+ // Real recording is an OPTIONAL external CC BY clip; it isn't Dhaka metro audio.
+ if($("recordedRail").checked&&!engine.active){
+  $("recordedRail").checked=false;
+  announce("প্রথমে City Sound চালু করো।",5000);return;
+ }
+ if($("recordedRail").checked&&zoneControl.value==="auto")zoneControl.value="platform";
+ if($("recordedRail").checked)engine.setZone(zoneControl.value);
+ engine.useRecordedTrain($("recordedRail").checked);
+});
+$("demoPA").addEventListener("click",()=>{
+ const result=window.DhakaSoundscape?.paDemo();
+ announce(!result?.ok?"প্রথমে Sound চালু করো।":result.voice
+  ?"এটি অফিসিয়াল মেট্রোরেলের ঘোষণা নয়—শুধু বাংলা ডেমো।"
+  :"Announcement chime বাজছে। এই ফোনে Bengali TTS voice নেই; অফিসিয়াল announcement ব্যবহার করা হয়নি।",5500);
+});
+function renderSoundMixer(detail){
+ if(!detail)return;
+ $("soundVolume").value=Math.round(detail.volume*100);
+ $("soundVolumeValue").textContent=Math.round(detail.volume*100)+"%";
+ $("recordedRail").checked=detail.recordedEnabled;
+ zoneControl.value=detail.requestedZone;
+ const zoneLabels={street:"রাস্তা",hall:"স্টেশনের ভেতর",platform:"প্ল্যাটফর্ম",track:"ট্রেনের পাশে",train:"ট্রেনের ভেতর",roof:"স্টেশনের উপরে"};
+ audioStatus.textContent=detail.active?"Sound ON · "+(zoneLabels[detail.zone]||detail.zone)
+  +(detail.recordingError?" · রেকর্ডিং লোড হয়নি":""):"Sound OFF · City Sound ট্যাপ করো";
+ reflectSoundState();
+}
+window.DhakaSoundscape?.onChange(renderSoundMixer);
+renderSoundMixer({active:false,zone:"street",requestedZone:"auto",volume:.55,recordedEnabled:false});
 $("buildings").addEventListener("click",()=>{
  if(googleMode){announce("Google mode-এ আলাদা OSM ভবন বন্ধ।");return}
  showBuildings=!showBuildings;
