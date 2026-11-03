@@ -54,3 +54,9 @@ To regenerate locally: run `node scripts/build-urban-models.mjs` from the reposi
 - Optional Google photorealistic 3D requires an authorized, referrer-restricted Maps Tiles API key and service availability. Never scrape/export/rehost Google Earth or Google Maps 3D tiles.
 - **Truthfulness:** MRT-6 uses internal CBTC/centralized train control, but no authenticated public DMTCL vehicle-position feed was located. Estimated train animation is **not** official real-time telemetry. An independent crowdsourced tracker may show voluntarily shared passenger phone GPS, but its data is not connected to this app, and phone GPS is not necessarily the train's own position.
 - Run `node scripts/check-metro-quality.mjs` for basic smooth-sample and UI contract tests, alongside `node --check app-v2.js`. Automatic Pages deployment uses `.github/workflows/deploy-pages.yml`; `deploy.yml` is a manual-only backup.
+
+## Farmgate landmark reconstruction (stage 1)
+- Farmgate (index 10) now has a **distinct original 3D station model** with a green curved roof, overpass/entrance bridges, vertical glass panels, brick-red station walls, steel canopy trusses, signage and elevated concrete supports.
+- The generator `scripts/build-farmgate-landmark.mjs` produces `assets/farmgate-landmark.gltf` in both GitHub Pages deployment workflows. Mobile users do not need to install anything.
+- Visual architecture is inspired by public photographs of the real station, not a licensed survey. Roads, bridge offsets and facade geometry are illustrative; these models do **not** duplicate the exact real-world shapes or every local shop.
+- In the web viewer, choose **Farmgate** to see the new landmark. All original camera controls, map imagery and train-follow functions remain intact.
