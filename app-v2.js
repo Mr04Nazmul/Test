@@ -135,11 +135,11 @@ function renderStructure(index){
  // Farmgate (index 10) gets its own original landmark geometry: curved
  // green roof, brick concourse, bridges, facade glass and street furniture.
  // Illustrative reconstruction, NOT photogrammetry or a measured survey.
- const farmgate=index===10,agargaon=index===8;
- const title=agargaon?" — Agargaon photo-referenced 3D":farmgate?" — Farmgate detailed reconstruction":" conceptual 3D station";
+ const farmgate=index===10,agargaon=index===8,university=index===13;
+ const title=university?" — Dhaka University original detailed 3D":agargaon?" — Agargaon photo-referenced 3D":farmgate?" — Farmgate detailed reconstruction":" conceptual 3D station";
  stationStructure=viewer.entities.add({name:s.n+title,
   position:lonlatPoint(s,0),orientation:modelOrientation(p),
-  model:{uri:agargaon?"assets/agargaon-station.gltf":farmgate?"assets/farmgate-landmark.gltf":"assets/mrt6-station-concept.gltf",
+  model:{uri:university?"assets/dhaka-university-landmark.gltf":agargaon?"assets/agargaon-station.gltf":farmgate?"assets/farmgate-landmark.gltf":"assets/mrt6-station-concept.gltf",
    scale:1,minimumPixelSize:0,maximumScale:1}});
  setupStreetTraffic(index);
 }
@@ -623,6 +623,7 @@ $("north").addEventListener("click",()=>focusStation(0));
 $("central").addEventListener("click",()=>focusStation(10));
 $("south").addEventListener("click",()=>focusStation(15));
 $("agargaon").addEventListener("click",()=>focusStation(8));
+$("university").addEventListener("click",()=>focusStation(13));
 $("moreControls").addEventListener("click",()=>{
  document.body.classList.toggle("mobile-controls-expanded");
  $("moreControls").textContent=document.body.classList.contains("mobile-controls-expanded")?"✕ Less tools":"☷ More tools";
