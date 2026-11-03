@@ -15,7 +15,7 @@ assert(sound.includes('function stop()'),'Audio mute option missing');
 assert(!/autoplay\s*=\s*true/i.test(sound),'Audio must not autoplay');
 assert(generator.includes("box('asphalt',side*27.3"),'Colored road surface missing');
 assert(generator.includes("box('white',side*27.3"),'Lane marking absent');
-assert(buildings.includes('#e6c7b4')&&buildings.includes('#c8d5e6'),'Building color palettes missing');
+assert(buildings.includes('facadePNGs=[0,1,2,3]')&&buildings.includes("roof-original-"),'Colored facade and rooftop texture styles missing');
 let roads=0,totalObjects=0;
 for(let i=0;i<16;i++){
  const path='assets/nearby/'+i+'.gltf';
