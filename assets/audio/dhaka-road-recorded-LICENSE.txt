@@ -1,0 +1,6 @@
+Source: "A busy road in Dhaka.webm" by Masum-al-Hasan Rocky (Wikimedia Commons), 25 August 2026.
+Location: Road near Jahangir Gate, Dhaka, Bangladesh.
+Original: https://commons.wikimedia.org/wiki/File:A_busy_road_in_Dhaka.webm
+Creative Commons Attribution-ShareAlike 4.0 International: https://creativecommons.org/licenses/by-sa/4.0/
+Modifications: audio track extracted, excerpted, resampled to 22050 Hz mono, compressed to MP3 for mobile website.
+This recording is NOT recorded inside a Bangladesh metro train or station.
