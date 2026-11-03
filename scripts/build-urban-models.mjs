@@ -91,8 +91,17 @@ function nearRailCorridor(poly,routeXY,stationIndex){
 const materials=[
  ...colors.map((c,i)=>material('windowed-plaster-'+i,c,true)),
  material('roof-concrete','#a7a59b'),material('parapets','#c9c5b8'),
- material('roof-utilities','#7d8988')
+ material('roof-utilities','#7d8988'),
+ material('ground-floor-shop-glass','#6f91a4'),
+ material('corrugated-shop-awning-green','#387968'),
+ material('corrugated-shop-awning-red','#a34b44'),
+ material('balcony-concrete','#b4aea4'),
+ material('balcony-metal-railing','#59666d'),
+ material('rooftop-black-water-tank','#33383b'),
+ material('rooftop-airconditioning','#879292'),
+ material('small-roof-greenery','#506f54')
 ];
+const detailMaterials={shop:11,awningGreen:12,awningRed:13,balcony:14,rail:15,tank:16,aircon:17,green:18};
 
 function newGroup(){return {positions:[],normals:[],uv:[],indices:[]}}
 function appendTri(g,a,b,c,normal,uv=[[0,0],[1,0],[0,1]]){
@@ -188,6 +197,33 @@ function makeModel(data,index){
    if(length<.22)continue;
    const nx=orientation*dz/length,nz=-orientation*dx/length;
    appendQuad(g,[p[0],.35,p[1]],[q[0],.35,q[1]],[q[0],height,q[1]],[p[0],height,p[1]],[nx,0,nz],length/4,height/3.2);
+   // Original illustrative Dhaka street frontage geometry.
+   // Footprint and location are OSM; shop presence/design is NOT verified.
+   if(seed%4===0&&j===seed%coords.length&&height>8&&length>6&&length<35){
+    const e=.11,awning=1.35;
+    appendQuad(groups[detailMaterials.shop],
+     [p[0]+nx*e,.55,p[1]+nz*e],[q[0]+nx*e,.55,q[1]+nz*e],
+     [q[0]+nx*e,2.94,q[1]+nz*e],[p[0]+nx*e,2.94,p[1]+nz*e],[nx,0,nz],1,1);
+    appendQuad(groups[seed%2?detailMaterials.awningGreen:detailMaterials.awningRed],
+     [p[0]+nx*.17,3.18,p[1]+nz*.17],[q[0]+nx*.17,3.18,q[1]+nz*.17],
+     [q[0]+nx*awning,3.02,q[1]+nz*awning],[p[0]+nx*awning,3.02,p[1]+nz*awning],
+     [0,1,0],1,1);
+   }
+   // A small number of illustrative balconies on eligible facades. A budget
+   // of three floors per face keeps all 16 station-area meshes phone-friendly.
+   if(seed%8===0&&j===((seed>>>2)%coords.length)&&height>14&&length>6&&length<23){
+    const floors=Math.min(3,Math.floor((height-4)/3.2));
+    for(let floor=1;floor<=floors;floor++){
+     const y=floor*3.2+.24;
+     appendQuad(groups[detailMaterials.balcony],
+      [p[0]+nx*.06,y,p[1]+nz*.06],[q[0]+nx*.06,y,q[1]+nz*.06],
+      [q[0]+nx*.95,y,q[1]+nz*.95],[p[0]+nx*.95,y,p[1]+nz*.95],[0,1,0],1,1);
+     appendQuad(groups[detailMaterials.rail],
+      [p[0]+nx*.96,y,p[1]+nz*.96],[q[0]+nx*.96,y,q[1]+nz*.96],
+      [q[0]+nx*.96,y+.8,q[1]+nz*.96],[p[0]+nx*.96,y+.8,p[1]+nz*.96],
+      [nx,0,nz],1,1);
+    }
+   }
    // Thin concrete roof-edge parapets add a more legible city silhouette.
    if(seed%3===0)appendQuad(parapet,
      [p[0]+nx*.15,height,p[1]+nz*.15],[q[0]+nx*.15,height,q[1]+nz*.15],
@@ -197,9 +233,16 @@ function makeModel(data,index){
   for(const [a,b,c] of earclip(coords))
    appendTri(roof,[coords[a][0],height,coords[a][1]],[coords[b][0],height,coords[b][1]],
      [coords[c][0],height,coords[c][1]],[0,1,0]);
-  if(seed%9===0&&coords.length<12){
+  if(coords.length<18){
    const mid=coords.reduce((acc,p)=>[acc[0]+p[0]/coords.length,acc[1]+p[1]/coords.length],[0,0]);
-   box(groups[10],mid[0],height+.06,mid[1],2.6,1.1,2.2);
+   if(seed%9===0)box(groups[10],mid[0],height+.06,mid[1],2.6,1.1,2.2);
+   // Dhaka rooftops commonly have water storage, AC units and roof fixtures;
+   // their exact locations here are procedural, not sourced building records.
+   if(seed%7===0&&height>6)box(groups[detailMaterials.tank],mid[0]+1.8,height+.10,mid[1],1.65,1.55,1.65);
+   if(seed%11===0&&height>10){
+    box(groups[detailMaterials.aircon],mid[0]-1.3,height+.10,mid[1]+.6,1.9,.78,1.4);
+    box(groups[detailMaterials.green],mid[0]+1.4,height+.08,mid[1]-1.3,1.1,.42,1.2);
+   }
   }
   count++;
  }
@@ -247,6 +290,7 @@ function makeModel(data,index){
   buffers:[{uri:'data:application/octet-stream;base64,'+binary.toString('base64'),byteLength:binary.length}],
   bufferViews,accessors,
   extras:{station:index,buildingFootprints:count,knownHeights:known,inferredHeights:count-known,
+   addedIllustrativeDetails:'shopfront glass and sunshades, balcony slabs, rooftop tanks and AC fixtures',
    anchor:{longitude:cx,latitude:cy},coordinateSystem:'local glTF X=east, Y=up, Z=south',provenance:data.source,license:'ODbL 1.0 © OpenStreetMap contributors',
    clearedNearTrack,
    caveat:'Real mapped footprints, visually excluded shapes near train corridor to reduce occlusion; approximate heights/windows are not real building imagery.'}
