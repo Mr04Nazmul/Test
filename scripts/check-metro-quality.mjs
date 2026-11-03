@@ -31,7 +31,7 @@ assert(app.includes('Overhead electric contact wire'),'DMTCL 1500V catenary line
 assert(!app.includes('PolylineGlowMaterialProperty'),'Wrong neon rail return: remove glowing green centerline');
 assert(app.includes('nearbyRailFurniture(8);'),'Agargaon track-side structure not initialized');
 assert(app.includes('stationCinematicCamera(8,false);'),'iPhone default should show real context, not the track nose');
-assert(/app-v2\\.js\\?v=20261104[-a-zA-Z0-9]+/.test(html),'Safari cache-busting asset version missing');
+assert(/app-v2\.js\?v=20261104[-a-zA-Z0-9]+/.test(html),'Safari cache-busting asset version missing');
 assert(app.includes('updateFollowCamera();'),'Following camera not animated');
 assert(app.includes('World_Transportation/MapServer'),'Real street/road overlay absent');
 assert(app.includes('assets/urban/'),'OSM building glTF loading missing');
