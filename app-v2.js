@@ -15,10 +15,11 @@ if(!C||!route||!svc){announce("ম্যাপ বা রুটের তথ্�
 const st=route.stations,pts=route.points,stops=route.stationBreaks;
 const slate=C.Color.fromCssColorString("#14354d"),green=C.Color.fromCssColorString("#0de9ad");
 let viewer,osmLayer=null,satLayer=null,roadsLayer=null,labelsLayer=null,googleTiles=null,googleMode=false,satelliteOn=false;
-let selectedStation=10,mode="estimate",selectedTrain="",trainData=[],focused=null;
+let selectedStation=8,mode="estimate",selectedTrain="",trainData=[],focused=null;
 let playing=true,demoMeters=0,rate=1,ride=false,worldModels=[],buildings=[],showBuildings=true;
 let cameraStyle="chase",orbitYaw=0,orbitPitch=-0.27,followDistance=105,gpsDisplayMeters=null;
 let lastFrame=0,lastMapUpdate=0,lastMarkerAnimation=0,etaLast=0,stationStructure=null,trainEntities=[],trainMarkers=new Map();
+const stationMarkers=[];
 let loadTicket=0,bldgRequest=null,gpsWatchId=null,gpsMeters=null,gpsMark=null;
 const nameFor=i=>(st[i]&&st[i].bn)||"";
 const carLength=19.8;
@@ -31,7 +32,7 @@ for(let i=1;i<pts.length;i++){
  cum.push(cum[i-1]+new C.EllipsoidGeodesic(a,b).surfaceDistance);
 }
 const trackLength=cum[cum.length-1],stopMeters=stops.map(k=>cum[k]);
-demoMeters=stopMeters[10]+110;
+demoMeters=stopMeters[8]+105;
 // Derive the tangent over 36 metres to avoid heading jitter at OSM vertices.
 function trackPoint(meters){
  const d=clamp(meters,0,trackLength-.01);
@@ -68,8 +69,8 @@ try{
  viewer.scene.screenSpaceCameraController.minimumZoomDistance=3;
  viewer.scene.screenSpaceCameraController.maximumZoomDistance=600000;
  osmLayer=viewer.imageryLayers.addImageryProvider(new C.OpenStreetMapImageryProvider({url:"https://tile.openstreetmap.org/"}));
- const s=st[10];
- viewer.camera.setView({destination:C.Cartesian3.fromDegrees(s.lon,s.lat,470),
+ const s=st[8];
+ viewer.camera.setView({destination:C.Cartesian3.fromDegrees(s.lon,s.lat,275),
  orientation:{heading:C.Math.toRadians(20),pitch:C.Math.toRadians(-48),roll:0}});
 }catch(e){announce("3D viewer শুরু হয়নি: "+e.message,0);return}
 const originalCameraFov=viewer.camera.frustum.fov;
@@ -119,11 +120,11 @@ st.forEach((s,i)=>{
  btn.append(a,text,num);
  btn.addEventListener("click",()=>focusStation(i));
  list.append(btn);
- viewer.entities.add({id:"station-"+i,name:s.n,position:lonlatPoint(s,26),
- point:{pixelSize:11,color:green,outlineColor:slate,outlineWidth:3,disableDepthTestDistance:Number.POSITIVE_INFINITY},
+ stationMarkers.push(viewer.entities.add({id:"station-"+i,name:s.n,position:lonlatPoint(s,26),
+ point:{pixelSize:8,color:green,outlineColor:slate,outlineWidth:2,disableDepthTestDistance:0},
  label:{text:s.n,font:"bold 13px system-ui",fillColor:C.Color.WHITE,outlineColor:C.Color.BLACK,
  outlineWidth:3,style:C.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new C.Cartesian2(0,-22),
- distanceDisplayCondition:new C.DistanceDisplayCondition(0,9000),disableDepthTestDistance:Number.POSITIVE_INFINITY}});
+ distanceDisplayCondition:new C.DistanceDisplayCondition(0,1200),disableDepthTestDistance:0}}));
 });
 // glTF 2.0 uses +Z-forward; Cesium converts it to +X. Adjust -90 degrees to
 // make the longitudinal axis of all train and station glTF files follow the rail's compass bearing.
@@ -134,10 +135,11 @@ function renderStructure(index){
  // Farmgate (index 10) gets its own original landmark geometry: curved
  // green roof, brick concourse, bridges, facade glass and street furniture.
  // Illustrative reconstruction, NOT photogrammetry or a measured survey.
- const farmgate=index===10;
- stationStructure=viewer.entities.add({name:s.n+(farmgate?" — Farmgate detailed reconstruction":" conceptual 3D station"),
+ const farmgate=index===10,agargaon=index===8;
+ const title=agargaon?" — Agargaon photo-referenced 3D":farmgate?" — Farmgate detailed reconstruction":" conceptual 3D station";
+ stationStructure=viewer.entities.add({name:s.n+title,
   position:lonlatPoint(s,0),orientation:modelOrientation(p),
-  model:{uri:farmgate?"assets/farmgate-landmark.gltf":"assets/mrt6-station-concept.gltf",
+  model:{uri:agargaon?"assets/agargaon-station.gltf":farmgate?"assets/farmgate-landmark.gltf":"assets/mrt6-station-concept.gltf",
    scale:1,minimumPixelSize:0,maximumScale:1}});
  setupStreetTraffic(index);
 }
@@ -189,6 +191,7 @@ function animateStreetTraffic(dt){
 }
 
 function updateStationText(){
+ stationMarkers.forEach((e,i)=>{e.show=!ride||i===selectedStation});
  list.querySelectorAll(".station").forEach(el=>el.classList.toggle("active",Number(el.dataset.index)===selectedStation));
  if(!$("etaPanel"))return;
  const box=$("etaPanel");box.replaceChildren();
@@ -699,7 +702,7 @@ $("myGPS").addEventListener("click",()=>{
 function cleanupModeLabels(){
  $("buildings").textContent="▥ Hide Buildings";$("buildings").classList.add("primary");
 }
-renderStructure(10);updateStationText();refreshTrainMarkerPositions();renderCoachSet();updateModeControls();cleanupModeLabels();updateCameraLabel();setQuality(1);
+renderStructure(8);updateStationText();refreshTrainMarkerPositions();renderCoachSet();updateModeControls();cleanupModeLabels();updateCameraLabel();setQuality(1);
 if(window.innerWidth<700){
  document.body.classList.add("panel-hidden");
  $("togglePanel").textContent="▤ Show Panel";
@@ -709,6 +712,6 @@ if(window.innerWidth<700){
   orientation:{heading:p.heading,pitch:C.Math.toRadians(-42),roll:0}});
  ride=true;$("follow").classList.add("primary");
 }
-satelliteToggle();loadBuildings(10);requestAnimationFrame(updateNow);
+satelliteToggle();loadBuildings(8);requestAnimationFrame(updateNow);
 announce("OSM real route + 3D trains + satellite + ETA estimates। এটি live GPS নয়।",11000);
 })();
