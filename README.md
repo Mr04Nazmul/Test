@@ -125,3 +125,12 @@ not provided. Google Photorealistic mode hides the conceptual details.
 - Mobile toolbar overlays are collapsed into a **More tools** launcher to keep the 3D scene unobstructed. Regeneration and automatic QA are handled in `.github/workflows/deploy-pages.yml`.
 
 Grounding sources: [DMTCL operational/track FAQ](https://dmtcl.gov.bd/pages/static-pages/6922e089933eb65569e27764), [Agargaon aerial / green roof](https://www.thedailystar.net/news/bangladesh/transport/news/birds-eye-view-all-metro-rail-stations-3459691), [Agargaon station Commons photo collection](https://commons.wikimedia.org/wiki/Category:Agargaon_metro_station). **This is a plausible visual reconstruction, not a certified photorealistic digital twin; no verified operator live GPS is connected.**
+
+## Multi-neighborhood 3D coverage and updated facades (2026-11-04)
+
+- The Cesium city renderer now streams **multiple OSM-derived neighborhood glTF tiles** simultaneously. Balanced mode loads the current station and its immediate neighbors on mobile (up to 3 tiles) or two stations either side on desktop (up to 5 tiles).
+- Select **🏙 Wider 3D** from the tools menu to load up to three station-neighborhoods on each side (up to 7 model tiles). `🏙 Local 3D` returns to the lighter near-city coverage.
+- Each tile is anchored to its own MRT-6 station coordinates; the scene updates the neighborhoods automatically when the station selection or followed train changes. The existing 3D Buildings control removes or restores all active city tiles.
+- The original `scripts/build-urban-models.mjs` now generates **extra procedural detailing** for all 16 station patches: glass shopfronts, awnings, balconies, rooftop water tanks, AC equipment and small roof greenery. Their presence and appearance are **illustrative**, not a measured visual inventory.
+- `scripts/check-urban-coverage.mjs` checks generated station models, glTF buffers, coverage UI hooks and OSM attribution at deployment.
+- These models represent building footprints in cached OSM station neighborhoods, **not every building or block between stations**. Missing OSM footprints, old snapshots, unknown building heights and storefront layouts limit real-world accuracy. This is not a photogrammetric or Google Earth reproduction, and estimated train locations are **not official realtime GPS**.
