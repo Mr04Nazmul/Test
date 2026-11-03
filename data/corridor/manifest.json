@@ -1,0 +1,429 @@
+{
+  "generator": "scripts/refresh-rail-corridor.mjs",
+  "source": "© OpenStreetMap contributors ODbL 1.0",
+  "tileCount": 30,
+  "available": 0,
+  "tiles": [
+    {
+      "id": "000",
+      "betweenStations": [
+        0,
+        1
+      ],
+      "alongMeters": 273,
+      "center": {
+        "lat": 23.8668104,
+        "lon": 90.3668015
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "001",
+      "betweenStations": [
+        0,
+        1
+      ],
+      "alongMeters": 819,
+      "center": {
+        "lat": 23.8621396,
+        "lon": 90.3654895
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "002",
+      "betweenStations": [
+        1,
+        2
+      ],
+      "alongMeters": 1480,
+      "center": {
+        "lat": 23.8562611,
+        "lon": 90.3645876
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "003",
+      "betweenStations": [
+        1,
+        2
+      ],
+      "alongMeters": 2256,
+      "center": {
+        "lat": 23.8493669,
+        "lon": 90.3634988
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "004",
+      "betweenStations": [
+        2,
+        3
+      ],
+      "alongMeters": 3014,
+      "center": {
+        "lat": 23.8425933,
+        "lon": 90.3632993
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "005",
+      "betweenStations": [
+        2,
+        3
+      ],
+      "alongMeters": 3754,
+      "center": {
+        "lat": 23.8361053,
+        "lon": 90.3636147
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "006",
+      "betweenStations": [
+        2,
+        3
+      ],
+      "alongMeters": 4495,
+      "center": {
+        "lat": 23.8294562,
+        "lon": 90.3638319
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "007",
+      "betweenStations": [
+        3,
+        4
+      ],
+      "alongMeters": 5264,
+      "center": {
+        "lat": 23.8225789,
+        "lon": 90.3643712
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "008",
+      "betweenStations": [
+        4,
+        5
+      ],
+      "alongMeters": 5971,
+      "center": {
+        "lat": 23.8164235,
+        "lon": 90.3660684
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "009",
+      "betweenStations": [
+        4,
+        5
+      ],
+      "alongMeters": 6587,
+      "center": {
+        "lat": 23.8110533,
+        "lon": 90.3675418
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "010",
+      "betweenStations": [
+        5,
+        6
+      ],
+      "alongMeters": 7167,
+      "center": {
+        "lat": 23.8060326,
+        "lon": 90.3690249
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "011",
+      "betweenStations": [
+        5,
+        6
+      ],
+      "alongMeters": 7710,
+      "center": {
+        "lat": 23.8015231,
+        "lon": 90.3710572
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "012",
+      "betweenStations": [
+        6,
+        7
+      ],
+      "alongMeters": 8229,
+      "center": {
+        "lat": 23.7971776,
+        "lon": 90.3728952
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "013",
+      "betweenStations": [
+        6,
+        7
+      ],
+      "alongMeters": 8723,
+      "center": {
+        "lat": 23.7930374,
+        "lon": 90.3746512
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "014",
+      "betweenStations": [
+        7,
+        8
+      ],
+      "alongMeters": 9339,
+      "center": {
+        "lat": 23.7878945,
+        "lon": 90.376869
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "015",
+      "betweenStations": [
+        7,
+        8
+      ],
+      "alongMeters": 10075,
+      "center": {
+        "lat": 23.7816439,
+        "lon": 90.3792263
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "016",
+      "betweenStations": [
+        8,
+        9
+      ],
+      "alongMeters": 10788,
+      "center": {
+        "lat": 23.7754621,
+        "lon": 90.3810457
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "017",
+      "betweenStations": [
+        8,
+        9
+      ],
+      "alongMeters": 11477,
+      "center": {
+        "lat": 23.7694571,
+        "lon": 90.3826659
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "018",
+      "betweenStations": [
+        9,
+        10
+      ],
+      "alongMeters": 12113,
+      "center": {
+        "lat": 23.7637768,
+        "lon": 90.3833671
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "019",
+      "betweenStations": [
+        9,
+        10
+      ],
+      "alongMeters": 12698,
+      "center": {
+        "lat": 23.7590789,
+        "lon": 90.3842247
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "020",
+      "betweenStations": [
+        10,
+        11
+      ],
+      "alongMeters": 13279,
+      "center": {
+        "lat": 23.7585307,
+        "lon": 90.3897243
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "021",
+      "betweenStations": [
+        10,
+        11
+      ],
+      "alongMeters": 13856,
+      "center": {
+        "lat": 23.753708,
+        "lon": 90.3917562
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "022",
+      "betweenStations": [
+        11,
+        12
+      ],
+      "alongMeters": 14470,
+      "center": {
+        "lat": 23.748533,
+        "lon": 90.3938479
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "023",
+      "betweenStations": [
+        11,
+        12
+      ],
+      "alongMeters": 15122,
+      "center": {
+        "lat": 23.7429532,
+        "lon": 90.3957911
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "024",
+      "betweenStations": [
+        12,
+        13
+      ],
+      "alongMeters": 15692,
+      "center": {
+        "lat": 23.7378783,
+        "lon": 90.3959266
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "025",
+      "betweenStations": [
+        12,
+        13
+      ],
+      "alongMeters": 16179,
+      "center": {
+        "lat": 23.7335238,
+        "lon": 90.395628
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "026",
+      "betweenStations": [
+        13,
+        14
+      ],
+      "alongMeters": 16755,
+      "center": {
+        "lat": 23.7294626,
+        "lon": 90.3989967
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "027",
+      "betweenStations": [
+        13,
+        14
+      ],
+      "alongMeters": 17419,
+      "center": {
+        "lat": 23.7290981,
+        "lon": 90.4046647
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "028",
+      "betweenStations": [
+        14,
+        15
+      ],
+      "alongMeters": 18061,
+      "center": {
+        "lat": 23.7301878,
+        "lon": 90.410602
+      },
+      "radiusMeters": 480,
+      "exists": false
+    },
+    {
+      "id": "029",
+      "betweenStations": [
+        14,
+        15
+      ],
+      "alongMeters": 18683,
+      "center": {
+        "lat": 23.7295634,
+        "lon": 90.4164841
+      },
+      "radiusMeters": 480,
+      "exists": false
+    }
+  ],
+  "description": "These are along-track corridor patches, separate from station-centered tiles; missing tiles remain empty instead of fake buildings."
+}

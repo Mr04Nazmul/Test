@@ -1,0 +1,7 @@
+{
+  "source": "© OpenStreetMap contributors ODbL 1.0",
+  "modelCount": 0,
+  "neededTiles": 30,
+  "generatedBy": "scripts/build-corridor-models.mjs",
+  "models": []
+}
