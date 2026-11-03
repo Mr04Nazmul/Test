@@ -25,38 +25,44 @@ function pngChunk(type,data){
  const t=Buffer.from(type),crc=Buffer.alloc(4);crc.writeUInt32BE(crc32(Buffer.concat([t,data])));
  return Buffer.concat([len,t,data,crc]);
 }
-function makeFacadeTexture(){
- const w=64,h=64,pixels=Buffer.alloc((w*4+1)*h);
+function makeFacadeTexture(style=0){
+ // Original procedural 2D textures applied to true OSM-footprint extrusions.
+ // Four distinctly Dhaka-like facade arrangements; no sourced aerial imagery.
+ const w=96,h=96,pixels=Buffer.alloc((w*4+1)*h);
+ const windows=style===0?[[9,35],[56,86]]:style===1?[[7,88]]:
+               style===2?[[7,27],[36,56],[65,85]]:[[12,48],[56,84]];
  for(let y=0;y<h;y++){
   const row=y*(w*4+1);pixels[row]=0;
   for(let x=0;x<w;x++){
-   let r=204,g=200,b=192;
-   // plaster, concrete slab line, two reflective glass windows per 4 m x 3.2 m tile
-   if(y<6||y>58){r=170;g=169;b=164}
-   else if((x>=6&&x<=28)||(x>=36&&x<=58)){
-    if(y>=15&&y<=51){
-     const frame=x<=28?(x<9||x>25||y<18||y>48):(x<39||x>55||y<18||y>48);
-     if(frame){r=92;g=104;b=111}
-     else {
-      const shine=(x+y)%23<4;
-      r=shine?160:98;g=shine?188:143;b=shine?196:159;
-      if(y>40){r+=5;g+=5;b+=4}
-     }
+   const grime=((x*17+y*13+style*43)%47===0)?-16:((x*3+y*11)%27===0?-7:0);
+   let r=247+grime,g=242+grime,b=234+grime;
+   if(y<5||y>91){r=190;g=185;b=176}
+   if(style===2&&y>69&&y<76){r=177;g=178;b=171}
+   if(style===3&&y>75){r=212;g=203;b=188}
+   const win=windows.find(([a,z])=>x>=a&&x<=z);
+   if(win&&y>15&&y<(style===2?67:style===3?71:78)){
+    const edge=x-win[0]<4||win[1]-x<4||y<19||y>(style===2?64:style===3?68:75);
+    if(edge){r=97;g=107;b=112}
+    else {
+     const sheen=(x+y*2+style*9)%37<6;
+     r=sheen?170:91;g=sheen?195:135;b=sheen?207:152;
+     if(style===3&&x%11<2){r=72;g=79;b=84}
     }
-   }else if(y>10&&y<55&&x%17===0){r=182;g=179;b=172}
+   }
+   if(style===1&&y>40&&y<46){r=161;g=162;b=159}
    const off=row+1+x*4;pixels[off]=r;pixels[off+1]=g;pixels[off+2]=b;pixels[off+3]=255;
   }
  }
  const header=Buffer.alloc(13);header.writeUInt32BE(w,0);header.writeUInt32BE(h,4);header[8]=8;header[9]=6;
- return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),pngChunk('IHDR',header),
-   pngChunk('IDAT',deflateSync(pixels,{level:9})),pngChunk('IEND',Buffer.alloc(0))]);
+ return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),
+  pngChunk('IHDR',header),pngChunk('IDAT',deflateSync(pixels,{level:9})),pngChunk('IEND',Buffer.alloc(0))]);
 }
-const facadePNG='data:image/png;base64,'+makeFacadeTexture().toString('base64');
-const colors=['#e6c7b4','#c9ddcf','#e3d3bb','#c8d5e6','#eadbaf','#c0ccc6','#e3c2bb','#d3d8c0'];
+const facadePNGs=[0,1,2,3].map(style=>'data:image/png;base64,'+makeFacadeTexture(style).toString('base64'));
+const colors=['#f1c2a6','#bbdfd3','#f0d1a8','#b7cfee','#e7dab2','#c5ccca','#ebbdad','#c9d4b5'];
 function rgba(hex){const s=hex.slice(1);return [parseInt(s.slice(0,2),16)/255,parseInt(s.slice(2,4),16)/255,parseInt(s.slice(4,6),16)/255,1]}
 function material(name,hex,texture=false){
  const pbr={baseColorFactor:rgba(hex),metallicFactor:0.02,roughnessFactor:texture?0.78:0.89};
- if(texture)pbr.baseColorTexture={index:0,texCoord:0};
+ if(Number.isInteger(texture))pbr.baseColorTexture={index:texture,texCoord:0};
  return {name,pbrMetallicRoughness:pbr,doubleSided:true};
 }
 const routeJS=readFileSync(join(root,'data','mrt6-track.js'),'utf8');
@@ -89,7 +95,7 @@ function nearRailCorridor(poly,routeXY,stationIndex){
  return poly.some(p=>minDist(p)<Math.max(10,buffer*.48));
 }
 const materials=[
- ...colors.map((c,i)=>material('windowed-plaster-'+i,c,true)),
+ ...colors.map((c,i)=>material('windowed-plaster-'+i,c,i%4)),
  material('roof-concrete','#b5aca0'),material('parapets','#c9c1b6'),
  material('roof-utilities','#7d8988'),
  material('ground-floor-shop-glass','#7eacbf'),
@@ -102,9 +108,10 @@ const materials=[
  material('small-roof-greenery','#506f54'),
  material('osm-road-asphalt','#4d5359'),material('osm-lane-markings','#e7e2cb'),
  material('osm-tree-bark','#7a583f'),material('osm-tree-leaves','#3b754c'),
- material('osm-tree-leaves-light','#5d8c5d')
+ material('osm-tree-leaves-light','#5d8c5d'),
+ ...['#b7aaa0','#c4b2a7','#a4aaad','#d1c3b5','#b5ada4','#9eaaa8','#c7bdb1','#aeaca4'].map((h,i)=>material('roof-original-'+i,h))
 ];
-const osmMaterials={road:materials.length-5,lane:materials.length-4,trunk:materials.length-3,leaf:materials.length-2,leafLight:materials.length-1};
+const osmMaterials={road:19,lane:20,trunk:21,leaf:22,leafLight:23};
 const detailMaterials={shop:11,awningGreen:12,awningRed:13,balcony:14,rail:15,tank:16,aircon:17,green:18};
 
 function newGroup(){return {positions:[],normals:[],uv:[],indices:[]}}
@@ -204,7 +211,8 @@ function makeModel(data,index){
  // Cesium ModelGraphics defaults: Y-up glTF is upright, with +Z facing east and +X facing north.
  // Map the OSM north/east displacements to those local axes; do not flip north.
  const routeXY=trackNodes.map(([lat,lon])=>[(lat-cy)*latScale,(lon-cx)*lonScale]);
- const merged=mergeOSMFootprints(data,index),allBuildings=merged.items;
+ const merged={items:data.buildings||[],legacyCount:0},allBuildings=merged.items;
+ // Prevent second overlapping old footprint datasets that made unrealistic blocks.
  let count=0,known=0,triangles=0,clearedNearTrack=0;
  for(const item of allBuildings.slice(0,900)){
   if(!Array.isArray(item.p)||item.p.length<4)continue;
@@ -220,10 +228,11 @@ function makeModel(data,index){
   const seed=Math.abs(Number(item.id)||item.p.length*98761);
   const chosenHeight=Number(item.h);
   const genuine=item.h!==undefined&&item.h!==null&&Number.isFinite(chosenHeight)&&chosenHeight>1;
-  let height=genuine?chosenHeight:8+(seed%9)*3.15;
+  const profile=index<=2?[7.5,2.05,10]:index<=7?[9.2,2.2,10]:index===8||index===13?[6.5,1.9,8]:index>=14?[12,3.5,10]:[9.5,2.75,10];
+   let height=genuine?chosenHeight:profile[0]+(seed%profile[2])*profile[1];
   height=clamp(height,4.4,110);
   if(genuine)known++;
-  const orientation=a>=0?1:-1,g=groups[seed%colors.length],roof=groups[8],parapet=groups[9];
+  const orientation=a>=0?1:-1,g=groups[seed%colors.length],roof=groups[24+seed%8],parapet=groups[9];
   for(let j=0;j<coords.length;j++){
    const p=coords[j],q=coords[(j+1)%coords.length],dx=q[0]-p[0],dz=q[1]-p[1],length=Math.hypot(dx,dz);
    if(length<.22)continue;
@@ -362,8 +371,8 @@ function makeModel(data,index){
   asset:{version:'2.0',generator:'Dhaka MRT-6 OSM footprint 3D mesh builder; heights/windows may be estimates'},
   scene:0,scenes:[{nodes:[0]}],nodes:[{mesh:0,name:'Station '+index+' surrounding real OSM building footprints'}],
   meshes:[{primitives}],materials,
-  textures:[{sampler:0,source:0}],samplers:[{magFilter:9729,minFilter:9987,wrapS:10497,wrapT:10497}],
-  images:[{uri:facadePNG,mimeType:'image/png'}],
+  textures:facadePNGs.map((_,i)=>({sampler:0,source:i})),samplers:[{magFilter:9729,minFilter:9987,wrapS:10497,wrapT:10497}],
+  images:facadePNGs.map(uri=>({uri,mimeType:'image/png'})),
   buffers:[{uri:'data:application/octet-stream;base64,'+binary.toString('base64'),byteLength:binary.length}],
   bufferViews,accessors,
   extras:{station:index,buildingFootprints:count,knownHeights:known,inferredHeights:count-known,legacyOSMBuildingCandidates:merged.legacyCount,
