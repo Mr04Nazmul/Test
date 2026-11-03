@@ -1,0 +1,32 @@
+// Deployment smoke tests: static markup, smooth train sampler and UI contract.
+import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
+import assert from 'node:assert/strict';
+
+const html=readFileSync('index.html','utf8');
+const app=readFileSync('app-v2.js','utf8');
+const sched=readFileSync('data/metro-schedule.js','utf8');
+const ctx={window:{},Date,Math,console};
+runInNewContext(sched,ctx);
+const service=ctx.window.MRT_SCHEDULE;
+assert.equal(typeof service.positionFor,'function','Frame-level train samples unavailable');
+const id='S06:30',north='N07:15';
+const a=service.positionFor(id,{minute:391,weekDay:3});
+const b=service.positionFor(id,{minute:391.016,weekDay:3});
+assert(a&&b,'Schedule train IDs must match');
+assert(b.position>a.position,'Southbound train must move smoothly between fractional-time samples');
+const c=service.positionFor(north,{minute:437,weekDay:3});
+const d=service.positionFor(north,{minute:437.016,weekDay:3});
+assert(c&&d&&d.position<c.position,'Northbound direction must move toward Uttara');
+assert.equal(service.positionFor('BAD_TRAIN_ID'),null);
+const ui=['camMode','orbitLeft','orbitRight','zoomIn','zoomOut','quality','follow','satellite','myGPS','google'];
+for(const id of ui){
+ assert(html.includes('id="'+id+'"'),'Missing 3D control: '+id);
+ assert(app.includes('$("'+id+'")'),'3D control not wired: '+id);
+}
+assert(app.includes('renderCoachSet(dt);'),'Train should animate on every frame');
+assert(app.includes('updateFollowCamera();'),'Following camera not animated');
+assert(app.includes('World_Transportation/MapServer'),'Real street/road overlay absent');
+assert(app.includes('assets/urban/'),'OSM building glTF loading missing');
+assert(html.includes('NOT GPS'),'Simulated data must not be labelled as official GPS');
+console.log('PASS smooth train samples, route camera hooks, 360°/zoom/quality controls and map-source accuracy.');
