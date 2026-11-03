@@ -17,7 +17,7 @@ const slate=C.Color.fromCssColorString("#14354d"),green=C.Color.fromCssColorStri
 let viewer,osmLayer=null,satLayer=null,roadsLayer=null,labelsLayer=null,googleTiles=null,googleMode=false,satelliteOn=false;
 let selectedStation=8,mode="estimate",selectedTrain="",trainData=[],focused=null;
 let playing=true,demoMeters=0,rate=1,ride=false,worldModels=[],buildings=[],showBuildings=true;
-let cameraStyle="chase",orbitYaw=0,orbitPitch=-0.27,followDistance=105,gpsDisplayMeters=null;
+let cameraStyle="chase",orbitYaw=0,orbitPitch=-0.40,followDistance=155,gpsDisplayMeters=null;
 let lastFrame=0,lastMapUpdate=0,lastMarkerAnimation=0,etaLast=0,stationStructure=null,trainEntities=[],trainMarkers=new Map();
 const stationMarkers=[];
 let loadTicket=0,bldgRequest=null,gpsWatchId=null,gpsMeters=null,gpsMark=null;
@@ -322,13 +322,25 @@ function updateStationText(){
  box.append(foot);
 }
 function clearViewLock(){viewer.camera.lookAtTransform(C.Matrix4.IDENTITY);if(typeof originalCameraFov==="number")viewer.camera.frustum.fov=originalCameraFov;ride=false;$("follow").classList.remove("primary")}
+function stationCinematicCamera(index,animate=true){
+ // Genuine 3D street-side elevated approach, not a camera stuck on the rails.
+ const p=at(stopMeters[index]),d=stopMeters[index]-170;
+ const origin=shiftedCoordinateAt(d,-92),height=102;
+ const east=(p.lon-origin.lon)*111320*Math.cos(C.Math.toRadians(p.lat));
+ const north=(p.lat-origin.lat)*111320;
+ const horizontal=Math.max(1,Math.hypot(east,north));
+ const destination=C.Cartesian3.fromDegrees(origin.lon,origin.lat,height);
+ const orientation={heading:Math.atan2(east,north),
+  pitch:-Math.atan2(height-24,horizontal),roll:0};
+ if(animate)viewer.camera.flyTo({destination,orientation,duration:1.22});
+ else viewer.camera.setView({destination,orientation});
+}
 function focusStation(i){
  selectedStation=i;clearViewLock();renderStructure(i);updateStationText();
+ nearbyRailFurniture(i);
  if(showBuildings&&!googleMode)loadBuildings(i);
- const s=st[i];
- viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(s.lon,s.lat,i===8?255:380),
- orientation:{heading:at(stopMeters[i]).heading+C.Math.toRadians(22),pitch:C.Math.toRadians(i===8?-54:-48),roll:0},duration:1.15});
- announce(nameFor(i)+" — স্টেশনের 3D মডেল ও আনুমানিক ট্রেনের সময়",5000);
+ stationCinematicCamera(i,true);
+ announce(nameFor(i)+" — সিনেমাটিক স্টেশনের দৃশ্য, বাস্তব রুটে আনুমানিক 3D পরিবেশ",5500);
 }
 function overview(){
  clearViewLock();viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(90.389,23.793,24000),
@@ -436,19 +448,15 @@ function updateFollowCamera(){
  for(const b of buildings)b.show=showBuildings&&!googleMode&&!(ride&&cameraStyle==="front"&&nearStation);
  for(const e of farmgateDetails){const hideFront=ride&&cameraStyle==="front"&&nearStation&&e.name.includes(" — buildings ");e.show=!googleMode&&!(hideFront||(!showBuildings&&(e.name.includes(" — buildings ")||e.name.includes(" — shopfronts "))));}
  if(!ride)return;
- if(cameraStyle==="front"){
-  // Camera at the train nose looking along the real mapped track; NOT video.
-  if(typeof originalCameraFov==="number")viewer.camera.frustum.fov=C.Math.toRadians(clamp(followDistance*1.1,23,95));
-  const ahead=at(focused.distance+(focused.dir==="south"?1:-1)*10,focused.dir);
-  viewer.camera.setView({destination:C.Cartesian3.fromDegrees(ahead.lon,ahead.lat,22.8),
-   orientation:{heading:focused.heading+orbitYaw,pitch:C.Math.toRadians(-2)+orbitPitch*0.12,roll:0}});
- }else{
-  if(typeof originalCameraFov==="number")viewer.camera.frustum.fov=originalCameraFov;
-  const pitch=cameraStyle==="top"?-1.12:orbitPitch;
-  const range=cameraStyle==="top"?Math.max(105,followDistance):followDistance;
-  viewer.camera.lookAt(lonlatPoint(focused,21.4),
-   new C.HeadingPitchRange(focused.heading+C.Math.PI+orbitYaw,pitch,range));
- }
+ if(typeof originalCameraFov==="number")viewer.camera.frustum.fov=originalCameraFov;
+ // All modes use an OUTSIDE camera: the train, adjacent roads and buildings
+ // are visible rather than placing the user INSIDE the roof or viaduct model.
+ const front=cameraStyle==="front",top=cameraStyle==="top";
+ const heading=focused.heading+(front?0:Math.PI)+orbitYaw;
+ const pitch=top?-1.12:front?clamp(orbitPitch-.13,-.90,-.22):clamp(orbitPitch,-.92,-.18);
+ const range=top?Math.max(145,followDistance):Math.max(78,followDistance);
+ viewer.camera.lookAt(lonlatPoint(focused,21.6),
+  new C.HeadingPitchRange(heading,pitch,range));
 }
 function animateTrainMarkers(){
  if(mode!=="estimate")return;
@@ -478,7 +486,8 @@ function updateNow(t){
     if(d<dist){closest=j;dist=d;}
    }
    if(closest!==selectedStation){
-    selectedStation=closest;renderStructure(closest);updateStationText();loadBuildings(closest);
+    selectedStation=closest;renderStructure(closest);updateStationText();
+    nearbyRailFurniture(closest);loadBuildings(closest);
    }
   }
  }
@@ -645,7 +654,7 @@ $("dayNight").addEventListener("click",()=>setDaylightMode(daylightMode==="day"?
 
 const cameraModes=[
  {id:"chase",label:"▣ Rear Chase"},
- {id:"front",label:"▣ Front View"},
+ {id:"front",label:"◧ Front Cinematic"},
  {id:"top",label:"▣ Drone Top"},
  {id:"orbit",label:"◉ Orbit 360°"}
 ];
@@ -656,7 +665,7 @@ function updateCameraLabel(){
 function useCameraMode(id){
  cameraStyle=id;ride=true;orbitYaw=0;
  orbitPitch=id==="orbit"?-0.36:-0.27;
- followDistance=id==="top"?190:id==="front"?38:105;
+ followDistance=id==="top"?190:id==="front"?118:155;
  $("follow").classList.add("primary");updateCameraLabel();
  updateFollowCamera();
 }
@@ -856,14 +865,12 @@ $("myGPS").addEventListener("click",()=>{
 function cleanupModeLabels(){
  $("buildings").textContent="▥ Hide Buildings";$("buildings").classList.add("primary");
 }
-renderStructure(8);updateStationText();refreshTrainMarkerPositions();renderCoachSet();updateModeControls();cleanupModeLabels();updateCameraLabel();setQuality(1);
+renderStructure(8);nearbyRailFurniture(8);updateStationText();refreshTrainMarkerPositions();renderCoachSet();updateModeControls();cleanupModeLabels();updateCameraLabel();setQuality(1);
 if(window.innerWidth<700){
  document.body.classList.add("panel-hidden");
  $("togglePanel").textContent="▤ Show Panel";
  // Open with the new Agargaon architecture visible. Follow mode stays one tap away.
- const p=at(stopMeters[8]);
- viewer.camera.setView({destination:C.Cartesian3.fromDegrees(p.lon,p.lat,265),
-  orientation:{heading:p.heading+C.Math.toRadians(25),pitch:C.Math.toRadians(-61),roll:0}});
+ stationCinematicCamera(8,false);
  ride=false;$("follow").classList.remove("primary");
 }
 satelliteToggle();loadBuildings(8);requestAnimationFrame(updateNow);
