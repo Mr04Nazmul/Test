@@ -145,3 +145,12 @@ Grounding sources: [DMTCL operational/track FAQ](https://dmtcl.gov.bd/pages/stat
 - `app-v2.js` loads the neighborhood mesh only for the selected station, alongside the OSM building model. Surrounding props are hidden while authorized Google 3D Tiles are active. Original train route, camera modes, simulator vs GPS truth labels and Esri attribution remain in place.
 - Both deployment workflows generate and validate all sixteen neighborhood assets with `scripts/check-neighborhood.mjs` before uploading to GitHub Pages. In isolated generator validation 16 outputs were produced (268,912 model triangles total, approx. 21.5 MB raw embedded geometry across all files). This is **not** a report of a verified public deployment or mobile FPS benchmark.
 - The reference screenshot cannot by itself establish centimeter-accurate facades, building heights, tree positions, traffic, or road geometry. Photo-exact reconstruction would require verified site photos, mapping data, or an authorized 3D survey.
+
+
+## Bangladesh city colors, neighborhood roads and optional ambience
+
+- Building façade tones have been changed in `scripts/build-urban-models.mjs` to a varied, believable Dhaka palette: plaster peach, muted mint, ochre, light blue, cream, and brick pink. Each mapped OpenStreetMap building footprint retains its original location; unknown height and appearance remain **estimates**.
+- Every one of the **16 MRT-6 station** local street scenes in `assets/nearby/{0..15}.gltf` now includes modeled asphalt, painted lanes, sidewalks, curb edging and zebra crossings. These are **illustrative station-area approaches, not surveyed street alignments**. OSM/satellite imagery remains the map's geographic source.
+- Trees, street vendors, people, lamps and storefronts remain original geometric approximations. More distant buildings are streamed from neighboring OSM tiles via **Wider 3D**; this is intentionally optional to keep mobile performance usable.
+- The visible **🔇 City Sound** button starts an original **Web Audio synthesized** ambient bed (cars, distant hubbub, vehicle pass-bys, horns, rickshaw bells and birds). Sounds vary by station category but **are not real location recordings**. Sound defaults to OFF, requires a user gesture, and automatically mutes when the browser tab is hidden. There is no microphone, tracking, upload, third-party music or recorded conversation.
+- GitHub Actions verifies both the glTF structures and the no-autoplay audio/HTML hooks with `node scripts/check-dhaka-environment.mjs`.
