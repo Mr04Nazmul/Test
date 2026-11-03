@@ -28,6 +28,7 @@ jobs:
         run: |
           node --check data/metro-schedule.js
           node --check app-v2.js
+          node --check dhaka-soundscape.js
           node --check scripts/build-farmgate-landmark.mjs
           node --check scripts/build-dhaka-traffic.mjs
           node scripts/check-metro-quality.mjs
@@ -72,6 +73,8 @@ jobs:
           node --check scripts/build-neighborhood-props.mjs
           node scripts/build-neighborhood-props.mjs
           node scripts/check-neighborhood.mjs
+      - name: Verify painted local roads and opt-in Bangladesh ambience
+        run: node scripts/check-dhaka-environment.mjs
       - name: Generate Dhaka vehicles
         run: node scripts/build-dhaka-traffic.mjs
       - name: Build and validate Farmgate street micro-models
