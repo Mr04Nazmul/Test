@@ -66,3 +66,13 @@ To regenerate locally: run `node scripts/build-urban-models.mjs` from the reposi
 - The build produces `assets/dhaka-bus.gltf`, `assets/dhaka-rickshaw.gltf`, and `assets/dhaka-car.gltf` automatically, with no extra npm packages or paid asset API.
 - Ten traffic models appear at illustrative local roads around Farmgate station. Their low-speed street animation is a **simulation only**, not actual traffic or observed vehicle positions.
 - Traffic hides in Google Photorealistic 3D mode to reduce mismatches between illustrative streets and real tiles.
+
+## Agargaon dedicated 3D station — 2026-11-04
+
+- A **new authored glTF 2.0 3D model** is committed at `assets/agargaon-station.gltf`, not merely a screenshot. It has **1,148 model nodes and 33 material variants**. Regenerate it with `node scripts/build-agargaon-station.mjs`.
+- The model is **photo-referenced** against the Agargaon green arched canopy, cream concrete structural frames, reddish brick walls, window panels, entrance stairs, pedestrian covered connectors, elevated side platforms and local road/traffic cues. Sources: [Wikimedia Commons Agargaon entrance](https://commons.wikimedia.org/wiki/File:Agargaon_metro_station_entrance_15.jpg) and [Agargaon station photo category](https://commons.wikimedia.org/wiki/Category:Agargaon_metro_station). It is not a surveyed, dimensionally exact digital twin and does not reproduce any protected photograph.
+- Includes roadway, pavements, sidewalk railings, green canopies, cars, buses, autorickshaws, plants and streetlights. These street objects and vehicle positions are **illustrative and not real-time**.
+- Station **index 8** loads the dedicated Agargaon model instead of the generic MRT station. A new **Agargaon 3D** shortcut opens its location, and the mobile default view starts above Agargaon. The existing dedicated Farmgate model is preserved.
+- Mobile controls are collapsible and the station shortcuts scroll sideways to prevent overlapping the camera toolbar. Station and train labels are hidden/reduced in close follow mode to remove the on-screen cluster.
+- The urban mesh builder omits visual 3D buildings that appear to intersect the track/camera clearance. Underlying OpenStreetMap footprint records are unchanged. This reduces first-person black-wall clipping and increases facade/window brightness.
+- CI runs `node scripts/check-metro-quality.mjs` and `node scripts/check-agargaon-station.mjs` to check model references, camera controls, and geometry. A passed source/geometry check is not proof of perfectly photorealistic visual output in Safari.
