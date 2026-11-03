@@ -8,6 +8,8 @@
 - A single station-at-a-time detailed conceptual **glTF** elevated station structure (not an accurate survey of the real station).
 - Esri satellite/aerial imagery base layer, OSM street-map fallback, OSM building-footprint extrusions around selected station (heights may be guessed).
 - Simulated, **timetable-estimated positions** for multiple trains and per-station ETA, using Dhaka UTC+6 time. Train marker list, selected train, Find Train and Follow Camera.
+- **My Train GPS** uses optional, user-approved phone geolocation to snap **the user's own position** to the railway only when within roughly 200 m; it is not the actual GPS feed for any other train. The project does not upload phone coordinates to its server.
+- Mobile opens in a train-follow camera with the controls/ETA panel initially collapsed; 3D concrete guideway and separate elevated rails are approximate reconstructions.
 - Optional official Google Map Tiles API photorealistic 3D mode with restricted user-provided API key (Google data never scraped, extracted or cached).
 
 ## Accurate labeling and limits
