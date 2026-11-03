@@ -35,6 +35,11 @@ jobs:
           node scripts/build-dhaka-university-landmark.mjs
       - name: Generate Dhaka road vehicles
         run: node scripts/build-dhaka-traffic.mjs
+      - name: Build and validate Farmgate street micro-models
+        run: |
+          node --check scripts/build-farmgate-details.mjs
+          node scripts/build-farmgate-details.mjs
+          node scripts/check-farmgate-details.mjs
       - uses: actions/upload-pages-artifact@v4
         with:
           path: .
