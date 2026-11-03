@@ -31,3 +31,16 @@ For native GPS positions in the future: request an official DMTCL feed/license o
 
 ## Deployment
 GitHub repository Settings > Pages > Source: GitHub Actions. Workflow: `.github/workflows/deploy.yml`.
+
+## Textured 3D Dhaka station neighbourhoods (added 2026-11-03)
+
+A dependency-free Node script `scripts/build-urban-models.mjs` converts the cached OpenStreetMap footprint polygons in `data/buildings/*.json` into standalone, textured glTF 2.0 3D meshes, one per station. Both GitHub Pages publishing workflows generate the assets automatically. The live generated manifest is:
+
+- https://mr04nazmul.github.io/Test/assets/urban/manifest.json
+- Farmgate glTF model: https://mr04nazmul.github.io/Test/assets/urban/10.gltf
+- Mirpur 10 glTF model: https://mr04nazmul.github.io/Test/assets/urban/5.gltf
+- Motijheel glTF model: https://mr04nazmul.github.io/Test/assets/urban/15.gltf
+
+Each model is positioned on the real station coordinates in the Cesium viewer, with satellite base imagery; choose stations from the panel. Rendered shapes correspond to mapped OSM footprints, **not** surveyed photo-real 3D scans. Building height is estimated if absent; facades, windows, roof parapets and rooftop utility fixtures are original procedural approximations. Some offline footprints came from older OSM snapshots, and they may be incomplete.
+
+To regenerate locally: run `node scripts/build-urban-models.mjs` from the repository root. `assets/urban/*.gltf` and `assets/urban/manifest.json` will be created. The generated assets retain the original ODbL/OSM attribution in their metadata. Browser display requires WebGL and an internet connection to load imagery. Model generation itself requires no paid provider or API key.
