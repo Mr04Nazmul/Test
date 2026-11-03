@@ -79,7 +79,7 @@ Individual station running durations and dwell estimates are approximations. */
  // Sample any scheduled train at the CURRENT fractional minute (including seconds).
  // Unlike one-second marker polling, this stays continuous on every animation frame.
  function positionFor(trainId, now=dhakaClock()){
-  const match=/^([SN])(\\d{2}):(\\d{2})$/.exec(String(trainId||""));
+  const match=/^([SN])(\d{2}):(\d{2})$/.exec(String(trainId||""));
   if(!match)return null;
   const dir=match[1]==="S"?"south":"north";
   const dep=Number(match[2])*60+Number(match[3]);
