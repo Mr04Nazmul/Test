@@ -43,7 +43,7 @@ function startWatch(onPosition){
   watcher=p;
   p.on("open",()=>{if(finished)return;finished=true;clearTimeout(timeout);
    const link=new URL("share-live.html",window.location.href);
-   link.search="?watch="+encodeURIComponent(id);
+   link.hash="watch="+encodeURIComponent(id); // Fragment is not sent to website/CDN servers.
    watchLink=link.href;status("waiting",{link:watchLink});resolve({link:watchLink,peerId:id});
   });
   p.on("connection",conn=>{
