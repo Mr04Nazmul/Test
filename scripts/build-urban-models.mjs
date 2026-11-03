@@ -207,7 +207,30 @@ function makeModel(data,index){
  const center=stationCenters[index];
  if(!center||center.length!==2)throw Error('Missing map anchor for station '+index);
  const cx=center[0],cy=center[1],lonScale=111320*Math.cos(cy*Math.PI/180),latScale=111320;
- const groups=materials.map(newGroup);
+ const localMaterials=[...materials],groups=localMaterials.map(newGroup);
+ const tagged=new Map();
+ let mappedWallColours=0,mappedRoofColours=0;
+ function trueOSMColor(raw){
+  if(typeof raw!=='string')return null;
+  const v=raw.trim().toLowerCase();
+  const named={white:'#ffffff',black:'#222222',grey:'#888888',gray:'#888888',red:'#bd4942',
+   brown:'#8f6254',beige:'#d7c2a3',cream:'#e8d7b6',blue:'#5985ab',
+   green:'#608866',yellow:'#dbc471',orange:'#c98b53',silver:'#adb3b7',pink:'#d7a5af'};
+  if(named[v])return named[v];
+  if(/^#[0-9a-f]{3}$/.test(v))return '#'+v.slice(1).split('').map(c=>c+c).join('');
+  if(/^#?[0-9a-f]{6}$/.test(v))return v[0]==='#'?v:'#'+v;
+  return null;
+ }
+ function taggedSurface(raw,kind){
+  const hex=trueOSMColor(raw);if(!hex)return null;
+  const key=kind+hex;
+  if(tagged.has(key))return groups[tagged.get(key)];
+  if(tagged.size>=32)return null; // Keep the material budget mobile-friendly.
+  const index=groups.length;
+  localMaterials.push(material('OSM tagged '+kind+' '+hex,hex,kind==='wall'?1:false));
+  groups.push(newGroup());tagged.set(key,index);
+  return groups[index];
+ }
  // Cesium ModelGraphics defaults: Y-up glTF is upright, with +Z facing east and +X facing north.
  // Map the OSM north/east displacements to those local axes; do not flip north.
  const routeXY=trackNodes.map(([lat,lon])=>[(lat-cy)*latScale,(lon-cx)*lonScale]);
@@ -232,7 +255,11 @@ function makeModel(data,index){
    let height=genuine?chosenHeight:profile[0]+(seed%profile[2])*profile[1];
   height=clamp(height,4.4,110);
   if(genuine)known++;
-  const orientation=a>=0?1:-1,g=groups[seed%colors.length],roof=groups[24+seed%8],parapet=groups[9];
+  const orientation=a>=0?1:-1,parapet=groups[9];
+   const actualWall=taggedSurface(item.wallColor,'wall'),actualRoof=taggedSurface(item.roofColor,'roof');
+   const g=actualWall||groups[seed%colors.length],roof=actualRoof||groups[24+seed%8];
+   if(actualWall)mappedWallColours++;
+   if(actualRoof)mappedRoofColours++;
   for(let j=0;j<coords.length;j++){
    const p=coords[j],q=coords[(j+1)%coords.length],dx=q[0]-p[0],dz=q[1]-p[1],length=Math.hypot(dx,dz);
    if(length<.22)continue;
@@ -370,12 +397,12 @@ function makeModel(data,index){
  const model={
   asset:{version:'2.0',generator:'Dhaka MRT-6 OSM footprint 3D mesh builder; heights/windows may be estimates'},
   scene:0,scenes:[{nodes:[0]}],nodes:[{mesh:0,name:'Station '+index+' surrounding real OSM building footprints'}],
-  meshes:[{primitives}],materials,
+  meshes:[{primitives}],materials:localMaterials,
   textures:facadePNGs.map((_,i)=>({sampler:0,source:i})),samplers:[{magFilter:9729,minFilter:9987,wrapS:10497,wrapT:10497}],
   images:facadePNGs.map(uri=>({uri,mimeType:'image/png'})),
   buffers:[{uri:'data:application/octet-stream;base64,'+binary.toString('base64'),byteLength:binary.length}],
   bufferViews,accessors,
-  extras:{station:index,buildingFootprints:count,knownHeights:known,inferredHeights:count-known,legacyOSMBuildingCandidates:merged.legacyCount,
+  extras:{station:index,buildingFootprints:count,knownHeights:known,inferredHeights:count-known,mappedWallColours,mappedRoofColours,legacyOSMBuildingCandidates:merged.legacyCount,
    addedIllustrativeDetails:'shopfront glass and sunshades, balcony slabs, rooftop tanks and AC fixtures',
    anchor:{longitude:cx,latitude:cy},coordinateSystem:'Cesium entity glTF X=north Y=up Z=east',provenance:data.source,license:'ODbL 1.0 © OpenStreetMap contributors',
    clearedNearTrack,roadSegments:streetSegments,mappedTreeNodes:treeCount,
@@ -390,7 +417,7 @@ for(let index=0;index<16;index++){
  const data=JSON.parse(readFileSync(path,'utf8'));
  const {model,count,known,triangles}=makeModel(data,index);
  const name=index+'.gltf';writeFileSync(join(destination,name),JSON.stringify(model));
- report.push({index,name,buildings:count,knownHeights:known,approximateHeights:count-known,legacyOSMBuildingCandidates:model.extras.legacyOSMBuildingCandidates,triangles,anchor:model.extras.anchor,source:model.extras.provenance,clearedNearTrack:model.extras.clearedNearTrack,roadSegments:model.extras.roadSegments,mappedTreeNodes:model.extras.mappedTreeNodes});
+ report.push({index,name,buildings:count,knownHeights:known,approximateHeights:count-known,legacyOSMBuildingCandidates:model.extras.legacyOSMBuildingCandidates,triangles,anchor:model.extras.anchor,source:model.extras.provenance,mappedWallColours:model.extras.mappedWallColours,mappedRoofColours:model.extras.mappedRoofColours,clearedNearTrack:model.extras.clearedNearTrack,roadSegments:model.extras.roadSegments,mappedTreeNodes:model.extras.mappedTreeNodes});
 }
 writeFileSync(join(destination,'manifest.json'),JSON.stringify({generatedBy:'scripts/build-urban-models.mjs',source:'OpenStreetMap ODbL + procedural surfaces',models:report},null,2));
 console.log('Generated',report.length,'MRT-6 surrounding-area glTF 3D models:',report.map(x=>x.index+':'+x.buildings).join(', '));
