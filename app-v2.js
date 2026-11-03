@@ -69,6 +69,27 @@ viewer.entities.add({name:"MRT Line 6 elevated viaduct · OSM trace",polyline:{
 viewer.entities.add({name:"MRT Line 6 rails · OSM trace",polyline:{
  positions:C.Cartesian3.fromDegreesArrayHeights(pts.flatMap(p=>[p[1],p[0],19.75])),
  width:4,material:new C.PolylineGlowMaterialProperty({glowPower:.12,color:green})}});
+// Visible 3D concrete viaduct and two pairs of steel rails following the curved OSM track.
+try{
+ viewer.entities.add({name:"Elevated concrete guideway (3D approximate)",corridor:{
+  positions:C.Cartesian3.fromDegreesArray(pts.flatMap(p=>[p[1],p[0]])),
+  width:7.2,height:18.4,extrudedHeight:17.95,
+  material:C.Color.fromCssColorString("#b4b6b5")}});
+ function offsetTrack(shift){
+  return C.Cartesian3.fromDegreesArrayHeights(pts.flatMap((p,i)=>{
+   const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)];
+   const lat=p[0],cos=Math.cos(C.Math.toRadians(lat));
+   const de=(b[1]-a[1])*111320*cos,dn=(b[0]-a[0])*111320,n=Math.max(1e-7,Math.hypot(de,dn));
+   return [p[1]+(-dn/n)*shift/(111320*cos),p[0]+(de/n)*shift/111320,19.45];
+  }));
+ }
+ for(const offset of [-2.85,-1.45,1.45,2.85]){
+  viewer.entities.add({name:"MRT-6 steel rail (approximate)",polyline:{
+   positions:offsetTrack(offset),width:2,
+   material:C.Color.fromCssColorString("#44494d")}});
+ }
+}catch(e){console.warn("Guideway geometry unavailable:",e)}
+
 for(let d=95;d<trackLength;d+=140){
  const p=at(d);
  viewer.entities.add({name:"Illustrative rail support",position:lonlatPoint(p,8.8),
@@ -348,6 +369,7 @@ function cleanupModeLabels(){
  $("buildings").textContent="▥ Hide Buildings";$("buildings").classList.add("primary");
 }
 renderStructure(10);updateStationText();refreshTrainMarkerPositions();renderCoachSet();updateModeControls();cleanupModeLabels();
+if(window.innerWidth<700){document.body.classList.add("panel-hidden");$("togglePanel").textContent="▤ Show Panel";}
 satelliteToggle();loadBuildings(10);requestAnimationFrame(updateNow);
 announce("OSM real route + 3D trains + satellite + ETA estimates। এটি live GPS নয়।",11000);
 })();
