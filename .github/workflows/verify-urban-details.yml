@@ -1,0 +1,25 @@
+name: Verify 3D Neighborhood Detail Models
+on:
+  push:
+    paths:
+      - .github/workflows/verify-urban-details.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate detailed 3D neighborhood tiles
+        run: |
+          node --check scripts/build-urban-details.mjs
+          node scripts/build-urban-details.mjs
+      - name: Inspect 3D detail glTF geometry and frontend linkage
+        run: node scripts/check-urban-details.mjs
+      - name: Upload validated glTF model set
+        uses: actions/upload-artifact@v4
+        with:
+          name: dhaka-neighborhood-3d
+          path: assets/urban-details/
+          retention-days: 7
