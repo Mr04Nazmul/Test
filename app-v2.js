@@ -474,6 +474,118 @@ trainPick.setInputAction(click=>{
  if(id&&svc.positionFor(id)){selectedTrain=id;findTrain(id)}
 },C.ScreenSpaceEventType.LEFT_CLICK);
 
+// Consent-based, ephemeral live GPS from a rider's *phone*. It is not train
+// telemetry, never counted among DMTCL timetable trains or made public.
+let riderGPSMark=null,riderGPSLatest=null,riderFollowing=false;
+const riderPanel=$("riderGPSPanel");
+const riderStatus=$("riderGPSStatus");
+function openRiderGPS(force){
+ riderPanel.hidden=force===undefined?!riderPanel.hidden:!force;
+ $("riderGPSButton").setAttribute("aria-expanded",String(!riderPanel.hidden));
+}
+function removeRiderMarker(){
+ if(riderGPSMark){viewer.entities.remove(riderGPSMark);riderGPSMark=null}
+ riderGPSLatest=null;riderFollowing=false;
+ $("riderGPSFollow").disabled=true;
+ $("riderGPSFollow").textContent="🎯 Follow Rider Phone GPS";
+}
+function riderStatusMessage(message){riderStatus.textContent=message}
+function onRiderSample(sample){
+ if(Date.now()-sample.time>20000)return;
+ if(sample.accuracy>80){
+  riderStatusMessage("Rider GPS signal এসেছে, কিন্তু accuracy ±"+Math.round(sample.accuracy)+"m। 80m-এর মধ্যে না আসা পর্যন্ত Live marker দেখানো হবে না।");
+  return;
+ }
+ const match=nearestTrackPoint(sample.lat,sample.lon);
+ if(match.distance>130){
+  riderStatusMessage("যাত্রীর ফোন MRT-6 রুট থেকে "+Math.round(match.distance)+"m দূরে। যাচাই না হওয়ায় Metro Train হিসেবে দেখাচ্ছি না।");
+  return;
+ }
+ riderGPSLatest={...sample,trackDistance:match.distance,along:match.along};
+ const position=C.Cartesian3.fromDegrees(sample.lon,sample.lat,29);
+ if(!riderGPSMark)riderGPSMark=viewer.entities.add({
+  name:"Consenting rider PHONE GPS · unverified Metro train",
+  position,
+  point:{pixelSize:17,color:C.Color.CYAN,outlineColor:C.Color.BLACK,outlineWidth:3,
+   disableDepthTestDistance:Number.POSITIVE_INFINITY},
+  label:{text:"📍 RIDER PHONE GPS · NOT TRAIN TELEMETRY",font:"bold 12px sans-serif",
+   fillColor:C.Color.WHITE,outlineColor:C.Color.BLACK,outlineWidth:3,
+   style:C.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new C.Cartesian2(0,-27),
+   distanceDisplayCondition:new C.DistanceDisplayCondition(0,8000),
+   disableDepthTestDistance:Number.POSITIVE_INFINITY}
+ });
+ else{riderGPSMark.position=position;riderGPSMark.show=true}
+ $("riderGPSFollow").disabled=false;
+ const nearest=st.reduce((best,v,i)=>{
+  const dx=(sample.lon-v.lon)*111320*Math.cos(C.Math.toRadians(sample.lat));
+  const dy=(sample.lat-v.lat)*111320;
+  const dist=Math.hypot(dx,dy);
+  return dist<best.dist?{dist,index:i}:best
+ },{dist:Infinity,index:0});
+ riderStatusMessage("📍 Rider phone GPS (NOT official train) · "+st[nearest.index].bn+
+  " এর কাছে · ±"+Math.round(sample.accuracy)+"m · route offset "+Math.round(match.distance)+"m · just updated");
+ if(riderFollowing)focusRiderCamera();
+}
+function focusRiderCamera(){
+ if(!riderGPSLatest)return;
+ const p=riderGPSLatest;
+ viewer.camera.lookAt(C.Cartesian3.fromDegrees(p.lon,p.lat,22),
+  new C.HeadingPitchRange(C.Math.toRadians(160),-0.68,215));
+}
+function updateRiderGPSFreshness(){
+ if(!riderGPSLatest)return;
+ const age=Date.now()-riderGPSLatest.time;
+ if(age<=20000)return;
+ riderStatusMessage("GPS তথ্য ২০ সেকেন্ডের বেশি পুরোনো। LIVE মার্কার লুকানো হয়েছে; নতুন consented sample-এর অপেক্ষা।");
+ if(riderGPSMark)riderGPSMark.show=false;
+ riderGPSLatest=null;riderFollowing=false;$("riderGPSFollow").disabled=true;
+ $("riderGPSFollow").textContent="🎯 Follow Rider Phone GPS";
+}
+$("riderGPSButton").addEventListener("click",()=>openRiderGPS());
+$("riderGPSClose").addEventListener("click",()=>openRiderGPS(false));
+$("riderGPSStart").addEventListener("click",async()=>{
+ const p2p=window.MRT_RIDER_P2P;
+ if(!p2p){riderStatusMessage("Private GPS module not loaded. Refresh page.");return}
+ $("riderGPSStart").disabled=true;
+ riderStatusMessage("Creating secure one-time viewer session…");
+ try{
+  const result=await p2p.startWatch(onRiderSample);
+  $("riderGPSInvite").hidden=false;
+  $("riderGPSLink").value=result.link;
+  $("riderGPSStop").disabled=false;
+  riderStatusMessage("Private link তৈরি। এটি ট্রেনে থাকা ব্যক্তিকে পাঠাও। তিনি নিজে Share My GPS না চাপা পর্যন্ত তুমি কিছুই দেখতে পাবে না।");
+ }catch(e){riderStatusMessage("Private GPS connection error: "+e.message)}
+ finally{$("riderGPSStart").disabled=false}
+});
+$("riderGPSCopy").addEventListener("click",async()=>{
+ const value=$("riderGPSLink").value;
+ try{await navigator.clipboard.writeText(value);riderStatusMessage("Private invitation link copied. Only send to a trusted rider.")}
+ catch(e){$("riderGPSLink").focus();$("riderGPSLink").select();riderStatusMessage("Link নির্বাচিত। Copy করে ট্রেনে থাকা ব্যক্তিকে পাঠাও।")}
+});
+$("riderGPSStop").addEventListener("click",()=>{
+ window.MRT_RIDER_P2P?.stopWatch();removeRiderMarker();
+ $("riderGPSInvite").hidden=true;$("riderGPSLink").value="";
+ $("riderGPSStop").disabled=true;
+ riderStatusMessage("Private sharing session বন্ধ করা হয়েছে।");
+});
+$("riderGPSFollow").addEventListener("click",()=>{
+ if(!riderGPSLatest)return;
+ riderFollowing=!riderFollowing;
+ if(riderFollowing){
+  clearViewLock();riderFollowing=true;
+  focusRiderCamera();
+ }else clearViewLock();
+ $("riderGPSFollow").textContent=riderFollowing?"◉ Stop Following Rider":"🎯 Follow Rider Phone GPS";
+});
+window.MRT_RIDER_P2P?.onStatus(x=>{
+ if(x.state==="sender-stopped"||x.state==="disconnected"||x.state==="error"){
+  removeRiderMarker();riderStatusMessage("Rider GPS connection "+x.state+
+   (x.message?": "+x.message:"")+". এখন কোনো LIVE ট্রেনের দাবি করা হচ্ছে না।");
+ }else if(x.state==="connected"){
+  riderStatusMessage("Rider connected. তার ফোন থেকে GPS permission দিয়ে location পাঠানোর অপেক্ষা…");
+ }
+});
+
 function refreshTrainMarkerPositions(){
  // Only show a timetable estimate when DMTCL's published service period
  // implies a departure. Never inject a demo train into "live" mode.
@@ -575,6 +687,7 @@ function renderCoachSet(dt=0.016){
  }
 }
 function findTrain(preferredId=null){
+ riderFollowing=false;
  if(mode==="estimate"){
   const current=svc.active();
   if(!current.length){
@@ -671,6 +784,7 @@ function updateNow(t){
   }
  }
  updateFollowCamera();
+ updateRiderGPSFreshness();
  updateSoundCamera(t);
  if(t-lastMapUpdate<45){
   stationMarkers.forEach((e,i)=>{e.show=!ride||i===selectedStation});
