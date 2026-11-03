@@ -167,6 +167,33 @@ const stationCenters=[
  [90.3961548,23.7400564],[90.3968427,23.7316979],[90.4075587,23.7300419],
  [90.4190709,23.7280844]
 ];
+// Complete more of the surrounding mapped neighborhood with a second,
+// locally bundled OSM snapshot (2020). Newer cached polygons always win.
+// This increases coverage only where an OSM footprint actually exists.
+function mergeOSMFootprints(data,index){
+ const items=[...(data.buildings||[])],identifiers=new Set(items.map(x=>String(x.id)));
+ const centers=items.filter(x=>Array.isArray(x.p)&&x.p.length>0).map(x=>
+  x.p.reduce((a,v)=>[a[0]+v[0]/x.p.length,a[1]+v[1]/x.p.length],[0,0]));
+ let legacyCount=0;
+ const filepath=join(root,'data','buildings',index+'.js');
+ if(!existsSync(filepath))return {items,legacyCount};
+ try{
+  const source=readFileSync(filepath,'utf8');
+  const prefix='window.MRT_OFFLINE_BUILDINGS['+index+']=';
+  const offset=source.indexOf(prefix);
+  if(offset<0)return {items,legacyCount};
+  const text=source.slice(offset+prefix.length).trim().replace(/;\\s*$/,'');
+  const obj=JSON.parse(text);
+  for(const old of obj.features||[]){
+   if(!Array.isArray(old.p)||old.p.length<4||identifiers.has(String(old.id)))continue;
+   const center=old.p.reduce((a,v)=>[a[0]+v[0]/old.p.length,a[1]+v[1]/old.p.length],[0,0]);
+   if(centers.some(c=>Math.hypot((c[0]-center[0])*101700,(c[1]-center[1])*111320)<6))continue;
+   items.push({...old,legacySnapshot:true});
+   identifiers.add(String(old.id));centers.push(center);legacyCount++;
+  }
+ }catch(error){console.warn('Cannot extend OSM station '+index+': '+error.message)}
+ return {items,legacyCount};
+}
 function makeModel(data,index){
  // Always anchor the local mesh to the same station coordinate as Cesium.
  // Some archival caches have a different center, which caused visible shifts.
@@ -177,8 +204,9 @@ function makeModel(data,index){
  // Cesium uses local ENU (east/north/up). In a Y-up glTF, X=east, Z=south.
  // The previous [-north,east] transform rotated mapped blocks off the imagery.
  const routeXY=trackNodes.map(([lat,lon])=>[(lon-cx)*lonScale,-(lat-cy)*latScale]);
+ const merged=mergeOSMFootprints(data,index),allBuildings=merged.items;
  let count=0,known=0,triangles=0,clearedNearTrack=0;
- for(const item of (data.buildings||[]).slice(0,450)){
+ for(const item of allBuildings.slice(0,900)){
   if(!Array.isArray(item.p)||item.p.length<4)continue;
   const coords=item.p.map(([lon,lat])=>[(lon-cx)*lonScale,-(lat-cy)*latScale]);
   if(coords.length>3&&Math.hypot(coords[0][0]-coords.at(-1)[0],coords[0][1]-coords.at(-1)[1])<.15)coords.pop();
@@ -186,7 +214,7 @@ function makeModel(data,index){
   // Safety clearance around metro track and camera: OSM footprints are still
   // preserved verbatim in data/buildings/*.json. Only conflicting 3D walls
   // are not rendered, avoiding camera spawning INSIDE dark fake buildings.
-  if(data.buildings.length>15&&nearRailCorridor(coords,routeXY,index)){clearedNearTrack++;continue}
+  if(allBuildings.length>15&&nearRailCorridor(coords,routeXY,index)){clearedNearTrack++;continue}
   const a=area2(coords);
   if(Math.abs(a)<3)continue;
   const seed=Math.abs(Number(item.id)||item.p.length*98761);
@@ -338,7 +366,7 @@ function makeModel(data,index){
   images:[{uri:facadePNG,mimeType:'image/png'}],
   buffers:[{uri:'data:application/octet-stream;base64,'+binary.toString('base64'),byteLength:binary.length}],
   bufferViews,accessors,
-  extras:{station:index,buildingFootprints:count,knownHeights:known,inferredHeights:count-known,
+  extras:{station:index,buildingFootprints:count,knownHeights:known,inferredHeights:count-known,legacyOSMBuildingCandidates:merged.legacyCount,
    addedIllustrativeDetails:'shopfront glass and sunshades, balcony slabs, rooftop tanks and AC fixtures',
    anchor:{longitude:cx,latitude:cy},coordinateSystem:'local glTF X=east, Y=up, Z=south',provenance:data.source,license:'ODbL 1.0 © OpenStreetMap contributors',
    clearedNearTrack,roadSegments:streetSegments,mappedTreeNodes:treeCount,
@@ -353,7 +381,7 @@ for(let index=0;index<16;index++){
  const data=JSON.parse(readFileSync(path,'utf8'));
  const {model,count,known,triangles}=makeModel(data,index);
  const name=index+'.gltf';writeFileSync(join(destination,name),JSON.stringify(model));
- report.push({index,name,buildings:count,knownHeights:known,approximateHeights:count-known,triangles,anchor:model.extras.anchor,source:model.extras.provenance,clearedNearTrack:model.extras.clearedNearTrack,roadSegments:model.extras.roadSegments,mappedTreeNodes:model.extras.mappedTreeNodes});
+ report.push({index,name,buildings:count,knownHeights:known,approximateHeights:count-known,legacyOSMBuildingCandidates:model.extras.legacyOSMBuildingCandidates,triangles,anchor:model.extras.anchor,source:model.extras.provenance,clearedNearTrack:model.extras.clearedNearTrack,roadSegments:model.extras.roadSegments,mappedTreeNodes:model.extras.mappedTreeNodes});
 }
 writeFileSync(join(destination,'manifest.json'),JSON.stringify({generatedBy:'scripts/build-urban-models.mjs',source:'OpenStreetMap ODbL + procedural surfaces',models:report},null,2));
 console.log('Generated',report.length,'MRT-6 surrounding-area glTF 3D models:',report.map(x=>x.index+':'+x.buildings).join(', '));
