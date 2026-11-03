@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -107,6 +107,33 @@ jobs:
           node --check scripts/build-urban-details.mjs
           node scripts/build-urban-details.mjs
           node scripts/check-urban-details.mjs
+      - name: Persist generated glTF assets so branch-based Pages can serve them
+        # The repository currently runs the built-in pages-build-deployment in
+        # addition to this workflow. Without committed assets that branch build
+        # overwrites them, producing 404 for city/station models.
+        continue-on-error: true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f assets .nojekyll
+          if git diff --cached --quiet; then
+            echo "No new 3D assets to persist"
+          else
+            git commit -m "chore: commit generated 3D environment assets for Pages [skip ci]"
+            for attempt in 1 2 3; do
+              if git push origin HEAD:main; then
+                echo "3D assets persisted in main for Pages branch builds"
+                break
+              fi
+              git fetch origin main
+              if ! git rebase origin/main; then
+                git rebase --abort || true
+                echo "Concurrent asset changes; cannot safely rebase"
+                exit 1
+              fi
+              if [ "$attempt" = 3 ]; then exit 1; fi
+            done
+          fi
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
