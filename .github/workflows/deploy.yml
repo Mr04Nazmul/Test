@@ -39,6 +39,10 @@ jobs:
         run: |
           node --check scripts/build-dhaka-university-landmark.mjs
           node scripts/build-dhaka-university-landmark.mjs
+      - name: Generate station street 3D neighborhoods
+        run: |
+          node --check scripts/build-neighborhood-props.mjs
+          node scripts/build-neighborhood-props.mjs
       - name: Generate Dhaka road vehicles
         run: node scripts/build-dhaka-traffic.mjs
       - name: Build and validate Farmgate street micro-models
