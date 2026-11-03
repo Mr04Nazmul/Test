@@ -17,7 +17,7 @@ const slate=C.Color.fromCssColorString("#14354d"),green=C.Color.fromCssColorStri
 let viewer,osmLayer=null,satLayer=null,roadsLayer=null,labelsLayer=null,googleTiles=null,googleMode=false,satelliteOn=false;
 let selectedStation=8,mode="estimate",selectedTrain="",trainData=[],focused=null;
 let playing=true,demoMeters=0,rate=1,ride=false,worldModels=[],buildings=[],showBuildings=true;
-let cameraStyle="chase",orbitYaw=0,orbitPitch=-0.40,followDistance=155,gpsDisplayMeters=null;
+let cameraStyle="chase",orbitYaw=0,orbitPitch=-0.74,followDistance=220,gpsDisplayMeters=null;
 let lastFrame=0,lastMapUpdate=0,lastMarkerAnimation=0,etaLast=0,stationStructure=null,trainEntities=[],trainMarkers=new Map();
 const stationMarkers=[];
 let loadTicket=0,bldgRequest=null,gpsWatchId=null,gpsMeters=null,gpsMark=null;
@@ -60,7 +60,8 @@ try{
  viewer.scene.globe.enableLighting=false;
  viewer.scene.globe.depthTestAgainstTerrain=false;
  viewer.scene.screenSpaceCameraController.enableCollisionDetection=false;
- viewer.scene.backgroundColor=C.Color.fromCssColorString("#102736");
+ viewer.scene.backgroundColor=C.Color.fromCssColorString("#88b5cd");
+ if(viewer.scene.skyBox)viewer.scene.skyBox.show=false; // Ground-level viewer should not expose starfield
  // High-resolution map without running the iPhone GPU at excessive native DPR.
  viewer.resolutionScale=window.innerWidth<700?1.16:1.35;
  viewer.scene.globe.maximumScreenSpaceError=1.6;
@@ -325,14 +326,14 @@ function updateStationText(){
 function clearViewLock(){viewer.camera.lookAtTransform(C.Matrix4.IDENTITY);if(typeof originalCameraFov==="number")viewer.camera.frustum.fov=originalCameraFov;ride=false;$("follow").classList.remove("primary")}
 function stationCinematicCamera(index,animate=true){
  // Genuine 3D street-side elevated approach, not a camera stuck on the rails.
- const p=at(stopMeters[index]),d=stopMeters[index]-170;
- const origin=shiftedCoordinateAt(d,-92),height=102;
+ const p=at(stopMeters[index]),d=stopMeters[index]-185;
+ const origin=shiftedCoordinateAt(d,-125),height=240;
  const east=(p.lon-origin.lon)*111320*Math.cos(C.Math.toRadians(p.lat));
  const north=(p.lat-origin.lat)*111320;
  const horizontal=Math.max(1,Math.hypot(east,north));
  const destination=C.Cartesian3.fromDegrees(origin.lon,origin.lat,height);
  const orientation={heading:Math.atan2(east,north),
-  pitch:-Math.atan2(height-24,horizontal),roll:0};
+  pitch:Math.min(-.97,-Math.atan2(height-24,horizontal)-.14),roll:0};
  if(animate)viewer.camera.flyTo({destination,orientation,duration:1.22});
  else viewer.camera.setView({destination,orientation});
 }
@@ -428,7 +429,7 @@ function renderCoachSet(dt=0.016){
 }
 function findTrain(){
  renderCoachSet();
- ride=true;cameraStyle="chase";orbitYaw=0;orbitPitch=-0.28;followDistance=105;
+ ride=true;cameraStyle="chase";orbitYaw=0;orbitPitch=-0.76;followDistance=235;
  $("follow").classList.add("primary");
  updateCameraLabel();
  updateFollowCamera();
@@ -446,7 +447,7 @@ function updateFollowCamera(){
  // Avoid dark near-field blocks when the first-person camera enters mapped
  // building geometry near the station. Detailed station stays visible.
  const nearStation=Math.abs(focused.distance-stopMeters[selectedStation])<175;
- for(const b of buildings)b.show=showBuildings&&!googleMode&&!(ride&&cameraStyle==="front"&&nearStation);
+ for(const b of buildings)b.show=showBuildings&&!googleMode;
  for(const e of farmgateDetails){const hideFront=ride&&cameraStyle==="front"&&nearStation&&e.name.includes(" — buildings ");e.show=!googleMode&&!(hideFront||(!showBuildings&&(e.name.includes(" — buildings ")||e.name.includes(" — shopfronts "))));}
  if(!ride)return;
  if(typeof originalCameraFov==="number")viewer.camera.frustum.fov=originalCameraFov;
@@ -454,8 +455,8 @@ function updateFollowCamera(){
  // are visible rather than placing the user INSIDE the roof or viaduct model.
  const front=cameraStyle==="front",top=cameraStyle==="top";
  const heading=focused.heading+(front?0:Math.PI)+orbitYaw;
- const pitch=top?-1.12:front?clamp(orbitPitch-.13,-.90,-.22):clamp(orbitPitch,-.92,-.18);
- const range=top?Math.max(145,followDistance):Math.max(78,followDistance);
+ const pitch=top?-1.26:front?clamp(orbitPitch-.09,-1.40,-.57):clamp(orbitPitch,-1.40,-.55);
+ const range=top?Math.max(210,followDistance):Math.max(130,followDistance);
  viewer.camera.lookAt(lonlatPoint(focused,21.6),
   new C.HeadingPitchRange(heading,pitch,range));
 }
@@ -670,7 +671,8 @@ function setDaylightMode(next){
  viewer.scene.globe.enableLighting=night;
  viewer.scene.globe.dynamicAtmosphereLighting=false;
  viewer.scene.globe.dynamicAtmosphereLightingFromSun=false;
- viewer.scene.backgroundColor=C.Color.fromCssColorString(night?"#071123":"#102736");
+ viewer.scene.backgroundColor=C.Color.fromCssColorString(night?"#192a40":"#88b5cd");
+ if(viewer.scene.skyBox)viewer.scene.skyBox.show=false;
  if(viewer.scene.skyAtmosphere)viewer.scene.skyAtmosphere.show=!night;
  if(viewer.scene.sun)viewer.scene.sun.show=!night;
  if(viewer.scene.moon)viewer.scene.moon.show=night;
@@ -693,8 +695,8 @@ function updateCameraLabel(){
 }
 function useCameraMode(id){
  cameraStyle=id;ride=true;orbitYaw=0;
- orbitPitch=id==="orbit"?-0.36:-0.27;
- followDistance=id==="top"?190:id==="front"?118:155;
+ orbitPitch=id==="top"?-1.24:id==="orbit"?-.81:-.78;
+ followDistance=id==="top"?270:id==="front"?220:240;
  $("follow").classList.add("primary");updateCameraLabel();
  updateFollowCamera();
 }
@@ -705,7 +707,7 @@ function cameraZoom(multiplier){
   else viewer.camera.zoomOut(distance);
   return;
  }
- followDistance=clamp(followDistance*multiplier,9,1500);
+ followDistance=clamp(followDistance*multiplier,70,1500);
  updateFollowCamera();
 }
 const sceneCanvas=viewer.canvas;
@@ -727,8 +729,8 @@ sceneCanvas.addEventListener("pointermove",e=>{
  const d1=pointerLength();
  if(activePointers.size===1){
   orbitYaw-=(e.clientX-prev.x)*.009;
-  orbitPitch=clamp(orbitPitch+(e.clientY-prev.y)*.005,-1.50,0.12);
- }else if(d0&&d1&&d1>10)followDistance=clamp(followDistance*d0/d1,9,1500);
+  orbitPitch=clamp(orbitPitch+(e.clientY-prev.y)*.005,-1.45,-.52);
+ }else if(d0&&d1&&d1>10)followDistance=clamp(followDistance*d0/d1,70,1500);
  e.preventDefault();e.stopImmediatePropagation();
 },true);
 function endOrbitPointer(e){
