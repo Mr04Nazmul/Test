@@ -76,37 +76,115 @@ try{
 const originalCameraFov=viewer.camera.frustum.fov;
 $("status").textContent="ETA ESTIMATE";
 $("notice").textContent="রেলপথ OSM থেকে; ট্রেন অবস্থান সময়সূচিভিত্তিক অনুমান (GPS নয়)।";
-const routePositions=C.Cartesian3.fromDegreesArrayHeights(pts.flatMap(p=>[p[1],p[0],18.7]));
-viewer.entities.add({name:"MRT Line 6 elevated viaduct · OSM trace",polyline:{
- positions:routePositions,width:12,material:C.Color.fromCssColorString("#6e8291").withAlpha(.95)}});
-viewer.entities.add({name:"MRT Line 6 rails · OSM trace",polyline:{
- positions:C.Cartesian3.fromDegreesArrayHeights(pts.flatMap(p=>[p[1],p[0],19.75])),
- width:4,material:new C.PolylineGlowMaterialProperty({glowPower:.12,color:green})}});
-// Visible 3D concrete viaduct and two pairs of steel rails following the curved OSM track.
+// MRT-6 elevated main line: 1,435 mm standard gauge, 1,500 V DC overhead
+// electrification, welded rails on ballastless concrete plinths (DMTCL/DTCA).
+// Visual reconstruction uses approximate measurements, not operator CAD.
+const viaductColors={
+ concrete:C.Color.fromCssColorString("#aeb2ae"),
+ parapet:C.Color.fromCssColorString("#c3c5bd"),
+ bed:C.Color.fromCssColorString("#969d9a"),
+ plinth:C.Color.fromCssColorString("#c6c7bf"),
+ rail:C.Color.fromCssColorString("#454d50"),
+ metal:C.Color.fromCssColorString("#858f8d"),
+ wire:C.Color.fromCssColorString("#707574")
+};
+const trackCenter=2.25;
+function shiftedRailCoordinates(shift){
+ return pts.map((p,i)=>{
+  const prev=pts[Math.max(0,i-1)],next=pts[Math.min(pts.length-1,i+1)],lat=p[0];
+  const east=(next[1]-prev[1])*111320*Math.cos(C.Math.toRadians(lat));
+  const north=(next[0]-prev[0])*111320;
+  const length=Math.max(.001,Math.hypot(east,north)),cos=Math.cos(C.Math.toRadians(lat));
+  return [p[1]-(north/length)*shift/(111320*cos),
+          p[0]+(east/length)*shift/111320];
+ });
+}
+const centerLine=shiftedRailCoordinates(0);
+function shiftedPositions(shift,height){
+ const arr=shiftedRailCoordinates(shift);
+ return C.Cartesian3.fromDegreesArrayHeights(arr.flatMap(p=>[p[0],p[1],height]));
+}
+function shiftedSurface(shift){
+ return C.Cartesian3.fromDegreesArray(shiftedRailCoordinates(shift).flat());
+}
 try{
- viewer.entities.add({name:"Elevated concrete guideway (3D approximate)",corridor:{
-  positions:C.Cartesian3.fromDegreesArray(pts.flatMap(p=>[p[1],p[0]])),
-  width:7.2,height:18.4,extrudedHeight:17.95,
-  material:C.Color.fromCssColorString("#b4b6b5")}});
- function offsetTrack(shift){
-  return C.Cartesian3.fromDegreesArrayHeights(pts.flatMap((p,i)=>{
-   const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)];
-   const lat=p[0],cos=Math.cos(C.Math.toRadians(lat));
-   const de=(b[1]-a[1])*111320*cos,dn=(b[0]-a[0])*111320,n=Math.max(1e-7,Math.hypot(de,dn));
-   return [p[1]+(-dn/n)*shift/(111320*cos),p[0]+(de/n)*shift/111320,19.45];
+ // Real viaduct deck is a shallow box section, not a giant white road slab.
+ viewer.entities.add({name:"MRT-6 main concrete box girder",corridor:{
+  positions:shiftedSurface(0),width:9.5,height:18.05,extrudedHeight:17.25,
+  material:viaductColors.concrete,outline:false}});
+ for(const side of [-4.58,4.58]){
+  viewer.entities.add({name:"Viaduct safety parapet",polyline:{
+   positions:shiftedPositions(side,19.35),width:2,material:viaductColors.parapet}});
+ }
+ // Narrow rails on two distinct plinths, not a flat four-rail slab.
+ for(const center of [-trackCenter,trackCenter]){
+  viewer.entities.add({name:"Ballastless concrete plinth",corridor:{
+   positions:shiftedSurface(center),width:1.96,height:18.57,extrudedHeight:18.34,
+   material:viaductColors.plinth}});
+  for(const rail of [center-.7175,center+.7175]){
+   viewer.entities.add({name:"Continuous welded steel MRT-6 rail",polyline:{
+    positions:shiftedPositions(rail,18.79),width:2,
+    material:viaductColors.rail}});
+  }
+ }
+ for(const off of [-3.8,0,3.8]){
+  viewer.entities.add({name:"Cable trench and service channel",polyline:{
+   positions:shiftedPositions(off,18.39),width:2,material:viaductColors.bed}});
+ }
+ // Lightweight overhead catenary silhouette, as used by the 1500V DC system.
+ for(const off of [-trackCenter,trackCenter]){
+  viewer.entities.add({name:"Overhead electric contact wire (conceptual)",polyline:{
+   positions:shiftedPositions(off,24.5),width:1,material:viaductColors.wire}});
+ }
+}catch(err){console.warn("Detailed ballastless railway viaduct could not render",err)}
+const railwayFurniture=[];
+function clearRailFurniture(){
+ for(const ent of railwayFurniture)viewer.entities.remove(ent);
+ railwayFurniture.length=0;
+}
+function nearbyRailFurniture(stationIndex){
+ clearRailFurniture();
+ const middle=stopMeters[stationIndex];
+ const c=C.Color.fromCssColorString("#b7bbb8");
+ // Scene detail is localized to the selected station, protecting mobile FPS.
+ for(let distance=Math.max(35,middle-340);distance<Math.min(trackLength-30,middle+340);distance+=35){
+  const p=at(distance),base=lonlatPoint(p,9.0);
+  railwayFurniture.push(viewer.entities.add({
+   name:"Concrete viaduct support pier",
+   position:base,
+   cylinder:{length:18,topRadius:1.12,bottomRadius:1.44,material:c,
+    distanceDisplayCondition:new C.DistanceDisplayCondition(0,1700)}
+  }));
+  const left=shiftedCoordinateAt(distance,-4.95),right=shiftedCoordinateAt(distance,4.95);
+  railwayFurniture.push(viewer.entities.add({
+   name:"Overhead wire support gantry",
+   polyline:{positions:C.Cartesian3.fromDegreesArrayHeights([
+    left.lon,left.lat,18.9,left.lon,left.lat,25.5,right.lon,right.lat,25.5,
+    right.lon,right.lat,18.9
+   ]),width:2,material:viaductColors.metal,
+   distanceDisplayCondition:new C.DistanceDisplayCondition(0,1600)}
   }));
  }
- for(const offset of [-2.85,-1.45,1.45,2.85]){
-  viewer.entities.add({name:"MRT-6 steel rail (approximate)",polyline:{
-   positions:offsetTrack(offset),width:2,
-   material:C.Color.fromCssColorString("#44494d")}});
+ for(let distance=Math.max(0,middle-135);distance<Math.min(trackLength,middle+135);distance+=6.4){
+  for(const center of [-trackCenter,trackCenter]){
+   const p1=shiftedCoordinateAt(distance,center-.87),p2=shiftedCoordinateAt(distance,center+.87);
+   railwayFurniture.push(viewer.entities.add({
+    name:"Steel rail fixation plate / ballastless cross-tie",
+    polyline:{positions:C.Cartesian3.fromDegreesArrayHeights([
+     p1.lon,p1.lat,18.70,p2.lon,p2.lat,18.70]),
+     width:2,material:viaductColors.metal,
+     distanceDisplayCondition:new C.DistanceDisplayCondition(0,480)}
+   }));
+  }
  }
-}catch(e){console.warn("Guideway geometry unavailable:",e)}
-
-for(let d=95;d<trackLength;d+=140){
- const p=at(d);
- viewer.entities.add({name:"Illustrative rail support",position:lonlatPoint(p,8.8),
- cylinder:{length:17.6,topRadius:1.15,bottomRadius:1.45,material:C.Color.fromCssColorString("#b2b7b6")}});
+}
+function shiftedCoordinateAt(distance,offset){
+ const here=at(distance),before=at(distance-4),after=at(distance+4);
+ const east=(after.lon-before.lon)*111320*Math.cos(C.Math.toRadians(here.lat));
+ const north=(after.lat-before.lat)*111320;
+ const len=Math.max(.001,Math.hypot(east,north));
+ return {lat:here.lat+(east/len)*offset/111320,
+  lon:here.lon-(north/len)*offset/(111320*Math.cos(C.Math.toRadians(here.lat)))};
 }
 const list=$("stationList");
 st.forEach((s,i)=>{
