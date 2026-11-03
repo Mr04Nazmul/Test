@@ -1,7 +1,6 @@
 name: Deploy Dhaka Metro 3D to GitHub Pages
+# Manual fallback only: deploy-pages.yml owns automatic publishing.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
