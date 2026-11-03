@@ -577,6 +577,24 @@ async function loadBuildings(i){
       distanceDisplayCondition:new C.DistanceDisplayCondition(0,5500)}
     }));
     appendAdjacentUrbanTiles(i);
+    // Close-up 3D shops, roofs and urban greenery. Built from cached OSM
+    // footprint anchors; decorations are illustrative and are NOT surveyed.
+    for(const zone of [...new Set([i,...adjacentUrbanTileIndices(i)])]){
+     const place=st[zone],uri="./assets/urban-details/"+zone+".gltf";
+     fetch(uri,{method:"HEAD",cache:"force-cache",signal:bldgRequest.signal})
+      .then(response=>{
+       if(!response.ok||token!==loadTicket||!showBuildings||googleMode)return;
+       buildings.push(viewer.entities.add({
+        name:place.n+" — original close-up 3D urban details (approximate)",
+        position:lonlatPoint(place,0),
+        model:{uri,scale:1,minimumPixelSize:0,maximumScale:1,
+         distanceDisplayCondition:new C.DistanceDisplayCondition(0,1550)}
+       }));
+      })
+      .catch(err=>{
+       if(!bldgRequest.signal.aborted)console.warn("Detail tile not available",err);
+      });
+    }
     appendNeighborhoodFurnishings(i);
     announce(s.n+" — বাস্তব OSM footprint-এর 3D building mesh। জানালা/অজানা উচ্চতা আনুমানিক।",9500);
     return;
