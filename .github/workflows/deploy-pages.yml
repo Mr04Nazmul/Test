@@ -57,6 +57,11 @@ jobs:
           node --check scripts/build-urban-rooftops.mjs
           node scripts/build-urban-rooftops.mjs
           node scripts/check-urban-rooftops.mjs
+      - name: Generate and check thirteen distinct MRT-6 station structures
+        run: |
+          node --check scripts/build-station-family.mjs
+          node scripts/build-station-family.mjs
+          node scripts/check-station-family.mjs
       - name: Generate Farmgate landmark 3D model
         run: node scripts/build-farmgate-landmark.mjs
       - name: Generate Dhaka University station 3D model
