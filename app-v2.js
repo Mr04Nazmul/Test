@@ -260,6 +260,22 @@ function renderStructure(index){
  setupStreetTraffic(index);
  addFarmgateDetails(index);
  renderNeighborhoodProps(index);
+ renderPhotoStationDetail(index,p,s);
+}
+// 16 separate original glTF overlays modeled from the 2023 Daily Star aerial
+// gallery: reference-guided roof colors, photo-visible local landmarks, different
+// station-area profiles. Photos themselves are NOT copied or rehosted.
+let photoStationDetail=null;
+function renderPhotoStationDetail(index,trackPos,station){
+ if(photoStationDetail){viewer.entities.remove(photoStationDetail);photoStationDetail=null;}
+ photoStationDetail=viewer.entities.add({
+  name:station.n+" — photo-reference exterior architecture and city silhouettes (approximate)",
+  position:lonlatPoint(station,0),
+  orientation:modelOrientation(trackPos),
+  model:{uri:"assets/photo-stations/"+index+".gltf",scale:1,
+   minimumPixelSize:0,maximumScale:1,
+   distanceDisplayCondition:new C.DistanceDisplayCondition(0,4200)}
+ });
 }
 // Illustrated traffic near the detailed Farmgate landmark.
 // Separately modeled buses, rickshaws and cars; animation is a visual demo,
@@ -960,7 +976,7 @@ $("google").addEventListener("click",()=>{
   if(roadsLayer)roadsLayer.show=satelliteOn;if(labelsLayer)labelsLayer.show=satelliteOn;
   if(googleTiles)googleTiles.show=false;
   buildings.forEach(e=>e.show=showBuildings);
-  if(stationStructure)stationStructure.show=true;
+  if(stationStructure)stationStructure.show=true;if(photoStationDetail)photoStationDetail.show=true;
   if(neighborhoodProps)neighborhoodProps.show=true;
   for(const e of farmgateDetails)e.show=true;
   $("google").textContent="◈ Google 3D";return;
@@ -982,7 +998,7 @@ $("loadGoogle").addEventListener("click",async()=>{
   googleMode=true;viewer.scene.globe.show=false;
   if(osmLayer)osmLayer.show=false;if(satLayer)satLayer.show=false;
    if(roadsLayer)roadsLayer.show=false;if(labelsLayer)labelsLayer.show=false;
-  buildings.forEach(e=>e.show=false);if(stationStructure)stationStructure.show=false;
+  buildings.forEach(e=>e.show=false);if(stationStructure)stationStructure.show=false;if(photoStationDetail)photoStationDetail.show=false;
   if(neighborhoodProps)neighborhoodProps.show=false;
   farmgateDetails.forEach(e=>e.show=false);
   $("google").textContent="◈ Exit Google 3D";$("key").value="";modal.classList.remove("open");
