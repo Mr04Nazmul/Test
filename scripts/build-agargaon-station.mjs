@@ -180,24 +180,9 @@ function rickshaw(x,z){
  for(const side of [-1,1])box("autorickshaw rear wheel","wheel",x+side*.62,.42,z-.45,.20,.48,.54);
  box("autorickshaw front wheel","wheel",x,.37,z+.78,.44,.45,.35);
 }
-// Ground roads run along the station; placement is intentionally illustrative.
-for(const side of [-1,1]){
- box("asphalt carriageway","asphalt",side*18.6,.025,0,34,.05,282);
- box("road side sidewalk","concreteLight",side*35.8,.14,0,3.4,.28,282);
- box("curb edge","white",side*33.5,.15,0,.28,.3,282);
- box("sidewalk tactile paving","tactile",side*36.1,.30,0,.38,.02,270);
- for(let z=-132;z<=132;z+=12){
-  box("broken lane stripe","marking",side*16,.058,z,.12,.016,5.0);
-  box("second lane stripe","marking",side*26,.058,z,.12,.016,5.0);
- }
- for(let z=-120;z<=120;z+=23){
-  if(Math.abs(z)>73)greenery(side*39,z,3.4);
- }
-}
-box("concrete central median island","concreteLight",0,.17,0,2,.32,282);
-for(let z=-128;z<=126;z+=9){
- box("planted central median strip","plant",0,.41,z,1.28,.16,5.0);
-}
+// No painted fake street slabs. OSM geometries are drawn in actual-roads.js
+// at their REAL lon/lat alignment, with estimated lane width.
+// Station load-bearing structure below remains in its own local coordinates.
 // Broad carriageway and undercroft structure.
 box("station undercroft deck","concrete",0,11.8,0,33,1.5,163);
 box("east red brick fascia","brick",15.0,13.8,0,1.1,5.0,153);
@@ -304,24 +289,8 @@ for(const side of [-1,1]){
  box("Agargaon station nameplate background","white",side*16.5,15.55,-41.2,.20,1.30,11.6);
  box("green line nameplate border","sign",side*16.65,14.85,-41.2,.06,.12,11.6);
 }
-// Roadside lamp posts and illustrative traffic.
-for(const side of [-1,1])for(let z=-111;z<=111;z+=28){
- box("roadside streetlamp pole","silver",side*32,4.9,z,.17,9.8,.17);
- link("streetlamp bent arm","silver",[side*32,9.70,z],[side*29.3,9.80,z],.13,.13);
- box("streetlamp light head","lamp",side*29.4,9.69,z,.65,.14,.32);
-}
-car(-15,-96,"carWhite");
-car(-25,-62,"carRed");
-car(-16,94,"carGreen");
-car(21,101,"carWhite");
-car(28,-106,"carWhite");
-bus(25,18);
-bus(-22,-115,-1);
-rickshaw(28,64);
-rickshaw(-26,101);
-rickshaw(16,-85);
-for(const x of [-38,38])for(const z of [-85,86])greenery(x,z,4.4);
-
+// Street vehicles/lamps are not positioned from a map survey; omit rather
+// than show a false intersection. Verified OSM roads now supply real alignment.
  // Photo-informed local Agargaon neighborhood character:
  // compact offices/shops to the west, mixed civic buildings, a pond and
  // vegetation to the east. Locations ARE ILLUSTRATIVE, not cadastral geometry.
@@ -367,36 +336,10 @@ const structures=[
  [69,114,18,22,5,5],[93,70,23,20,8,3],[151,97,28,21,10,1],
  [152,-112,26,24,7,2],[185,-38,26,24,12,0]
 ];
-for(const item of structures)localBlock(...item);
-// Reflective urban pond and shaded trees are inspired by nearby green spaces,
-// but are NOT represented as a surveyed waterbody outline.
-box("green landscaped park near metro", "plantLight",111,.06,-33,104,.12,99);
-box("reflective local water feature","glassDark",110,.12,-32,73,.035,67);
-for(const edge of [-1,1]){
- box("pond pedestrian edge kerb","concreteLight",110+edge*38,.25,-32,1.2,.25,69);
- box("pond perimeter walk","asphaltLight",110+edge*41,.05,-32,4,.10,77);
-}
-for(let i=0;i<37;i++){
- const t=i/37*Math.PI*2,rx=59,rz=54;
- const x=111+Math.cos(t)*rx,z=-33+Math.sin(t)*rz;
- greenery(x,z,3.5+((i*7)%5)*.47);
- if(i%4===0){
-  box("roadside soil bed","concreteDark",x,.08,z,2.5,.16,1.8);
- }
-}
-for(const x of [-43,43])for(let z=-139;z<145;z+=22){
- greenery(x,z,3.7+((z*3)%5)*.23);
- box("low roadside planter edge","concreteDark",x,.12,z,2.8,.19,2.9);
-}
-// Lower utility wires, shop canopies and seasonal greens are schematic street
-// clutter, never real address / live traffic.
-for(const x of [-51,51])for(let z=-116;z<=118;z+=33){
- box("covered roadside vendor roof","roofDark",x,3.12,z,4.6,.16,5.3);
- for(const side of [-1,1])
-  box("vendor stall steel support","metal",x+side*1.9,1.58,z,.09,3.14,.12);
- box("small shop counter","concreteLight",x,1.28,z,3.2,1.0,2.1);
-}
-
+// Decorative building footprints were not geocoded; real OSM buildings render separately.
+// for(const item of structures)localBlock(...item);
+// Never place a fabricated rectangular pond, planted road, or street market
+// on top of genuine satellite imagery. Leave those colors to geographic data.
 // Bake all architectural boxes into a small number of meshes, one primitive
 // per material. Three thousand Cesium glTF nodes would otherwise trigger
 // thousands of iPhone GPU draw calls; baking keeps detail but greatly reduces
@@ -476,7 +419,7 @@ const gltf={
   classification:"textured photo-referenced architectural approximation, not a surveyed 3D scan",
   orientation:"local glTF Z is longitudinal rail direction; same layout convention as original MRT6 model",
   facade:"green curved roof, brick/concrete facade, platform glass, stair entrances, covered footbridges",
-  notReal:"vehicle traffic is static decoration, roads and geometry are approximated; do not infer actual building measurements",
+  notReal:"Station geometry approximate. No fake roads, guessed traffic positions, invented ponds or unsurveyed building blocks overlaid; OSM roads and buildings are separate.",
   sources:[
    "https://commons.wikimedia.org/wiki/File:Agargaon_metro_station_entrance_15.jpg",
    "https://commons.wikimedia.org/wiki/Category:Agargaon_metro_station"
