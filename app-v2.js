@@ -277,7 +277,7 @@ async function loadBuildings(i){
  bldgRequest=new AbortController();
  // True mapped OSM building polygons, converted into one textured glTF mesh
  // per supported station. Glass windows/unknown heights are illustrative.
- const hasCityMesh=new Set([0,1,2,3,4,5,6,7,8,9,10,15]);
+ const hasCityMesh=new Set(Array.from({length:16},(_,n)=>n));
  if(hasCityMesh.has(i)){
   try{
    const url="./assets/urban/"+i+".gltf";
