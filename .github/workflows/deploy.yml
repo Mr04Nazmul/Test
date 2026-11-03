@@ -19,6 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      - name: Build realistic city-footprint 3D models
+        run: node scripts/build-urban-models.mjs
       - uses: actions/upload-pages-artifact@v4
         with:
           path: .
