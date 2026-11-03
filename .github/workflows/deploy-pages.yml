@@ -1,4 +1,4 @@
-name: Publish Dhaka Metro 3D
+name: Build Dhaka Metro 3D Assets for Pages
 on:
   push:
     branches: [main]
@@ -10,8 +10,8 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: "dhaka-metro-asset-generator"
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -165,10 +165,8 @@ jobs:
               if [ "$attempt" = 3 ]; then exit 1; fi
             done
           fi
-      - name: Upload static site
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Hand off to GitHub Pages branch publisher
+        # This repository uses the built-in GitHub Pages deploy-from-branch
+        # pipeline. An additional actions/deploy-pages deployment races it and
+        # fails HTTP 400 (a Pages deployment is already in progress).
+        run: echo "3D assets committed to main; branch-based Pages publishes them."
