@@ -275,6 +275,28 @@ async function loadBuildings(i){
  const token=++loadTicket,s=st[i];
  if(bldgRequest)bldgRequest.abort();
  bldgRequest=new AbortController();
+ // True mapped OSM building polygons, converted into one textured glTF mesh
+ // per supported station. Glass windows/unknown heights are illustrative.
+ const hasCityMesh=new Set([0,1,2,3,4,5,6,7,8,9,10,15]);
+ if(hasCityMesh.has(i)){
+  try{
+   const url="./assets/urban/"+i+".gltf";
+   const head=await fetch(url,{method:"HEAD",cache:"force-cache",signal:bldgRequest.signal});
+   if(head.ok){
+    if(i!==selectedStation||token!==loadTicket||!showBuildings||googleMode)return;
+    for(const old of buildings)viewer.entities.remove(old);
+    buildings=[];
+    buildings.push(viewer.entities.add({
+     name:s.n+" — textured 3D buildings from mapped OSM footprints (not photogrammetry)",
+     position:lonlatPoint(s,0),
+     model:{uri:url,scale:1,minimumPixelSize:0,
+      distanceDisplayCondition:new C.DistanceDisplayCondition(0,5500)}
+    }));
+    announce(s.n+" — বাস্তব OSM footprint-এর 3D building mesh। জানালা/অজানা উচ্চতা আনুমানিক।",9500);
+    return;
+   }
+  }catch(err){if(bldgRequest.signal.aborted)return;console.warn("City mesh unavailable; OSM geometry fallback",err)}
+ }
  const query='[out:json][timeout:18];way["building"](around:520,'+s.lat+','+s.lon+');out geom;';
  const base=["https://overpass.kumi.systems/api/interpreter","https://overpass-api.de/api/interpreter"];
  try{
