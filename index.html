@@ -110,6 +110,27 @@ body.panel-hidden .controls{margin-left:auto}
 .train-row.active{background:#10aa8160}
 @media(max-width:680px){.panel{width:min(72vw,290px);max-height:54vh}.main{padding-bottom:62px}#etaPanel,#trainList{margin:5px 7px;padding:8px}.eta-row{font-size:10px;gap:5px}.eta-row b{font-size:10px}.ctrl{padding:8px 9px}.controls{gap:5px}}
 
+@media(max-width:680px){
+ /* The 3D scene gets the majority of the screen; tools expand only on demand. */
+ .controls{position:fixed;top:calc(env(safe-area-inset-top) + 130px);right:10px;
+  width:132px;max-height:49vh;z-index:12;padding:0;overflow-y:auto;gap:5px;
+  align-items:flex-end;pointer-events:auto}
+ body:not(.mobile-controls-expanded) .controls .ctrl:not(#moreControls){display:none}
+ .controls .ctrl{width:100%;min-width:0;max-width:132px}
+ #moreControls{max-width:98px;width:98px;background:#102a39e5;border-color:#6ce6c363}
+ body.mobile-controls-expanded .controls{padding:7px;background:#091a26e9;
+  border:1px solid #ffffff29;border-radius:15px;backdrop-filter:blur(13px)}
+ .floating-bottom{position:absolute;bottom:calc(max(env(safe-area-inset-bottom),10px) + 4px);
+  left:8px;right:8px;display:flex;flex-flow:row nowrap;gap:5px;overflow-x:auto;
+  justify-content:flex-start;align-items:center;max-width:none;margin:0;padding:3px 0;
+  white-space:nowrap;scrollbar-width:none;touch-action:pan-x}
+ .floating-bottom .pill{flex:0 0 auto;min-width:0}
+ .camera-toolbar{bottom:calc(max(env(safe-area-inset-bottom),10px) + 56px);
+  width:auto;max-width:calc(100vw - 16px)}
+ .brand{max-width:56vw}
+ .brand small{max-width:39vw;line-height:1.3}
+ .right-tag{max-width:40vw;line-height:1.3}
+}
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/";</script>
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
@@ -178,6 +199,6 @@ body.panel-hidden .controls{margin-left:auto}
 <p class="fine">Attribution remains visible. Google content may not be extracted or cached. No API key? Free 3D demo map remains available.</p>
 </section>
 </div>
-<script src="app-v2.js?v=20261104-university-landmark-v1"></script>
+<script src="app-v2.js?v=20261104-mrt6-rail-realism-v5"></script>
 </body>
 </html>
