@@ -59,6 +59,35 @@ function material(name,hex,texture=false){
  if(texture)pbr.baseColorTexture={index:0,texCoord:0};
  return {name,pbrMetallicRoughness:pbr,doubleSided:true};
 }
+const routeJS=readFileSync(join(root,'data','mrt6-track.js'),'utf8');
+const routeBody=routeJS.split('window.MRT_TRACK=')[1];
+if(!routeBody)throw Error('MRT route data missing');
+const trackNodes=JSON.parse(routeBody.trim().replace(/;\s*$/,'')).points;
+function distanceToSegment(p,a,b){
+ const dx=b[0]-a[0],dy=b[1]-a[1];
+ const t=clamp(((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(dx*dx+dy*dy||1),0,1);
+ return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy);
+}
+function nearRailCorridor(poly,routeXY,stationIndex){
+ if(poly.length<3)return false;
+ const c=poly.reduce((s,p)=>[s[0]+p[0]/poly.length,s[1]+p[1]/poly.length],[0,0]);
+ const buffer=stationIndex===8?30:18;
+ // Coarse reject: do not apply visual clearance to buildings far from rail.
+ const candidates=routeXY.filter(p=>Math.abs(p[0]-c[0])<150&&Math.abs(p[1]-c[1])<150);
+ if(!candidates.length)return false;
+ const minDist=p=>{
+  let best=Infinity;
+  for(let k=1;k<routeXY.length;k++){
+   const a=routeXY[k-1],b=routeXY[k];
+   if(Math.abs(a[0]-p[0])>160&&Math.abs(b[0]-p[0])>160)continue;
+   if(Math.abs(a[1]-p[1])>160&&Math.abs(b[1]-p[1])>160)continue;
+   best=Math.min(best,distanceToSegment(p,a,b));
+  }
+  return best;
+ };
+ if(minDist(c)<buffer)return true;
+ return poly.some(p=>minDist(p)<Math.max(10,buffer*.48));
+}
 const materials=[
  ...colors.map((c,i)=>material('windowed-plaster-'+i,c,true)),
  material('roof-concrete','#a7a59b'),material('parapets','#c9c5b8'),
@@ -130,12 +159,17 @@ function makeModel(data,index){
  if(!center||center.length!==2)throw Error('Missing map anchor for station '+index);
  const cx=center[0],cy=center[1],lonScale=111320*Math.cos(cy*Math.PI/180),latScale=111320;
  const groups=materials.map(newGroup);
- let count=0,known=0,triangles=0;
+ const routeXY=trackNodes.map(([lat,lon])=>[-(lat-cy)*latScale,(lon-cx)*lonScale]);
+ let count=0,known=0,triangles=0,clearedNearTrack=0;
  for(const item of (data.buildings||[]).slice(0,450)){
   if(!Array.isArray(item.p)||item.p.length<4)continue;
   const coords=item.p.map(([lon,lat])=>[-(lat-cy)*latScale,(lon-cx)*lonScale]);
   if(coords.length>3&&Math.hypot(coords[0][0]-coords.at(-1)[0],coords[0][1]-coords.at(-1)[1])<.15)coords.pop();
   if(coords.length<3||coords.length>150)continue;
+  // Safety clearance around metro track and camera: OSM footprints are still
+  // preserved verbatim in data/buildings/*.json. Only conflicting 3D walls
+  // are not rendered, avoiding camera spawning INSIDE dark fake buildings.
+  if(data.buildings.length>15&&nearRailCorridor(coords,routeXY,index)){clearedNearTrack++;continue}
   const a=area2(coords);
   if(Math.abs(a)<3)continue;
   const seed=Math.abs(Number(item.id)||item.p.length*98761);
@@ -204,7 +238,8 @@ function makeModel(data,index){
   bufferViews,accessors,
   extras:{station:index,buildingFootprints:count,knownHeights:known,inferredHeights:count-known,
    anchor:{longitude:cx,latitude:cy},provenance:data.source,license:'ODbL 1.0 © OpenStreetMap contributors',
-   caveat:'Real mapped footprints, approximate heights where unavailable; procedural facade windows (NOT real building imagery).'}
+   clearedNearTrack,
+   caveat:'Real mapped footprints, visually excluded shapes near train corridor to reduce occlusion; approximate heights/windows are not real building imagery.'}
  };
  return {model,count,known,triangles};
 }
@@ -215,7 +250,7 @@ for(let index=0;index<16;index++){
  const data=JSON.parse(readFileSync(path,'utf8'));
  const {model,count,known,triangles}=makeModel(data,index);
  const name=index+'.gltf';writeFileSync(join(destination,name),JSON.stringify(model));
- report.push({index,name,buildings:count,knownHeights:known,approximateHeights:count-known,triangles,anchor:model.extras.anchor,source:model.extras.provenance});
+ report.push({index,name,buildings:count,knownHeights:known,approximateHeights:count-known,triangles,anchor:model.extras.anchor,source:model.extras.provenance,clearedNearTrack:model.extras.clearedNearTrack});
 }
 writeFileSync(join(destination,'manifest.json'),JSON.stringify({generatedBy:'scripts/build-urban-models.mjs',source:'OpenStreetMap ODbL + procedural surfaces',models:report},null,2));
 console.log('Generated',report.length,'MRT-6 surrounding-area glTF 3D models:',report.map(x=>x.index+':'+x.buildings).join(', '));
