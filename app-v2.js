@@ -278,7 +278,8 @@ function setupStreetTraffic(index){
   ["car",-24,-42,1,7.5],["car",-32,34,-1,6.6],
   ["car",23,-7,-1,8.1],["car",32,70,-1,7.1],
   ["rickshaw",-19,-60,1,2.9],["rickshaw",-36,28,-1,2.5],
-  ["rickshaw",19,40,-1,3.0],["rickshaw",35,-21,1,2.8]
+  ["rickshaw",19,40,-1,3.0],["rickshaw",35,-21,1,2.8],
+  ["motorcycle",-23,-9,1,9.4],["motorcycle",30,-47,-1,10.3]
  ];
  for(const [kind,x,z,dir,speed] of specs){
   const heading={...p,heading:p.heading+(dir<0?Math.PI:0)};
