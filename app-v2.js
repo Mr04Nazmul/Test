@@ -18,7 +18,7 @@ let viewer,osmLayer=null,satLayer=null,googleTiles=null,googleMode=false,satelli
 let selectedStation=10,mode="estimate",selectedTrain="",trainData=[],focused=null;
 let playing=true,demoMeters=0,rate=1,ride=false,worldModels=[],buildings=[],showBuildings=true;
 let lastFrame=0,lastMapUpdate=0,etaLast=0,stationStructure=null,trainEntities=[],trainMarkers=new Map();
-let loadTicket=0,bldgRequest=null;
+let loadTicket=0,bldgRequest=null,gpsWatchId=null,gpsMeters=null,gpsMark=null;
 const nameFor=i=>(st[i]&&st[i].bn)||"";
 const carLength=19.8;
 function lonlatPoint(p,h){return C.Cartesian3.fromDegrees(p.lon,p.lat,h)}
@@ -213,6 +213,7 @@ function activeFocus(){
   const t=trainData.find(x=>x.id===selectedTrain);
   if(t){const m=metersAtIndex(t.position);return {m,dir:t.dir};}
  }
+ if(mode==="onboard"&&gpsMeters!==null)return {m:gpsMeters,dir:"south"};
  return {m:demoMeters,dir:"south"};
 }
 function renderCoachSet(){
@@ -229,12 +230,13 @@ function findTrain(){
  const p=lastKnown();
  viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(p.lon,p.lat,160),
   orientation:{heading:p.heading,pitch:C.Math.toRadians(-34),roll:0},duration:1.15});
- announce(mode==="estimate"?"সময়সূচিভিত্তিক অনুমান—এটি live GPS tracking নয়":"সিমুলেটেড ট্রেন—live নয়",6500);
+ announce(mode==="estimate"?"সময়সূচিভিত্তিক অনুমান—এটি live GPS tracking নয়":mode==="onboard"?"ফোনের নিজস্ব GPS অনুযায়ী ট্র্যাক অনুসরণ; অন্য ট্রেনের GPS নয়":"সিমুলেটেড ট্রেন—live নয়",6500);
 }
 function updateModeControls(){
- const demo=mode==="demo";$("pause").textContent=demo?"◉ ETA Mode":"▶ Demo Ride";
+ const demo=mode==="demo",onboard=mode==="onboard";
+ $("pause").textContent=demo?"◉ ETA Mode":onboard?"◉ Exit My GPS":"▶ Demo Ride";
  $("speed").textContent="▶ "+rate+"× demo speed";
- $("status").textContent=demo?"DEMO RIDE":"TIMETABLE ESTIMATE";
+ $("status").textContent=onboard?"MY PHONE GPS · PRIVATE":demo?"DEMO RIDE":"TIMETABLE ESTIMATE";
 }
 function updateNow(t){
  const dt=Math.min(.10,Math.max(0,(t-lastFrame)/1000||0));lastFrame=t;
@@ -321,6 +323,7 @@ $("follow").addEventListener("click",()=>{
  if(!ride)clearViewLock();
 });
 $("pause").addEventListener("click",()=>{
+ if(mode==="onboard")endPhoneGPS();
  mode=mode==="estimate"?"demo":"estimate";playing=true;refreshTrainMarkerPositions();updateModeControls();
  if(mode==="estimate"&&!trainData.length){mode="demo";updateModeControls();announce("এখন অনুমিত চলমান ট্রেন নেই; Demo ride চলছে।")}
 });
@@ -365,6 +368,58 @@ $("loadGoogle").addEventListener("click",async()=>{
  }catch(e){announce("Google 3D load হয়নি। API key, billing অথবা coverage পরীক্ষা করো।",10000)}
  finally{btn.disabled=false}
 });
+
+function nearestTrackPoint(lat,lon){
+ const metersLon=111320*Math.cos(C.Math.toRadians(lat));
+ let best={distance:Infinity,along:0};
+ for(let i=0;i<pts.length-1;i++){
+  const a=pts[i],b=pts[i+1];
+  const ax=(a[1]-lon)*metersLon,ay=(a[0]-lat)*111320;
+  const bx=(b[1]-lon)*metersLon,by=(b[0]-lat)*111320;
+  const dx=bx-ax,dy=by-ay;
+  const t=clamp(-(ax*dx+ay*dy)/(dx*dx+dy*dy||1),0,1);
+  const dist=Math.hypot(ax+t*dx,ay+t*dy);
+  if(dist<best.distance)best={distance:dist,along:cum[i]+t*(cum[i+1]-cum[i])};
+ }
+ return best;
+}
+function endPhoneGPS(){
+ if(gpsWatchId!==null&&navigator.geolocation)navigator.geolocation.clearWatch(gpsWatchId);
+ gpsWatchId=null;gpsMeters=null;
+ if(gpsMark){viewer.entities.remove(gpsMark);gpsMark=null;}
+ $("myGPS").textContent="📍 My Train GPS";
+ $("myGPS").classList.remove("primary");
+ if(mode==="onboard"){mode="estimate";refreshTrainMarkerPositions();updateModeControls();}
+}
+$("myGPS").addEventListener("click",()=>{
+ if(gpsWatchId!==null){endPhoneGPS();announce("ফোন GPS mode বন্ধ। GPS তথ্য কোথাও আপলোড করা হয়নি।",5000);return;}
+ if(!navigator.geolocation){announce("এই ব্রাউজারে GPS পাওয়া যায়নি। HTTPS ও location permission লাগবে।",8000);return;}
+ announce("ফোনের GPS অনুমতি দাও। শুধু এই ডিভাইসে location দেখানো হবে, সার্ভারে পাঠানো হবে না।",9500);
+ $("myGPS").textContent="📍 GPS locating…";
+ gpsWatchId=navigator.geolocation.watchPosition(
+  pos=>{
+   const {latitude:lat,longitude:lon,accuracy}=pos.coords;
+   if(!gpsMark)gpsMark=viewer.entities.add({name:"My phone GPS (private)",position:C.Cartesian3.fromDegrees(lon,lat,32),
+    point:{pixelSize:14,color:C.Color.CYAN,outlineColor:C.Color.WHITE,outlineWidth:3,disableDepthTestDistance:Number.POSITIVE_INFINITY}});
+   gpsMark.position=C.Cartesian3.fromDegrees(lon,lat,32);
+   const match=nearestTrackPoint(lat,lon);
+   if(match.distance<200&&accuracy<350){
+    gpsMeters=match.along;mode="onboard";playing=true;ride=true;
+    $("follow").classList.add("primary");
+    $("myGPS").textContent="📍 My GPS ON";$("myGPS").classList.add("primary");
+    renderCoachSet();updateModeControls();
+   }else{
+    if(mode==="onboard"){mode="estimate";refreshTrainMarkerPositions();}
+    gpsMeters=null;$("myGPS").textContent="📍 GPS active";
+    $("myGPS").classList.remove("primary");updateModeControls();
+    announce("তোমার ফোন MRT-6 থেকে "+Math.round(match.distance)+"m দূরে; ট্রেনের অবস্থান হিসেবে ব্যবহার হচ্ছে না।",6000);
+   }
+  },
+  err=>{announce("Location permission / GPS error: "+err.message,9000);endPhoneGPS();},
+  {enableHighAccuracy:true,maximumAge:2000,timeout:20000}
+ );
+});
+
 function cleanupModeLabels(){
  $("buildings").textContent="▥ Hide Buildings";$("buildings").classList.add("primary");
 }
