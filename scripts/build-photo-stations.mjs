@@ -169,63 +169,12 @@ function build(d){
   }
   box("white",x,floors*3.1+.23,z,15,.42,15,"rounded tower flat roof parapet");
  }
- // Separate reference-specific 3D neighborhood silhouettes. Do not cover
- // existing track or detailed station; additions begin >=45 m laterally.
+ // The old city generator painted roads, ponds and even a blue tower at guessed
+ // offsets. They looked like cartoon props and did NOT match Google/OSM.
+ // Leave the true surroundings to accurately geolocated OSM building meshes
+ // and the verified road-way loader. This file models the station facade/roof only.
  const city=d.scene;
- const dense=city.includes("dense")||city.includes("office")||city.includes("highrise")||city.includes("market");
- if(city==="uttara-open"){
-  field(83,-74,85,92);field(-83,67,75,83);
-  pond(93,57,58,74);pond(-101,-72,53,54);
-  for(let i=0;i<6;i++)office(i%2?115:-112,-116+i*45,15,20,4+i%3,i);
-  bridge(31,-42,33);
- }else if(city==="field-city"){
-  field(94,15,90,145);
-  for(let i=0;i<15;i++)office(-64-(i%3)*22,-130+(i*19)%255,13+(i%3)*3,15+(i%4)*2,6+i%5,i);
-  roadway(55,-5,9,250);market(-48,-51,6);
- }else if(city==="mirpur-dense"){
-  for(let i=0;i<22;i++){
-   const side=i%2?1:-1,x=side*(52+(i%4)*23),z=-126+(i*41%252);
-   office(x,z,13+i%4*3,15+i%3*4,4+(i*7%6),i);
-  }
-  roadway(51,0,12,250);market(-49,-69,9);
- }else if(city==="mirpur-roundabout"){
-  circularBlueTower(76,22);
-  for(let i=0;i<13;i++)office(i%2?111:-89,-125+i*20,18,19,6+i%6,i);
-  roadway(52,0,15,240);roadway(103,-45,14,153);
-  bridge(15,-92,93);market(-59,60,10);
- }else if(city==="pond-park"){
-  pond(103,10,82,92);for(let i=0;i<26;i++)tree(45+i%6*12,-115+(i*27%205),5+i%5);
-  office(-74,-75,21,25,6,2);office(-82,61,28,23,9,3);
- }else if(city==="bijoy-green"){
-  for(let i=0;i<57;i++)tree((i%2?1:-1)*(48+(i*13%109)),-138+(i*29%270),5.4+(i%6)*.3);
-  roadway(-79,13,16,257);roadway(75,-6,11,254);
-  box("grass",112,.06,76,73,.12,63,"civic open green field");
-  office(115,-83,37,26,3,1);
- }else if(city==="farmgate-market"){
-  for(let i=0;i<21;i++)office((i%2?1:-1)*(55+i%5*19),-133+(i*31%266),18,19,6+(i*5%7),i);
-  market(-48,61,18);roadway(60,0,15,270);
-  bridge(17,66,53);
- }else if(city==="karwan-office"){
-  officeTower(74,42,17);officeTower(125,-57,13);
-  for(let i=0;i<11;i++)office(-55-(i%4)*22,-126+(i*22),20,21,8+(i%6),i);
-  roadway(59,1,17,280);market(-56,80,10);
- }else if(city==="park-campus"){
-  for(let i=0;i<d.trees;i++)tree((i%2?1:-1)*(52+i%8*14),-137+(i*43)%275,5+(i%5)*.6);
-  office(125,-50,49,28,5,1);office(-122,85,45,35,4,2);
-  roadway(70,0,11,270);
- }else if(city==="tsc-campus"){
-  for(let i=0;i<d.trees;i++)tree((i%2?1:-1)*(48+i%8*11),-140+(i*31)%279,6+(i%6)*.55);
-  amphitheatre(103,-31);office(117,81,55,25,3,0);
-  office(-129,-57,51,36,3,1);
- }else if(city==="press-office"){
-  for(let i=0;i<18;i++)office((i%2?1:-1)*(56+(i%4)*21),-122+(i*33)%245,22,23,6+(i%7),i);
-  roadway(60,0,18,285);bridge(-29,-57,57);
- }else if(city==="motijheel-highrise"){
-  for(let i=0;i<19;i++)office((i%2?1:-1)*(54+(i%4)*25),-132+(i*29)%269,21,24,9+(i*11%11),i);
-  pond(133,33,37,75);roadway(58,0,17,280);
-  market(-52,-85,8);
- }
- // Photo-based architecture highlighting above existing roofs; do not build
+// Photo-based architecture highlighting above existing roofs; do not build
  // another full station over the specialist Agargaon/Farmgate/TSC models.
  if(!d.existingDetailed){
   const halfW=d.width/2,span=d.length;
@@ -262,6 +211,11 @@ function build(d){
    beam("steel",[-halfW,25.8,z],[halfW,25.8,z],.23,.20,"roof truss");
  }
  // Photo-aligned landmark silhouette is original geometry; no photo texture copied.
+ if(d.existingDetailed){
+  // This architectural model is loaded separately (Agargaon/Farmgate/DU).
+  // Retain a tiny nonvisual valid mesh to keep the 16-file manifest complete.
+  box("frame",0,.05,0,.05,.05,.05,"nonvisual station reference anchor");
+ }
  const buffers=[],bufferViews=[],accessors=[],primitives=[];let byteOffset=0,triangleCount=0;
  function accessor(arr,type,n,bounds=false){
   const typed=type===5126?new Float32Array(arr):new Uint32Array(arr);
@@ -292,8 +246,8 @@ function build(d){
    photoRoofColor:d.roofTone,photoAccentColor:d.accent,
    referenceURL:d.photo,sourceGallery:dataset.gallery,
    sourcePhotoCreditedTo:dataset.photographer,sourceCopyrightOwner:dataset.publication,
-   precision:"Visual likeness only. Shapes/colors approximate. Not a scanned/surveyed 1:1 replica.",
-   photographsEmbedded:false,components,triangles:triangleCount,drawGroups:primitives.length}
+   precision:"Station roof/facade visual likeness only. Surrounding land/roads/buildings are geolocated elsewhere; nothing is a surveyed 1:1 replica.",
+   photographsEmbedded:false,geoRoadsIncluded:false,unsurveyedSceneryIncluded:false,components,triangles:triangleCount,drawGroups:primitives.length}
  };
  writeFileSync(baseDir+"/"+d.id+".gltf",JSON.stringify(data));
  return {id:d.id,name:d.n,roof:d.roof,roofTone:d.roofTone,accent:d.accent,scene:d.scene,components:Object.values(components).reduce((a,b)=>a+b,0),triangles:triangleCount,drawGroups:primitives.length,bytes:blob.length,
