@@ -219,7 +219,7 @@ function addFarmgateDetails(index){
  removeFarmgateDetails();
  if(index!==10||googleMode)return;
  const s=st[index],p=at(stopMeters[index]),pos=lonlatPoint(s,0),direction=modelOrientation(p);
- const kinds=["shopfronts","buildings","street-market","pedestrians","greenery","utility-network","streetlights","rail-power","road-markings"];
+ const kinds=["street-market","pedestrians","greenery","utility-network","streetlights"];
  for(const kind of kinds){
   farmgateDetails.push(viewer.entities.add({
    name:"Farmgate — "+kind+" (original approximate 3D model)",
@@ -228,18 +228,7 @@ function addFarmgateDetails(index){
     distanceDisplayCondition:new C.DistanceDisplayCondition(0,kind==="buildings"?2500:1800)}
   }));
  }
- // Local bilingual signs: these are scene labels, not copied signage textures.
- const matrix=C.Matrix4.fromTranslationQuaternionRotationScale(pos,direction,new C.Cartesian3(1,1,1),new C.Matrix4());
- for(const [name,x,y,z] of [
-  ["ফার্মগেট বাজার",45,6.4,58],["Janata Bank / জনতা ব্যাংক",-68,13,-44],
-  ["Islami Bank / ইসলামী ব্যাংক",-80,20,7]]){
-  const place=C.Matrix4.multiplyByPoint(matrix,new C.Cartesian3(x,y,z),new C.Cartesian3());
-  farmgateDetails.push(viewer.entities.add({name:name+" (illustrative sign)",position:place,
-   label:{text:name,font:"bold 14px sans-serif",fillColor:C.Color.WHITE,
-    style:C.LabelStyle.FILL_AND_OUTLINE,outlineColor:C.Color.fromCssColorString("#182b30"),
-    outlineWidth:4,distanceDisplayCondition:new C.DistanceDisplayCondition(15,340),
-    disableDepthTestDistance:0}}));
- }
+
 }
 // 16 separate original low-poly 3D street-environment meshes, dynamically
 // loaded for the chosen station. They complement real OSM building footprints.
@@ -342,19 +331,23 @@ function updateStationText(){
 function clearViewLock(){viewer.camera.lookAtTransform(C.Matrix4.IDENTITY);if(typeof originalCameraFov==="number")viewer.camera.frustum.fov=originalCameraFov;ride=false;$("follow").classList.remove("primary")}
 function stationCinematicCamera(index,animate=true){
  // Genuine 3D street-side elevated approach, not a camera stuck on the rails.
- const p=at(stopMeters[index]),d=stopMeters[index]-185;
- const origin=shiftedCoordinateAt(d,-125),height=240;
+ const p=at(stopMeters[index]),d=clamp(stopMeters[index]-122,0,trackLength-2);
+ const flank=index===8||index===13?-138:-118;
+ const origin=shiftedCoordinateAt(d,flank),height=index===10?96:105;
  const east=(p.lon-origin.lon)*111320*Math.cos(C.Math.toRadians(p.lat));
  const north=(p.lat-origin.lat)*111320;
  const horizontal=Math.max(1,Math.hypot(east,north));
  const destination=C.Cartesian3.fromDegrees(origin.lon,origin.lat,height);
+ // Three-quarter urban-streetscape view, not near-vertical looking only at a roof.
  const orientation={heading:Math.atan2(east,north),
-  pitch:Math.min(-.97,-Math.atan2(height-24,horizontal)-.14),roll:0};
+  pitch:clamp(-Math.atan2(height-23,horizontal)-.075,-.64,-.32),roll:0};
  if(animate)viewer.camera.flyTo({destination,orientation,duration:1.22});
  else viewer.camera.setView({destination,orientation});
 }
 function focusStation(i){
- selectedStation=i;clearViewLock();renderStructure(i);updateStationText();
+ selectedStation=i;clearViewLock();
+ if(mode==="demo")demoMeters=clamp(stopMeters[i]+145,0,trackLength-3);
+ renderStructure(i);updateStationText();
  nearbyRailFurniture(i);
  if(showBuildings&&!googleMode)loadBuildings(i);
  stationCinematicCamera(i,true);
@@ -538,7 +531,7 @@ function appendAdjacentUrbanTiles(focus){
    name:station.n+" — nearby georeferenced OSM 3D neighborhood (illustrative heights)",
    position:lonlatPoint(station,0),
    model:{uri:"./assets/urban/"+j+".gltf",scale:1,minimumPixelSize:0,maximumScale:1,
-    distanceDisplayCondition:new C.DistanceDisplayCondition(0,6500)}
+    distanceDisplayCondition:new C.DistanceDisplayCondition(0,2400)}
   }));
  }
 }
