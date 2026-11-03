@@ -241,6 +241,20 @@ function addFarmgateDetails(index){
     disableDepthTestDistance:0}}));
  }
 }
+// 16 separate original low-poly 3D street-environment meshes, dynamically
+// loaded for the chosen station. They complement real OSM building footprints.
+let neighborhoodProps=null;
+function renderNeighborhoodProps(index){
+ if(neighborhoodProps){viewer.entities.remove(neighborhoodProps);neighborhoodProps=null;}
+ if(googleMode)return;
+ const selected=st[index],tangent=at(stopMeters[index]);
+ neighborhoodProps=viewer.entities.add({
+  name:selected.n+" — illustrative local street furniture and trees in actual 3D",
+  position:lonlatPoint(selected,0),orientation:modelOrientation(tangent),
+  model:{uri:"assets/nearby/"+index+".gltf",scale:1,minimumPixelSize:0,maximumScale:1,
+   distanceDisplayCondition:new C.DistanceDisplayCondition(0,3000)}
+ });
+}
 function renderStructure(index){
  if(stationStructure)viewer.entities.remove(stationStructure);
  const s=st[index],p=at(stopMeters[index]);
@@ -255,6 +269,7 @@ function renderStructure(index){
    scale:1,minimumPixelSize:0,maximumScale:1}});
  setupStreetTraffic(index);
  addFarmgateDetails(index);
+ renderNeighborhoodProps(index);
 }
 // Illustrated traffic near the detailed Farmgate landmark.
 // Separately modeled buses, rickshaws and cars; animation is a visual demo,
@@ -838,6 +853,7 @@ $("google").addEventListener("click",()=>{
   if(googleTiles)googleTiles.show=false;
   buildings.forEach(e=>e.show=showBuildings);
   if(stationStructure)stationStructure.show=true;
+  if(neighborhoodProps)neighborhoodProps.show=true;
   for(const e of farmgateDetails)e.show=true;
   $("google").textContent="◈ Google 3D";return;
  }
@@ -859,6 +875,7 @@ $("loadGoogle").addEventListener("click",async()=>{
   if(osmLayer)osmLayer.show=false;if(satLayer)satLayer.show=false;
    if(roadsLayer)roadsLayer.show=false;if(labelsLayer)labelsLayer.show=false;
   buildings.forEach(e=>e.show=false);if(stationStructure)stationStructure.show=false;
+  if(neighborhoodProps)neighborhoodProps.show=false;
   farmgateDetails.forEach(e=>e.show=false);
   $("google").textContent="◈ Exit Google 3D";$("key").value="";modal.classList.remove("open");
   announce("Google 3D tiles চালু হয়েছে; ঢাকায় পূর্ণ photorealistic coverage নিশ্চিত নয়।",8000);
