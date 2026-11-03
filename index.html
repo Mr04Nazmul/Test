@@ -240,11 +240,36 @@ body.panel-hidden .controls{margin-left:auto}
  font-size:9px;line-height:1.25;color:#edf8f2cf;background:#0a1b24a6;
  border-radius:5px;padding:3px 6px;text-decoration:none;max-width:55vw}
 @media(max-width:680px){#roadAttribution{bottom:176px;left:7px;max-width:50vw;font-size:8px}}
+
+.train-radar-panel[hidden]{display:none!important}
+.train-radar-panel{position:fixed;z-index:22;left:14px;bottom:calc(env(safe-area-inset-bottom) + 125px);
+ width:min(380px,calc(100vw - 28px));max-height:min(65vh,550px);overflow:auto;overscroll-behavior:contain;
+ border:1px solid #78f6cb4d;border-radius:18px;background:#091e2bf5;backdrop-filter:blur(16px);
+ color:#f3fcf8;padding:14px;box-shadow:0 14px 45px #001018c9;font-size:12px}
+.radar-title{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.radar-title strong{color:#66f6c7;font-size:15px}
+.radar-title button{padding:6px 11px;border-radius:10px;color:white;background:#ffffff1a;border:1px solid #ffffff47}
+.radar-notice{color:#b5d4df;font-size:11px;line-height:1.45;margin:9px 0}
+.radar-clock{display:flex;justify-content:space-between;align-items:center;gap:7px;color:#b9f5de;padding:9px 0;border-top:1px solid #ffffff20}
+#trainRadarList{display:flex;flex-direction:column;gap:7px}
+.radar-train{display:flex;flex-direction:column;align-items:stretch;text-align:left;gap:4px;width:100%;
+ background:#143645;color:white;border:1px solid #ffffff3b;border-radius:11px;padding:10px 11px}
+.radar-train.selected{border-color:#79f1cb;background:#0b514a}
+.radar-train b{font-size:12px}.radar-train small{font-size:10px;color:#c8dadf;line-height:1.35}
+.radar-empty{background:#143746;border:1px solid #ffffff24;padding:11px;border-radius:12px}
+.radar-empty strong{color:#9beccb}.radar-empty p{margin:6px 0 0}
+.radar-foot{display:flex;gap:7px;margin:11px 0}
+.radar-foot button{flex:1;padding:9px 5px;border-radius:9px;color:#f7fffa;background:#146958;border:1px solid #5cceb1;font-size:11px}
+.train-radar-panel>a{color:#8fead4;text-decoration:underline;font-size:11px}
+@media(max-width:700px){.train-radar-panel{left:8px;right:8px;width:auto;bottom:calc(env(safe-area-inset-bottom) + 116px);
+ max-height:min(59vh,520px);padding:12px}.radar-train{padding:9px}}
+
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/";</script>
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
 <script src="./data/mrt6-track.js"></script>
 <script src="./data/metro-schedule.js"></script>
+<script src="./data/train-radar.js?v=20261104-radar-v1"></script>
 </head>
 <body>
 <div id="app"><div id="scene" aria-label="Interactive Dhaka Metro 3D map"></div></div>
@@ -268,7 +293,8 @@ body.panel-hidden .controls{margin-left:auto}
 </aside>
 <div class="controls">
 <button id="overview" class="ctrl optional-control">◉ পুরো রুট</button>
-<button id="findTrain" class="ctrl primary">🚆 Find Train</button>
+<button id="findTrain" class="ctrl primary">🎯 Find Nearest Train</button>
+<button id="trainRadarButton" class="ctrl" type="button" aria-controls="trainRadarPanel" aria-expanded="false">🚆 Train Radar</button>
 <button id="sound" class="ctrl primary" type="button" aria-pressed="false" title="Start locally generated Dhaka 3D audio with your tap">🔊 সাউন্ড চালু</button>
 <button id="soundTest" class="ctrl" type="button" title="Immediate short three-tone audio test">🔔 Test Sound</button>
 <button id="soundOptions" type="button" class="ctrl optional-control" aria-controls="soundPanel" aria-expanded="false">🎚 Sound Zones</button>
@@ -304,6 +330,19 @@ body.panel-hidden .controls{margin-left:auto}
 </div>
 </div>
 
+
+<aside id="trainRadarPanel" class="train-radar-panel" hidden aria-label="Dhaka Metro estimated train radar">
+ <div class="radar-title"><strong>🚆 MRT-6 Train Radar</strong><button type="button" id="trainRadarClose" aria-label="Close train radar">✕</button></div>
+ <p class="radar-notice">সময়সূচি অনুযায়ী অনুমান · এটি Live GPS নয়। DMTCL কোনো উন্মুক্ত train-location feed দেয় না।</p>
+ <div class="radar-clock"><b id="trainRadarClock">Dhaka time loading…</b><span id="trainRadarCount">—</span></div>
+ <div id="trainRadarList" aria-live="polite"><p>সময়সূচির ট্রেন গণনা হচ্ছে…</p></div>
+ <div class="radar-foot">
+ <button type="button" id="trainRadarOverview">◉ পুরো রুট দেখো</button>
+ <button type="button" id="trainRadarNearest">🎯 সবচেয়ে কাছের ট্রেন</button>
+ </div>
+ <a href="https://dmtcl.gov.bd/pages/static-pages/6922df5f933eb65569e218ed" target="_blank" rel="noopener noreferrer">DMTCL অফিসিয়াল ট্রেনের সময়সূচি</a>
+</aside>
+
 <aside id="soundPanel" class="sound-panel" hidden aria-label="Dhaka station 3D sound settings">
  <header class="sound-panel-title"><strong>🎧 Dhaka 3D Audio</strong><button id="soundClose" type="button" aria-label="Close sound settings">✕</button></header>
  <p id="soundState" aria-live="polite">Sound OFF · 🔊 সাউন্ড চালু চাপো</p>
@@ -338,6 +377,6 @@ body.panel-hidden .controls{margin-left:auto}
 </div>
 <script src="dhaka-soundscape.js?v=20261104-local-audio-fix-v3"></script>
 <script src="actual-roads.js?v=20261104-osm-geometry-v2"></script>
-<script src="app-v2.js?v=20261104-osm-geometry-v2"></script>
+<script src="app-v2.js?v=20261104-train-radar-v2"></script>
 </body>
 </html>
