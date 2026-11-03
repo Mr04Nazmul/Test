@@ -293,7 +293,7 @@ function findTrain(){
  ride=false;$("follow").classList.remove("primary");
  viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
  const p=at(distance);
- viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(p.lon,p.lat,410),
+ viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(p.lon,p.lat,250),
   orientation:{heading:p.heading,pitch:Cesium.Math.toRadians(-60),roll:0},duration:1.2});
  notify("🚆 চলমান 3D ট্রেন দেখা যাচ্ছে — এটি simulation, real-time GPS নয়।",6500);
 }
@@ -322,7 +322,7 @@ async function loadOSMBuildings(i){
   if(!response.ok)throw new Error("OSM server "+response.status);
   const data=await response.json();
   if(!buildingsEnabled||googleMode||selectedStation!==i)return;
-  for(const item of (data.elements||[]).slice(0,190)){
+  for(const item of (data.elements||[]).slice(0,110)){
    if(!item.geometry||item.geometry.length<4)continue;
    const points=item.geometry.filter(p=>Number.isFinite(p.lon)&&Number.isFinite(p.lat)).flatMap(p=>[p.lon,p.lat]);
    if(points.length<8)continue;
@@ -377,6 +377,7 @@ async function enableSatellite(){
   notify("Satellite / aerial imagery (Esri). এটি Google Earth নয়; 3D buildings আলাদা simulated OSM geometry.",8000);
  }catch(err){
   button.textContent="◈ Satellite";
+  $("status").textContent="STREET MAP";
   notify("Satellite imagery লোড হয়নি: "+(err.message||"network/provider সমস্যা"),10000);
  }finally{button.disabled=false;}
 }
@@ -430,7 +431,14 @@ $("loadGoogle").addEventListener("click",async()=>{
   notify("Google 3D লোড হয়নি: "+(err.message||"API key / billing / coverage check করো"),15000);
  }finally{button.disabled=false;button.textContent="Load Google 3D";}
 });
-notify("🚆 3D ট্রেন Farmgate-এর কাছে চলছে। Satellite বোতাম চাপলে real imagery লোড হবে।",9000);
+// Use satellite as the initial imagery for this non-commercial test prototype.
+enableSatellite();
+// Try nearby OSM building footprints, with an automatic graceful fallback when offline.
+buildingsEnabled=true;
+$("buildings").classList.add("primary");
+$("buildings").textContent="▥ Hide Buildings";
+loadOSMBuildings(selectedStation);
+notify("ঢাকার Satellite view ও চলমান 3D ট্রেন দেখানো হচ্ছে। Find Train চাপলে ট্রেনের কাছে যাবে।",9500);
 })();
 </script>
 </body>
