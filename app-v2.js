@@ -381,6 +381,29 @@ function focusStation(i){
  stationCinematicCamera(i,true);
  announce(nameFor(i)+" — সিনেমাটিক স্টেশনের দৃশ্য, বাস্তব রুটে আনুমানিক 3D পরিবেশ",5500);
 }
+// Explore above, inside, and below the elevated station. 3D visuals are illustrative.
+const stationShotLevels=[
+ {name:"Street",back:85,side:-64,height:14,target:2},
+ {name:"Concourse",back:34,side:-27,height:18,target:15},
+ {name:"Platform",back:39,side:-20,height:23,target:21},
+ {name:"Roof",back:110,side:-85,height:78,target:28}
+];
+let stationShot=-1;
+function showNextStationLevel(){
+ if(googleMode){announce("Station Levels দেখতে Google 3D mode বন্ধ করো।",5000);return;}
+ stationShot=(stationShot+1)%stationShotLevels.length;
+ const shot=stationShotLevels[stationShot],s=st[selectedStation];
+ clearViewLock();
+ const eye=shiftedCoordinateAt(clamp(stopMeters[selectedStation]-shot.back,0,trackLength-1),shot.side);
+ const east=(s.lon-eye.lon)*111320*Math.cos(C.Math.toRadians(s.lat));
+ const north=(s.lat-eye.lat)*111320,horizontal=Math.max(1,Math.hypot(east,north));
+ const destination=C.Cartesian3.fromDegrees(eye.lon,eye.lat,shot.height);
+ const orientation={heading:Math.atan2(east,north),
+  pitch:clamp(-Math.atan2(shot.height-shot.target,horizontal),-1.35,.15),roll:0};
+ viewer.camera.flyTo({destination,orientation,duration:1.1});
+ $("stationLevels").textContent="🏢 "+shot.name+" View";
+ announce(s.n+" — "+shot.name+" 3D স্তর (modelled, exact architectural survey নয়)",4900);
+}
 function overview(){
  clearViewLock();viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(90.389,23.793,24000),
  orientation:{heading:0,pitch:C.Math.toRadians(-74),roll:0},duration:1.3});
@@ -894,7 +917,8 @@ $("pause").addEventListener("click",()=>{
  if(mode==="estimate"&&!trainData.length){mode="demo";updateModeControls();announce("এখন অনুমিত চলমান ট্রেন নেই; Demo ride চলছে।")}
 });
 $("speed").addEventListener("click",()=>{rate=rate===1?2:rate===2?4:1;updateModeControls()});
-$("cityCoverage").addEventListener("click",()=>{
+$("stationLevels").addEventListener("click",showNextStationLevel);
+ $("cityCoverage").addEventListener("click",()=>{
  extendedCityCoverage=!extendedCityCoverage;
  $("cityCoverage").textContent=extendedCityCoverage?"🏙 Local 3D":"🏙 Wider 3D";
  $("cityCoverage").classList.toggle("primary",extendedCityCoverage);
