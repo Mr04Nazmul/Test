@@ -5,6 +5,8 @@ import {readFileSync,existsSync,statSync} from 'node:fs';
 const app=readFileSync('app-v2.js','utf8');
 assert(app.includes('renderStationLevels(index,p,s);'),'Station detail overlay not wired to the viewer');
 assert(app.includes('assets/station-detail/'),'3D station detail asset path absent');
+assert(app.includes('function showNextStationLevel()'),'Multi-level station camera missing');
+assert(readFileSync('index.html','utf8').includes('id="stationLevels"'),'Multi-level camera button missing');
 const levels=new Set(['street entrance','concourse gates','elevated platform']);
 let totalParts=0,totalTriangles=0;
 for(let i=0;i<16;i++){
