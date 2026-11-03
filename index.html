@@ -45,6 +45,10 @@ header{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .pill.active{background:#156d60}.pill svg{width:14px;height:14px}
 #notice{position:absolute;left:50%;top:76px;transform:translateX(-50%);max-width:min(620px,94vw);padding:10px 15px;background:#061b2aec;color:#cde5f4;border:1px solid #ffffff22;box-shadow:0 8px 25px #0005;border-radius:12px;text-align:center;font-size:11px;line-height:1.4;pointer-events:none;z-index:6}
 #notice:empty{display:none}
+body.panel-hidden .panel{display:none}
+body.panel-hidden .controls{margin-left:auto}
+#satellite.primary{background:#54daba;color:#09271f}
+#findTrain.primary{background:#ffc85e;color:#2b1e00}
 .backdrop{display:none;position:fixed;inset:0;background:#0009;z-index:20;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)}
 .backdrop.open{display:flex}.modal{width:min(480px,100%);background:#101e2c;border:1px solid #ffffff35;border-radius:20px;padding:24px;box-shadow:0 20px 60px #000b}
 .modal h2{margin:0 0 8px;font-size:21px}.modal p{font-size:13px;color:#aebfd0;line-height:1.7}.modal a{color:#47eec0}
@@ -88,7 +92,9 @@ header{display:flex;justify-content:space-between;align-items:center;gap:12px}
 <div id="stationList"></div>
 </aside>
 <div class="controls">
-<button id="overview" class="ctrl primary">◉ পুরো রুট</button>
+<button id="overview" class="ctrl">◉ পুরো রুট</button>
+<button id="findTrain" class="ctrl primary">🚆 Find Train</button>
+<button id="satellite" class="ctrl">◈ Satellite</button>
 <button id="follow" class="ctrl">▣ ট্রেনের সাথে</button>
 <button id="pause" class="ctrl">❚❚ Pause</button>
 <button id="buildings" class="ctrl">▥ 3D Buildings</button>
@@ -99,6 +105,7 @@ header{display:flex;justify-content:space-between;align-items:center;gap:12px}
 <button id="north" class="pill">◎ Uttara</button>
 <button id="central" class="pill">◎ Farmgate</button>
 <button id="south" class="pill">◎ Motijheel</button>
+<button id="togglePanel" class="pill">▤ Hide Panel</button>
 <button id="speed" class="pill">▶ 1× Speed</button>
 </div>
 </div>
@@ -136,7 +143,7 @@ const stations=[
 ];
 const $=id=>document.getElementById(id);
 const notify=(s,ms=6000)=>{ $("notice").textContent=s; if(ms>0)setTimeout(()=>{if($("notice").textContent===s)$("notice").textContent="";},ms); };
-let viewer, googleTiles=null, osmLayer=null, demoRoofs=[], routeEntities=[], cars=[], playing=true, ride=false, rate=1, distance=0, length=0, previousTime=0, googleMode=false, osmBuildings=[], buildingsEnabled=false, selectedStation=10;
+let viewer, googleTiles=null, osmLayer=null, demoRoofs=[], routeEntities=[], cars=[], trainParts=[], satelliteLayer=null, satelliteOn=false, playing=true, ride=false, rate=1, distance=0, length=0, previousTime=0, googleMode=false, osmBuildings=[], buildingsEnabled=false, selectedStation=10;
 const stationList=$("stationList");
 stations.forEach((s,i)=>{
  const el=document.createElement("button"); el.type="button"; el.className="station";el.setAttribute("data-index",i);
@@ -164,7 +171,8 @@ try{
  viewer.scene.skyAtmosphere.show=true;
  viewer.scene.backgroundColor=Cesium.Color.fromCssColorString("#143147");
  osmLayer=viewer.imageryLayers.addImageryProvider(new Cesium.OpenStreetMapImageryProvider({url:"https://tile.openstreetmap.org/"}));
- viewer.camera.setView({destination:Cesium.Cartesian3.fromDegrees(90.393,23.789,24000),orientation:{heading:0,pitch:Cesium.Math.toRadians(-68),roll:0}});
+ viewer.camera.setView({destination:Cesium.Cartesian3.fromDegrees(90.3865,23.7625,550),orientation:{heading:0.3,pitch:Cesium.Math.toRadians(-45),roll:0}});
+ viewer.resolutionScale=Math.min(window.devicePixelRatio>2?0.85:1,1);
 }catch(err){notify("3D viewer শুরু হয়নি: "+err.message,0);return;}
 const cart=(p,h=20)=>Cesium.Cartesian3.fromDegrees(p.lon,p.lat,h);
 const lineCoords=stations.map(s=>s.lon).length;
@@ -177,6 +185,7 @@ for(let i=0;i<stations.length-1;i++){
  const b=Cesium.Cartographic.fromDegrees(stations[i+1].lon,stations[i+1].lat);
  const g=new Cesium.EllipsoidGeodesic(a,b);geodesics.push(g);cum.push(cum[i]+g.surfaceDistance);
 }length=cum[cum.length-1];
+distance=cum[10]+135; // start with the simulated train near Farmgate, inside the visible camera area
 function at(d){
  let val=Math.max(0,Math.min(d,length-0.01)),i=0;
  for(;i<geodesics.length-1&&cum[i+1]<val;i++){}
@@ -204,13 +213,51 @@ stations.forEach((s,i)=>{
  });demoRoofs.push(roof);
  const pole=viewer.entities.add({name:"Support (illustrative)",position:cart(s,8),cylinder:{length:16,topRadius:1.8,bottomRadius:2.8,material:Cesium.Color.fromCssColorString("#a1aab0")}});demoRoofs.push(pole);
 });
+// Custom built six-car train with visible windows, doors, roof and side stripe.
+// This is a simulated 3D train, NOT a live GPS vehicle feed.
+const trainPaint=Cesium.Color.fromCssColorString("#e8f0f4");
+const windowPaint=Cesium.Color.fromCssColorString("#173d5b");
+const bandPaint=Cesium.Color.fromCssColorString("#0b9f84");
 for(let i=0;i<6;i++){
- const coach=viewer.entities.add({
-  name:"Simulated MRT-6 coach "+(i+1),position:cart(stations[0],22),
-  box:{dimensions:new Cesium.Cartesian3(3.4,17.5,3.5),material:Cesium.Color.fromCssColorString(i===0?"#0cbf8d":"#d9e4eb"),outline:true,outlineColor:Cesium.Color.fromCssColorString("#19896e")}
- });
- cars.push(coach);
+ const parts=[];
+ const specs=[
+  {side:0,long:0,z:22.4,w:3.35,l:17.5,h:3.7,color:trainPaint},
+  {side:0,long:0,z:24.45,w:3.45,l:17.1,h:0.32,color:Cesium.Color.fromCssColorString("#8b9ba8")},
+  {side:1.76,long:0,z:21.35,w:0.09,l:17,h:0.45,color:bandPaint},
+  {side:-1.76,long:0,z:21.35,w:0.09,l:17,h:0.45,color:bandPaint}
+ ];
+ for(const side of [-1,1]){
+  for(const along of [-6.2,0,6.2]){
+   specs.push({side:side*1.76,long:along,z:23,w:.085,l:3.55,h:1.22,color:windowPaint});
+  }
+  for(const along of [-3.2,3.2]){
+   specs.push({side:side*1.8,long:along,z:22,w:.09,l:1.15,h:2.25,color:Cesium.Color.fromCssColorString("#9aaebb")});
+  }
+ }
+ if(i===0||i===5){
+  specs.push({side:0,long:i===0?8.78:-8.78,z:23,w:2.85,l:.11,h:1.55,color:windowPaint});
+  specs.push({side:0,long:i===0?8.95:-8.95,z:21.45,w:3.15,l:.11,h:.43,color:bandPaint});
+ }
+ for(const spec of specs){
+  const entity=viewer.entities.add({
+   name:"Dhaka Metro Coach "+(i+1),
+   position:cart(stations[10],spec.z),
+   box:{dimensions:new Cesium.Cartesian3(spec.w,spec.l,spec.h),material:spec.color,outline:spec.color===trainPaint,outlineColor:Cesium.Color.fromCssColorString("#4a6271")}
+  });
+  parts.push({entity,spec});
+ }
+ trainParts.push(parts);
+ cars.push(parts[0].entity);
 }
+// Support columns along the approximate corridor: intentionally illustrative, not survey accurate.
+const supportMat=Cesium.Color.fromCssColorString("#9aa5af");
+for(let d=60;d<length;d+=210){
+ const p=at(d);
+ viewer.entities.add({name:"Illustrative elevated rail support",
+  position:cart(p,9),
+  cylinder:{length:18,topRadius:1.25,bottomRadius:1.7,material:supportMat,outline:false}});
+}
+
 function setActive(i){
  stationList.querySelectorAll(".station").forEach(el=>el.classList.toggle("active",Number(el.dataset.index)===i));
 }
@@ -219,22 +266,38 @@ function focusStation(i){
  ride=false;$("follow").classList.remove("primary");
  setActive(i);
  const s=stations[i];
+ viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
  viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(s.lon,s.lat,950),orientation:{heading:0,pitch:Cesium.Math.toRadians(-47),roll:0},duration:1.4});
  notify(s.bn+" · "+s.n,3000);
 }
 function overview(){
+ viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
  ride=false;$("follow").classList.remove("primary");
  stationList.querySelectorAll(".station").forEach(el=>el.classList.remove("active"));
- viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(90.3915,23.789,25500),orientation:{heading:0,pitch:Cesium.Math.toRadians(-69),roll:0},duration:1.7});
+ viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(90.3915,23.789,21000),orientation:{heading:0,pitch:Cesium.Math.toRadians(-69),roll:0},duration:1.7});
 }
 function renderTrain(){
- for(let i=0;i<cars.length;i++){
+ for(let i=0;i<trainParts.length;i++){
   const p=at((distance-i*20+length)%length);
-  const pos=cart(p,22.2);
-  cars[i].position=pos;
-  cars[i].orientation=Cesium.Transforms.headingPitchRollQuaternion(pos,new Cesium.HeadingPitchRoll(p.heading,0,0));
+  const angle=p.heading,phi=Cesium.Math.toRadians(p.lat), metersLon=111320*Math.cos(phi);
+  for(const {entity,spec} of trainParts[i]){
+   const east=spec.side*Math.cos(angle)+spec.long*Math.sin(angle);
+   const north=-spec.side*Math.sin(angle)+spec.long*Math.cos(angle);
+   const position=Cesium.Cartesian3.fromDegrees(p.lon+east/metersLon,p.lat+north/111320,spec.z);
+   entity.position=position;
+   entity.orientation=Cesium.Transforms.headingPitchRollQuaternion(position,new Cesium.HeadingPitchRoll(angle,0,0));
+  }
  }
 }
+function findTrain(){
+ ride=false;$("follow").classList.remove("primary");
+ viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+ const p=at(distance);
+ viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(p.lon,p.lat,410),
+  orientation:{heading:p.heading,pitch:Cesium.Math.toRadians(-60),roll:0},duration:1.2});
+ notify("🚆 চলমান 3D ট্রেন দেখা যাচ্ছে — এটি simulation, real-time GPS নয়।",6500);
+}
+
 function loop(t){
  const dt=Math.min(0.07,Math.max(0,(t-previousTime)/1000||0));previousTime=t;
  if(playing){distance=(distance+dt*13.5*rate)%length;renderTrain();}
@@ -284,7 +347,44 @@ $("buildings").addEventListener("click",()=>{
  else{osmBuildings.forEach(e=>viewer.entities.remove(e));osmBuildings=[];}
 });
 
+
+async function enableSatellite(){
+ if(googleMode){
+  notify("Google 3D mode বন্ধ করে Satellite mode নির্বাচন করো।",7000);return;
+ }
+ if(satelliteOn){
+  satelliteOn=false;
+  if(satelliteLayer)satelliteLayer.show=false;
+  if(osmLayer)osmLayer.show=true;
+  $("satellite").textContent="◈ Satellite";$("satellite").classList.remove("primary");
+  $("status").textContent="STREET MAP";
+  notify("Street map mode",2500);return;
+ }
+ const button=$("satellite");
+ button.disabled=true;button.textContent="Loading…";
+ try{
+  if(!satelliteLayer){
+   const provider=await Cesium.ArcGisMapServerImageryProvider.fromUrl(
+    "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer",
+    {credit:"Satellite imagery: Esri and imagery contributors (see map attribution)"}
+   );
+   satelliteLayer=viewer.imageryLayers.addImageryProvider(provider);
+  }
+  satelliteOn=true;satelliteLayer.show=true;
+  if(osmLayer)osmLayer.show=false;
+  button.classList.add("primary");button.textContent="◈ Street Map";
+  $("status").textContent="SATELLITE VIEW";
+  notify("Satellite / aerial imagery (Esri). এটি Google Earth নয়; 3D buildings আলাদা simulated OSM geometry.",8000);
+ }catch(err){
+  button.textContent="◈ Satellite";
+  notify("Satellite imagery লোড হয়নি: "+(err.message||"network/provider সমস্যা"),10000);
+ }finally{button.disabled=false;}
+}
+$("satellite").addEventListener("click",enableSatellite);
+
 renderTrain();requestAnimationFrame(loop);
+$("findTrain").addEventListener("click",findTrain);
+$("togglePanel").addEventListener("click",()=>{document.body.classList.toggle("panel-hidden");$("togglePanel").textContent=document.body.classList.contains("panel-hidden")?"▤ Show Panel":"▤ Hide Panel";});
 $("overview").addEventListener("click",overview);
 $("north").addEventListener("click",()=>focusStation(0));
 $("central").addEventListener("click",()=>focusStation(10));
@@ -301,7 +401,7 @@ $("speed").addEventListener("click",()=>{
 });
 const modal=$("settings");
 $("google").addEventListener("click",()=>{
- if(googleMode){googleMode=false;viewer.scene.globe.show=true;if(osmLayer)osmLayer.show=true;if(googleTiles)googleTiles.show=false;demoRoofs.forEach(x=>x.show=true);osmBuildings.forEach(x=>x.show=buildingsEnabled);$("status").textContent="DEMO MAP";$("google").textContent="◈ Google 3D";notify("Free 3D demo map enabled.");return;}
+ if(googleMode){googleMode=false;viewer.scene.globe.show=true;if(osmLayer)osmLayer.show=!satelliteOn;if(satelliteLayer)satelliteLayer.show=satelliteOn;if(googleTiles)googleTiles.show=false;demoRoofs.forEach(x=>x.show=true);osmBuildings.forEach(x=>x.show=buildingsEnabled);$("status").textContent="DEMO MAP";$("google").textContent="◈ Google 3D";notify("Free 3D demo map enabled.");return;}
  modal.classList.add("open");$("key").focus();
 });
 $("close").addEventListener("click",()=>modal.classList.remove("open"));
@@ -318,7 +418,7 @@ $("loadGoogle").addEventListener("click",async()=>{
    viewer.scene.primitives.add(googleTiles);
   }else googleTiles.show=true;
   googleMode=true;viewer.scene.globe.show=false;
-  if(osmLayer)osmLayer.show=false;
+  if(osmLayer)osmLayer.show=false;if(satelliteLayer)satelliteLayer.show=false;
   demoRoofs.forEach(x=>x.show=false);osmBuildings.forEach(x=>x.show=false);
   $("status").textContent="GOOGLE 3D API";
   $("google").textContent="◈ Demo Map";
@@ -326,11 +426,11 @@ $("loadGoogle").addEventListener("click",async()=>{
   notify("Google 3D Tiles চালু হয়েছে। ঢাকার এলাকায় surface 3D coverage না থাকলে ভবন নাও দেখা যেতে পারে।",11000);
   overview();
  }catch(err){
-  googleMode=false;viewer.scene.globe.show=true;if(osmLayer)osmLayer.show=true;
+  googleMode=false;viewer.scene.globe.show=true;if(osmLayer)osmLayer.show=!satelliteOn;if(satelliteLayer)satelliteLayer.show=satelliteOn;
   notify("Google 3D লোড হয়নি: "+(err.message||"API key / billing / coverage check করো"),15000);
  }finally{button.disabled=false;button.textContent="Load Google 3D";}
 });
-notify("OpenStreetMap demo mode: রুট ও ট্রেন 3D সিমুলেশন; বাস্তব Google 3D দেখতে API key প্রয়োজন।",11000);
+notify("🚆 3D ট্রেন Farmgate-এর কাছে চলছে। Satellite বোতাম চাপলে real imagery লোড হবে।",9000);
 })();
 </script>
 </body>
