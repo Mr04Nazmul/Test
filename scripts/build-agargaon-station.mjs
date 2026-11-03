@@ -9,16 +9,17 @@
  */
 import {writeFileSync,mkdirSync} from "node:fs";
 import {join} from "node:path";
+import {deflateSync} from "node:zlib";
 
 const assets=join(process.cwd(),"assets");mkdirSync(assets,{recursive:true});
 const palette={
  concrete:"#b3b2ac",concreteLight:"#d6d3ca",concreteDark:"#797c7c",
  brick:"#a65648",brickLight:"#c67e67",brickMortar:"#d8aca0",
  metal:"#778886",silver:"#bac2be",black:"#2d383b",
- roof:"#178363",roofLight:"#289e7b",roofDark:"#16694f",
- glass:"#6c9198",glassDark:"#385f65",windowLight:"#92b9bb",
+ roof:"#31765b",roofLight:"#3d8267",roofDark:"#225840",
+ glass:"#77949c",glassDark:"#49676d",windowLight:"#a2bec2",
  platform:"#c8c9c2",tactile:"#dbc74c",white:"#e4e6df",
- asphalt:"#383d42",asphaltLight:"#4c5155",marking:"#e7e4d3",
+ asphalt:"#46484b",asphaltLight:"#585b5d",marking:"#e7e4d3",
  plant:"#397a45",plantLight:"#5c9861",trunk:"#705a43",
  carWhite:"#c7d0cf",carGreen:"#218b6d",carRed:"#b64c48",
  bus:"#2d7469",busStrip:"#d8d2c7",rickshaw:"#228760",
@@ -32,6 +33,69 @@ const materials=Object.entries(palette).map(([name,color])=>{
  return {name,alphaMode:glass?"BLEND":"OPAQUE",doubleSided:true,
   pbrMetallicRoughness:{baseColorFactor:base,metallicFactor:glass?.14:0.04,roughnessFactor:glass?.25:0.83}};
 });
+
+// Original generated surface textures, never copied from Google Earth / photos.
+// Embedded base64 textures are glTF-compatible PNGs; window/roof/bricks are
+// physically suggestive but not observations of specific Agargaon buildings.
+function crc32(buf){
+ let c=0xffffffff;
+ for(const b of buf){c^=b;for(let i=0;i<8;i++)c=(c>>>1)^(0xedb88320&-(c&1))}
+ return (c^0xffffffff)>>>0;
+}
+function pngChunk(type,buf){
+ const n=Buffer.alloc(4);n.writeUInt32BE(buf.length);
+ const t=Buffer.from(type),crc=Buffer.alloc(4);crc.writeUInt32BE(crc32(Buffer.concat([t,buf])));
+ return Buffer.concat([n,t,buf,crc]);
+}
+function proceduralPNG(kind){
+ const w=128,h=128,rows=Buffer.alloc((w*4+1)*h);
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+  const row=y*(w*4+1);rows[row]=0;
+  const ix=row+1+x*4;
+  const noise=((x*37+y*53+x*y*7)%29)-14;
+  let f=232;
+  if(kind==="brick"){
+   const course=Math.floor(y/15),mortar=y%15<2||((x+course*23)%38)<2;
+   f=mortar?165:233+noise*.65;
+  }else if(kind==="roof"){
+   // Repeating dark pressed seams across a gently weathered green canopy.
+   const seam=(x%12)<2,weather=(y%24)>20;
+   f=seam?162:weather?206:237+noise*.5;
+  }else if(kind==="concrete"){
+   const joint=x%64<2||y%48<2;
+   f=joint?190:234+noise*1.1;
+   if((x+3*y)%67<2)f-=8;
+  }else if(kind==="asphalt"){
+   const grains=(x*19+y*23+x*y)%13;
+   f=217+(grains-6)*1.2;
+  }else if(kind==="glass"){
+   const frame=(x%48)<3||(y%56)<3;
+   const reflection=((x+y*2)%34)<7;
+   f=frame?155:reflection?249:224+noise*.4;
+  }
+  const v=Math.max(20,Math.min(255,Math.round(f)));
+  rows[ix]=v;rows[ix+1]=v;rows[ix+2]=v;rows[ix+3]=255;
+ }
+ const header=Buffer.alloc(13);header.writeUInt32BE(w);header.writeUInt32BE(h,4);header[8]=8;header[9]=6;
+ return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),
+  pngChunk("IHDR",header),pngChunk("IDAT",deflateSync(rows,{level:9})),
+  pngChunk("IEND",Buffer.alloc(0))]);
+}
+const textureKinds=["brick","roof","concrete","asphalt","glass"];
+const images=textureKinds.map(k=>({name:"original-"+k+"-surface",
+ uri:"data:image/png;base64,"+proceduralPNG(k).toString("base64"),mimeType:"image/png"}));
+const samplers=[{wrapS:10497,wrapT:10497,magFilter:9729,minFilter:9987}];
+const textures=images.map((_,i)=>({source:i,sampler:0}));
+const textureMap=Object.fromEntries(textureKinds.map((k,i)=>[k,i]));
+for(const mat of materials){
+ const name=mat.name;
+ const kind=name.startsWith("brick")?"brick":name.startsWith("roof")?"roof":
+  name.startsWith("concrete")||name==="platform"?"concrete":
+  name.startsWith("asphalt")?"asphalt":
+  name.startsWith("glass")||name==="windowLight"?"glass":null;
+ if(kind)mat.pbrMetallicRoughness.baseColorTexture={index:textureMap[kind],texCoord:0};
+ if(kind==="roof")mat.pbrMetallicRoughness.metallicFactor=.19;
+}
 const matIds=Object.fromEntries(Object.keys(palette).map((n,i)=>[n,i]));
 // One unit cube reused for all structural parts and street furniture.
 const face=[
@@ -42,13 +106,13 @@ const face=[
  {n:[0,1,0],v:[[-.5,.5,.5],[.5,.5,.5],[.5,.5,-.5],[-.5,.5,-.5]]},
  {n:[0,-1,0],v:[[-.5,-.5,-.5],[.5,-.5,-.5],[.5,-.5,.5],[-.5,-.5,.5]]}
 ];
-const pos=[],nor=[],ind=[];
+const pos=[],nor=[],ind=[],uv=[];
 for(const f of face){
  const start=pos.length/3;
- for(const v of f.v){pos.push(...v);nor.push(...f.n);}
+ for(let j=0;j<f.v.length;j++){pos.push(...f.v[j]);nor.push(...f.n);uv.push(j===1||j===2?1:0,j>=2?1:0)}
  ind.push(start,start+1,start+2,start,start+2,start+3);
 }
-const bytes=[Buffer.from(new Float32Array(pos).buffer),Buffer.from(new Float32Array(nor).buffer),Buffer.from(new Uint16Array(ind).buffer)];
+const bytes=[Buffer.from(new Float32Array(pos).buffer),Buffer.from(new Float32Array(nor).buffer),Buffer.from(new Uint16Array(ind).buffer),Buffer.from(new Float32Array(uv).buffer)];
 const bufferViews=[];let offset=0;
 for(let i=0;i<bytes.length;i++){
  bufferViews.push({buffer:0,byteOffset:offset,byteLength:bytes[i].length});
@@ -57,10 +121,11 @@ for(let i=0;i<bytes.length;i++){
 const accessors=[
  {bufferView:0,componentType:5126,count:24,type:"VEC3",min:[-.5,-.5,-.5],max:[.5,.5,.5]},
  {bufferView:1,componentType:5126,count:24,type:"VEC3"},
- {bufferView:2,componentType:5123,count:36,type:"SCALAR",min:[0],max:[23]}
+ {bufferView:2,componentType:5123,count:36,type:"SCALAR",min:[0],max:[23]},
+  {bufferView:3,componentType:5126,count:24,type:"VEC2"}
 ];
 const meshes=materials.map((mat,i)=>({name:mat.name+" component",primitives:[{
- attributes:{POSITION:0,NORMAL:1},indices:2,material:i
+ attributes:{POSITION:0,NORMAL:1,TEXCOORD_0:3},indices:2,material:i
 }]}));
 const nodes=[];
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
@@ -255,7 +320,7 @@ for(const x of [-38,38])for(const z of [-85,86])greenery(x,z,4.4);
 const meshBuffer=Buffer.concat(bytes);
 const gltf={
  asset:{version:"2.0",generator:"Agargaon MRT-6 photographed-feature procedural architecture v1"},
- scene:0,scenes:[{nodes:nodes.map((_,i)=>i)}],nodes,meshes,materials,
+ scene:0,scenes:[{nodes:nodes.map((_,i)=>i)}],nodes,meshes,materials,images,textures,samplers,
  buffers:[{byteLength:meshBuffer.length,uri:"data:application/octet-stream;base64,"+meshBuffer.toString("base64")}],
  bufferViews,accessors,
  extras:{
