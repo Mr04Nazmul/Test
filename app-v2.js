@@ -931,10 +931,20 @@ $("stationLevels").addEventListener("click",showNextStationLevel);
 // WebAudio starts only on a direct tap; no background recording or autoplay.
 function reflectSoundState(){
  const btn=$("sound"),enabled=!!window.DhakaSoundscape?.active;
- btn.textContent=enabled?"🔊 Sound On":"🔇 City Sound";
+ btn.textContent=enabled?"🔊 Sound ON":"🔊 সাউন্ড চালু";
  btn.setAttribute("aria-pressed",String(enabled));
  btn.classList.toggle("primary",enabled);
 }
+$("soundTest").addEventListener("click",async()=>{
+ const engine=window.DhakaSoundscape;
+ if(!engine){announce("Audio script লোড হয়নি। পেজ Refresh করো।",10000);return}
+ try{
+  if(!engine.active)await engine.start();
+  else engine.playTestSound();
+  reflectSoundState();
+  announce("🔔 Test Sound: এখন তিনটি স্পষ্ট বিপ ও পরিবেশের সাউন্ড শোনার কথা। iPhone Silent Mode বন্ধ ও Media Volume বাড়াও।",9500);
+ }catch(error){announce("🔇 Sound error: "+error.message,12000)}
+});
 $("sound").addEventListener("click",async()=>{
  const engine=window.DhakaSoundscape;
  if(!engine){announce("Audio engine unavailable. Refresh করে আবার চেষ্টা করো।",5000);return}
@@ -989,12 +999,15 @@ function renderSoundMixer(detail){
  $("recordedRail").checked=detail.recordedEnabled;
  zoneControl.value=detail.requestedZone;
  const zoneLabels={street:"রাস্তা",hall:"স্টেশনের ভেতর",platform:"প্ল্যাটফর্ম",track:"ট্রেনের পাশে",train:"ট্রেনের ভেতর",roof:"স্টেশনের উপরে"};
- audioStatus.textContent=detail.active?"Sound ON · "+(zoneLabels[detail.zone]||detail.zone)
-  +(detail.recordingError?" · রেকর্ডিং লোড হয়নি":""):"Sound OFF · City Sound ট্যাপ করো";
+ audioStatus.textContent=detail.active
+  ?"Sound ON · "+(zoneLabels[detail.zone]||detail.zone)
+   +(detail.localSampleError?" · local WAV লোড হয়নি, WebAudio fallback":detail.localSamplePlaying?" · WAV চলছে":" · লোড হচ্ছে")
+   +(detail.recordingError?" · external sample unavailable":"")
+  :"Sound OFF · 🔊 সাউন্ড চালু চাপো";
  reflectSoundState();
 }
 window.DhakaSoundscape?.onChange(renderSoundMixer);
-renderSoundMixer({active:false,zone:"street",requestedZone:"auto",volume:.55,recordedEnabled:false});
+renderSoundMixer({active:false,zone:"street",requestedZone:"auto",volume:.55,recordedEnabled:false,localSamplePlaying:false,localSampleError:false});
 $("buildings").addEventListener("click",()=>{
  if(googleMode){announce("Google mode-এ আলাদা OSM ভবন বন্ধ।");return}
  showBuildings=!showBuildings;
