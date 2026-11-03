@@ -46,6 +46,11 @@ jobs:
           node scripts/check-agargaon-station.mjs
       - name: Generate Dhaka vehicles
         run: node scripts/build-dhaka-traffic.mjs
+      - name: Build and validate Farmgate street micro-models
+        run: |
+          node --check scripts/build-farmgate-details.mjs
+          node scripts/build-farmgate-details.mjs
+          node scripts/check-farmgate-details.mjs
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
