@@ -45,6 +45,14 @@ header{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .pill.active{background:#156d60}.pill svg{width:14px;height:14px}
 #notice{position:absolute;left:50%;top:76px;transform:translateX(-50%);max-width:min(620px,94vw);padding:10px 15px;background:#061b2aec;color:#cde5f4;border:1px solid #ffffff22;box-shadow:0 8px 25px #0005;border-radius:12px;text-align:center;font-size:11px;line-height:1.4;pointer-events:none;z-index:6}
 #notice:empty{display:none}
+.tracker{padding:10px 16px;background:#11372bd6;border:1px solid #54c8a73d;border-left:0;border-right:0;font-size:11px;line-height:1.4}
+.tracker strong{display:block;font-size:12px;color:#b1ffdc}.tracker small{display:block;color:#c4d6d5;font-size:10px;margin-top:3px}
+#trackerClock{font-weight:800;font-size:11px;margin-top:8px}#trackerNext{font-size:11px;color:#ffe29c;margin:7px 0}
+#trackerTrains{display:flex;overflow-x:auto;gap:6px;scrollbar-width:thin;max-width:100%;padding-top:3px}
+.trainchip{background:#08202a;border:1px solid #6ae9c347;color:#e4fff8;white-space:nowrap;border-radius:7px;font-size:10px;padding:6px 8px}
+.trainchip.active{background:#40e2ae;color:#02291e}
+@media(max-width:680px){.tracker{padding:8px 10px}.tracker strong{font-size:11px}.tracker small{font-size:9px}}
+
 body.panel-hidden .panel{display:none}
 body.panel-hidden .controls{margin-left:auto}
 #satellite.primary{background:#54daba;color:#09271f}
@@ -84,12 +92,20 @@ body.panel-hidden .controls{margin-left:auto}
 <div class="shell">
 <header>
  <div class="brand"><div class="symbol">M</div><div><strong>DHAKA METRO 3D</strong><small>MRT LINE 06 · EXPLORER</small></div></div>
- <div class="right-tag"><i class="live-dot"></i><span id="status">DEMO MAP</span></div>
+ <div class="right-tag"><i class="live-dot"></i><span id="status">ESTIMATED · NOT GPS</span></div>
 </header>
 <div class="main">
 <aside class="panel">
 <div class="hero"><div class="eyebrow">BANGLADESH · DHAKA</div><h1>Explore the Metro.</h1><p>উত্তরা উত্তর থেকে মতিঝিল—বাস্তব অবস্থানে 3D রুট এবং সিমুলেটেড চলমান ট্রেন।</p></div>
 <div class="stats"><div class="stat"><b>16</b><span>স্টেশন</span></div><div class="stat"><b>Line 6</b><span>উড়াল মেট্রোরেল</span></div></div>
+<div class="station-heading">TRAIN TRACKER <span>ESTIMATED · NOT GPS</span></div>
+<div class="tracker" id="tracker">
+<strong>ঢাকার সময় অনুযায়ী ট্রেনের অবস্থান</strong>
+<small>Official DMTCL timetable-based estimate, GPS নয়। Actual delays দেখা যায় না।</small>
+<div id="trackerClock">ঢাকার সময় লোড হচ্ছে…</div>
+<div id="trackerNext">স্টেশন নির্বাচন করো</div>
+<div id="trackerTrains"></div>
+</div>
 <div class="station-heading">STATIONS <span>SELECT TO FLY</span></div>
 <div id="stationList"></div>
 </aside>
@@ -108,7 +124,7 @@ body.panel-hidden .controls{margin-left:auto}
 <button id="central" class="pill">◎ Farmgate</button>
 <button id="south" class="pill">◎ Motijheel</button>
 <button id="togglePanel" class="pill">▤ Hide Panel</button>
-<button id="speed" class="pill">▶ 1× Speed</button>
+<button id="speed" class="pill">◷ Sync Dhaka Time</button>
 </div>
 </div>
 <div class="backdrop" id="settings" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
@@ -268,7 +284,7 @@ function setActive(i){
  stationList.querySelectorAll(".station").forEach(el=>el.classList.toggle("active",Number(el.dataset.index)===i));
 }
 function focusStation(i){
- selectedStation=i;if(buildingsEnabled&&!googleMode)loadOSMBuildings(i);
+ selectedStation=i;if(buildingsEnabled&&!googleMode)loadOSMBuildings(i);refreshTracker(performance.now());
  ride=false;$("follow").classList.remove("primary");
  setActive(i);
  const s=stations[i];
@@ -445,7 +461,7 @@ $("pause").addEventListener("click",()=>{
  playing=!playing;$("pause").textContent=playing?"❚❚ Pause":"▶ Play";
 });
 $("speed").addEventListener("click",()=>{
- rate=rate===1?2:rate===2?4:1;$("speed").textContent="▶ "+rate+"× Speed";
+ playing=true;$("pause").textContent="❚❚ Pause";refreshTracker(performance.now());notify("Dhaka timetable-based tracker synced to current time.",4000);
 });
 const modal=$("settings");
 $("google").addEventListener("click",()=>{
@@ -486,7 +502,8 @@ $("buildings").classList.add("primary");
 $("buildings").textContent="▥ Hide Buildings";
 loadOSMBuildings(selectedStation);
 refreshTracker(performance.now());
-notify("MRT-6 train 3D model ও schedule estimates চালু হয়েছে। Official GPS feed নেই।",9500);
+if(window.innerWidth<700){document.body.classList.add("panel-hidden");$("togglePanel").textContent="▤ Show Panel";}
+notify("MRT-6 reconstructed train · estimated GPS-free tracker. Find Train দিয়ে কাছে যাও।",9500);
 })();
 </script>
 </body>
