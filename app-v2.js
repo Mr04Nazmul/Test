@@ -235,7 +235,11 @@ function addFarmgateDetails(index){
 let neighborhoodProps=null;
 function renderNeighborhoodProps(index){
  if(neighborhoodProps){viewer.entities.remove(neighborhoodProps);neighborhoodProps=null;}
- if(googleMode)return;
+ // Older "nearby" mesh painted 266 m of artificial straight streets onto
+ // satellite imagery at EVERY station. Never show non-georeferenced roads.
+ // Use original OpenStreetMap way geometry via MRTActualRoads instead.
+ const allowUnmappedStreetProps=false;
+ if(googleMode||!allowUnmappedStreetProps)return;
  const selected=st[index],tangent=at(stopMeters[index]);
  neighborhoodProps=viewer.entities.add({
   name:selected.n+" — illustrative local street furniture and trees in actual 3D",
@@ -273,6 +277,13 @@ function renderStructure(index){
  renderNeighborhoodProps(index);
  renderStationLevels(index,p,s);
  renderPhotoStationDetail(index,p,s);
+ // Real OSM centerlines only, no fictitious grid of roadside rectangles.
+ // If the source is unreachable, underlying satellite imagery remains.
+ if(!googleMode&&window.MRTActualRoads){
+  window.MRTActualRoads.show(viewer,index,s,message=>{
+   console.info("Metro road mapping:",message);
+  });
+ }
 }
 // 16 separate original glTF overlays modeled from the 2023 Daily Star aerial
 // gallery: reference-guided roof colors, photo-visible local landmarks, different
@@ -280,6 +291,9 @@ function renderStructure(index){
 let photoStationDetail=null;
 function renderPhotoStationDetail(index,trackPos,station){
  if(photoStationDetail){viewer.entities.remove(photoStationDetail);photoStationDetail=null;}
+ // The three dedicated stations already have measured-route-aligned main
+ // models; do not overlay unlocated cartoon roads, parks or duplicate roofs.
+ if(index===8||index===10||index===13)return;
  photoStationDetail=viewer.entities.add({
   name:station.n+" — photo-reference exterior architecture and city silhouettes (approximate)",
   position:lonlatPoint(station,0),
@@ -1059,8 +1073,9 @@ $("google").addEventListener("click",()=>{
   if(googleTiles)googleTiles.show=false;
   buildings.forEach(e=>e.show=showBuildings);
   if(stationStructure)stationStructure.show=true;if(stationDetailLayer)stationDetailLayer.show=true;if(photoStationDetail)photoStationDetail.show=true;
-  if(neighborhoodProps)neighborhoodProps.show=true;
+  if(neighborhoodProps)neighborhoodProps.show=false;
   for(const e of farmgateDetails)e.show=true;
+  if(window.MRTActualRoads)window.MRTActualRoads.show(viewer,selectedStation,st[selectedStation]);
   $("google").textContent="◈ Google 3D";return;
  }
  modal.classList.add("open");
@@ -1078,6 +1093,7 @@ $("loadGoogle").addEventListener("click",async()=>{
    viewer.scene.primitives.add(googleTiles);
   }else googleTiles.show=true;
   googleMode=true;viewer.scene.globe.show=false;
+  if(window.MRTActualRoads)window.MRTActualRoads.hide(viewer);
   if(osmLayer)osmLayer.show=false;if(satLayer)satLayer.show=false;
    if(roadsLayer)roadsLayer.show=false;if(labelsLayer)labelsLayer.show=false;
   buildings.forEach(e=>e.show=false);if(stationStructure)stationStructure.show=false;if(stationDetailLayer)stationDetailLayer.show=false;if(photoStationDetail)photoStationDetail.show=false;
