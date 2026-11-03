@@ -25,6 +25,13 @@ for(const id of ui){
  assert(app.includes('$("'+id+'")'),'3D control not wired: '+id);
 }
 assert(app.includes('renderCoachSet(dt);'),'Train should animate on every frame');
+assert(app.includes('Continuous welded steel MRT-6 rail'),'Realistic welded rail model missing');
+assert(app.includes('Ballastless concrete plinth'),'Ballastless rail support missing');
+assert(app.includes('Overhead electric contact wire'),'DMTCL 1500V catenary line missing');
+assert(!app.includes('PolylineGlowMaterialProperty'),'Wrong neon rail return: remove glowing green centerline');
+assert(app.includes('nearbyRailFurniture(8);'),'Agargaon track-side structure not initialized');
+assert(app.includes('stationCinematicCamera(8,false);'),'iPhone default should show real context, not the track nose');
+assert(html.includes('mrt6-rail-realism-v5'),'Safari cache-busting asset version missing');
 assert(app.includes('updateFollowCamera();'),'Following camera not animated');
 assert(app.includes('World_Transportation/MapServer'),'Real street/road overlay absent');
 assert(app.includes('assets/urban/'),'OSM building glTF loading missing');
