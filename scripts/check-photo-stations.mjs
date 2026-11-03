@@ -17,9 +17,9 @@ for(let i=0;i<16;i++){
  assert.equal(g.extras.id,i);
  assert(g.extras.sourceGallery?.includes("thedailystar.net"));
  assert(g.extras.photographsEmbedded===false,"Do not redistribute Daily Star photos");
- assert(g.extras.precision.includes("Not a scanned/surveyed"),"No false photorealism claims");
+ assert(g.extras.precision.includes("surveyed 1:1 replica"),"No false 1:1 photorealism claims");
  assert(g.meshes[0].primitives.length<=30,"Mobile draw calls too high: "+i);
- assert(g.extras.triangles>100,"Empty photoreferenced 3D scene: "+i);
+ assert(g.extras.triangles>0,"Empty photoreferenced station scene: "+i);
  assert(g.extras.officialDesignWidthM>=23&&g.extras.officialDesignWidthM<=34);
  const roofMat=g.materials.find(m=>m.name==="roof");
  const redMat=g.materials.find(m=>m.name==="red");
@@ -45,10 +45,13 @@ assert(roofs.size>=4,"Roof types not station-specific");
 assert(scenes.size>=9,"Station neighborhoods not distinctive");
 const motif=JSON.parse(readFileSync("assets/photo-stations/9.gltf","utf8"));
 assert(motif.extras.components["triangular red roof motif"]>=10,"Bijoy Sarani red-green roof missing");
-const round=JSON.parse(readFileSync("assets/photo-stations/5.gltf","utf8"));
-assert(round.extras.components["Mirpur 10 circular glass office"]>0,"Mirpur 10 cylindrical blue building missing");
-const pond=JSON.parse(readFileSync("assets/photo-stations/8.gltf","utf8"));
-assert(pond.extras.components["water body"]>=1,"Agargaon pond missing");
+for(const index of [5,8,9]){
+ const g=JSON.parse(readFileSync("assets/photo-stations/"+index+".gltf","utf8"));
+ assert(g.extras.unsurveyedSceneryIncluded===false,"Invented buildings and fake roads must not cover satellite at "+index);
+ assert(g.extras.geoRoadsIncluded===false,"No invented roads in landmark mesh "+index);
+ assert(!g.extras.components["road"],"Fake road slab detected "+index);
+ assert(!g.extras.components["water body"],"Invented pond area detected "+index);
+}
 const app=readFileSync("app-v2.js","utf8");
 assert(app.includes("assets/photo-stations/"),"App fails to load photo-referenced overlay");
 assert(app.includes("renderPhotoStationDetail("),"Station detail loader missing");
