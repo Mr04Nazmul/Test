@@ -1,104 +1,260 @@
-/* Dhaka Metro 3D / original synthesized Bangladesh city soundscape.
- * No music, copyrighted recording, remote stream or microphone access.
- * Muted by default: AudioContext starts only after a user taps Sound ON.
+/* Dhaka Metro 3D: context-aware WebAudio soundscape (original sound design).
+ * Five distinct areas: street, concourse, platform, train/viaduct and station roof.
+ * Non-official, synthetic ambience, never claims actual train microphone/GPS.
+ * Optional external recorded sound is clearly labelled non-Dhaka and separately opt-in.
+ * Copyrighted music / commercial-only Dhaka clips are never included.
+ * Sound only starts on user tap; hides/mutes on inactive browser tabs.
  */
 (function(){
  "use strict";
- let audio=null,master=null,rumble=null,crowd=null,timer=null,active=false,station=8,volume=.58;
  const AC=window.AudioContext||window.webkitAudioContext;
- function profile(i){
-   // Artistic sound design, NOT a field recording or observed intensity reading.
-   if([5,10,11,12,14,15].includes(i))return{traffic:1.0,crowd:.82,birds:.16};
-   if([0,1,2,3].includes(i))return{traffic:.55,crowd:.38,birds:.63};
-   if([8,9,13].includes(i))return{traffic:.68,crowd:.57,birds:.45};
-   return{traffic:.83,crowd:.63,birds:.33};
+ const ZONES=["street","hall","platform","track","train","roof"];
+ const SOURCE_URL="https://www.orangefreesounds.com/wp-content/uploads/2014/08/Train-sound-effect.mp3";
+ let ctx=null,master=null,groups={},noiseBuffer=null,timer=null,active=false,station=10;
+ let requestedZone="auto",effectiveZone="street",volume=.55,scene={height:150,distance:250,following:false,moving:true};
+ let lastAnnouncement=0,lastDoor=0,recording=null,recordedEnabled=false,recordingError=false;
+ const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
+ const audioAvailable=()=>!!AC;
+ const listeners=new Set();
+ function publish(){
+  const detail={active,zone:effectiveZone,requestedZone,volume,recordedEnabled,recordingError};
+  document.dispatchEvent(new CustomEvent("dhaka-audio-state",{detail}));
+  for(const fn of listeners){try{fn(detail)}catch(e){console.warn(e)}}
  }
- function noise(ctx,seconds=2){
-   const b=ctx.createBuffer(1,Math.floor(ctx.sampleRate*seconds),ctx.sampleRate),arr=b.getChannelData(0);
-   for(let i=0;i<arr.length;i++)arr[i]=Math.random()*2-1;
-   return b;
+ function localProfile(){
+  // Sound design inspired by generic Dhaka urban setting, not decibel measurements.
+  if([5,10,11,12,14,15].includes(station))return{traffic:1.0,voices:.9,birds:.14};
+  if([0,1,2,3].includes(station))return{traffic:.5,voices:.48,birds:.6};
+  if([8,9,13].includes(station))return{traffic:.66,voices:.62,birds:.47};
+  return{traffic:.82,voices:.72,birds:.33};
  }
- function loopNoise(ctx,buffer,low,high,gain){
-   const src=ctx.createBufferSource(),f=ctx.createBiquadFilter(),g=ctx.createGain();
-   src.buffer=buffer;src.loop=true;f.type=high?"bandpass":"lowpass";f.frequency.value=low;
-   if(high)f.Q.value=high;
-   g.gain.value=gain;src.connect(f);f.connect(g);g.connect(master);src.start();
-   return{src,g};
+ function audioGroup(name){
+  const g=ctx.createGain();g.gain.value=0;g.connect(master);groups[name]=g;return g;
  }
- function tone(freq,dur,vol,type="sine",endFreq=freq,when=0){
-   if(!audio||!active)return;
-   const t=audio.currentTime+when,osc=audio.createOscillator(),g=audio.createGain();
-   osc.type=type;osc.frequency.setValueAtTime(freq,t);
-   osc.frequency.exponentialRampToValueAtTime(Math.max(40,endFreq),t+dur);
-   g.gain.setValueAtTime(.0001,t);
-   g.gain.exponentialRampToValueAtTime(Math.max(.0002,vol),t+.025);
-   g.gain.exponentialRampToValueAtTime(.0001,t+dur);
-   osc.connect(g);g.connect(master);osc.start(t);osc.stop(t+dur+.025);
-   osc.onended=()=>{osc.disconnect();g.disconnect()};
+ function bufferNoise(seconds=3){
+  const b=ctx.createBuffer(1,ctx.sampleRate*seconds,ctx.sampleRate),d=b.getChannelData(0);
+  let brown=0;for(let i=0;i<d.length;i++){brown=(brown+(.18*(Math.random()*2-1)))/1.018;d[i]=clamp(brown*2.15,-1,1)}
+  return b;
  }
- function bell(){
-   tone(990,.72,.048,"sine",925,0);
-   tone(1470,.51,.022,"sine",1430,.04);
-   tone(990,.58,.039,"sine",930,.33);
+ function bed(bus,freq,amount,filterType="lowpass",q=.7){
+  const s=ctx.createBufferSource(),f=ctx.createBiquadFilter(),g=ctx.createGain();
+  s.buffer=noiseBuffer;s.loop=true;
+  f.type=filterType;f.frequency.value=freq;f.Q.value=q;
+  g.gain.value=amount;s.connect(f);f.connect(g);g.connect(groups[bus]);s.start();return s;
  }
- function horn(){
-   const f=300+Math.random()*115;
-   tone(f,.42,.038,"sawtooth",f*.96);
-   tone(f*1.5,.29,.012,"triangle",f*1.49,.07);
+ function create(){
+  if(!audioAvailable())throw Error("Web Audio unavailable on this device.");
+  ctx=new AC();master=ctx.createGain();master.gain.value=0;
+  const compressor=ctx.createDynamicsCompressor();compressor.threshold.value=-18;
+  compressor.knee.value=18;compressor.ratio.value=3.8;compressor.attack.value=.009;
+  compressor.release.value=.22;master.connect(compressor);compressor.connect(ctx.destination);
+  for(const z of ZONES)audioGroup(z);
+  noiseBuffer=bufferNoise();
+  bed("street",180,.37);bed("street",650,.07,"bandpass",.6);
+  bed("hall",420,.095);bed("hall",1020,.07,"bandpass",.65);
+  bed("platform",260,.16);bed("platform",1200,.056,"bandpass",.7);
+  bed("track",125,.35);bed("track",940,.1,"bandpass",.75);
+  bed("train",165,.31);bed("train",720,.07,"bandpass",.65);
+  bed("roof",220,.13);bed("roof",1400,.03,"bandpass",.7);
+  refresh();
+ }
+ function tone(freq,duration,amp,type="sine",endFreq=freq,bus=effectiveZone,delay=0,pan=0){
+  if(!active||!ctx||ctx.state!=="running")return;
+  const t=ctx.currentTime+Math.max(0,delay),o=ctx.createOscillator(),g=ctx.createGain();
+  o.type=type;o.frequency.setValueAtTime(Math.max(40,freq),t);
+  o.frequency.exponentialRampToValueAtTime(Math.max(40,endFreq),t+duration);
+  g.gain.setValueAtTime(.0001,t);
+  g.gain.exponentialRampToValueAtTime(Math.max(.0002,amp),t+.023);
+  g.gain.exponentialRampToValueAtTime(.0001,t+duration);
+  const p=ctx.createStereoPanner?ctx.createStereoPanner():null;
+  if(p)p.pan.value=clamp(pan,-1,1);
+  o.connect(g);
+  if(p){g.connect(p);p.connect(groups[bus])}else g.connect(groups[bus]);
+  o.start(t);o.stop(t+duration+.04);
+  o.onended=()=>{o.disconnect();g.disconnect();if(p)p.disconnect()};
+ }
+ function hiss(seconds=1,amp=.07,bus=effectiveZone){
+  if(!ctx||!active||ctx.state!=="running")return;
+  const s=ctx.createBufferSource(),f=ctx.createBiquadFilter(),g=ctx.createGain(),t=ctx.currentTime;
+  s.buffer=noiseBuffer;f.type="highpass";f.frequency.value=1200;
+  g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(amp,t+.18);
+  g.gain.linearRampToValueAtTime(.0001,t+seconds);
+  s.connect(f);f.connect(g);g.connect(groups[bus]);s.start(t);s.stop(t+seconds+.02);
+  s.onended=()=>{s.disconnect();f.disconnect();g.disconnect()};
+ }
+ function roadHorn(){
+  const f=285+Math.random()*150,p=Math.random()*1.4-.7;
+  tone(f,.35,.10,"sawtooth",f*.96,"street",0,p);
+  tone(f*1.45,.28,.04,"triangle",f*1.43,"street",.045,p);
+ }
+ function rickshawBell(){
+  for(const delay of [0,.22,.5]){tone(1120,.36,.065,"sine",1010,"street",delay,-.45);
+   tone(1640,.24,.026,"sine",1510,"street",delay,.28)}
  }
  function bird(){
-   const f=1300+Math.random()*520;
-   tone(f,.16,.014,"sine",f*1.38);
-   tone(f*1.24,.16,.012,"sine",f*.92,.19);
+  const f=1550+Math.random()*600;
+  tone(f,.17,.03,"sine",f*1.35,"roof",0,-.5);
+  tone(f*1.1,.14,.025,"sine",f*.84,"roof",.18,.4);
+ }
+ function trainMotor(){
+  const f=110+Math.random()*27;
+  tone(f,1.2,.045,"sawtooth",f*1.33,"track",0,.25);
+  tone(f*.65,1.4,.043,"triangle",f*.74,"train",0,-.2);
+ }
+ function doorBeep(){
+  for(const delay of [0,.25,.50]){
+   tone(760,.155,.072,"sine",810,"platform",delay);
+   tone(780,.155,.064,"sine",820,"train",delay);
+  }
+  hiss(1.3,.06,"platform");
+ }
+ function platformAnnouncement(){
+  // Distinctive PA chime only, not fabricated official DMTCL human voice.
+  tone(670,.42,.06,"sine",670,"platform");
+  tone(890,.42,.055,"sine",890,"hall",.13);
+  tone(780,.49,.052,"sine",780,"platform",.55);
+ }
+ function footstep(){
+  const f=55+Math.random()*45;
+  tone(f,.13,.030,"triangle",47,"hall",0,-.4);
+  tone(f,.11,.028,"triangle",47,"platform",.26,.45);
+ }
+ function ticketGate(){
+  tone(1100,.12,.043,"sine",1095,"hall");
+  tone(1280,.1,.031,"sine",1280,"hall",.17);
  }
  function passingVehicle(){
-   tone(72+Math.random()*26,1.5,.017,"triangle",42);
-   tone(110+Math.random()*35,.95,.007,"sawtooth",73,.2);
+  const f=65+Math.random()*24;
+  tone(f,1.4,.043,"triangle",f*.6,"street",0,Math.random()*2-1);
  }
- function soundEvent(){
-   if(!active||!audio)return;
-   const p=profile(station),r=Math.random();
-   if(r<.15*p.traffic)horn();
-   else if(r<.29*p.traffic)passingVehicle();
-   else if(r<.22+.29*p.traffic)bell();
-   else if(r<.26+.29*p.traffic+.33*p.birds)bird();
+ function zoneFromScene(){
+  if(scene.following)return"track";
+  if(scene.distance<105&&scene.height<14)return"hall";
+  if(scene.distance<125&&scene.height>=14&&scene.height<34)return"platform";
+  if(scene.distance<105&&scene.height>=34&&scene.height<80)return"roof";
+  return"street";
  }
- function update(){
-   if(!audio||!master)return;
-   const p=profile(station),t=audio.currentTime;
-   master.gain.setTargetAtTime(active?Math.min(.85,volume):0,t,.12);
-   if(rumble)rumble.g.gain.setTargetAtTime(.050*p.traffic,t,.5);
-   if(crowd)crowd.g.gain.setTargetAtTime(.011*p.crowd,t,.5);
+ function refresh(){
+  if(!ctx||!master)return;
+  const t=ctx.currentTime,p=localProfile();
+  master.gain.setTargetAtTime(active?volume:0,t,.22);
+  const weights={street:0,hall:0,platform:0,track:0,train:0,roof:0};
+  weights[effectiveZone]=1;
+  if(effectiveZone==="hall"){weights.street=.15;weights.platform=.08}
+  if(effectiveZone==="platform"){weights.street=.32;weights.hall=.19;weights.track=.20}
+  if(effectiveZone==="track"){weights.street=.44;weights.platform=.24;weights.train=.18}
+  if(effectiveZone==="train"){weights.track=.28;weights.hall=.05}
+  if(effectiveZone==="roof"){weights.street=.28;weights.platform=.1}
+  for(const [name,g] of Object.entries(groups)){
+   const factor=name==="street"?p.traffic:name==="hall"?p.voices:name==="roof"?Math.max(.5,p.birds):1;
+   g.gain.setTargetAtTime(active?clamp(weights[name]*factor,0,1):0,t,.35);
+  }
+  syncRecording();
  }
- function setup(){
-   if(!AC)throw Error("This browser does not support Web Audio.");
-   audio=new AC();master=audio.createGain();
-   // Gentle output limiter avoids harsh audio on phone speakers.
-   const compressor=audio.createDynamicsCompressor();
-   compressor.threshold.value=-20;compressor.knee.value=20;compressor.ratio.value=5;
-   master.gain.value=0;master.connect(compressor);compressor.connect(audio.destination);
-   const bed=noise(audio);
-   rumble=loopNoise(audio,bed,185,0,0);
-   crowd=loopNoise(audio,bed,640,.58,0);
+ function syncRecording(){
+  if(!recording)return;
+  if(!active||!recordedEnabled){recording.pause();return}
+  const relevant=["platform","track","train"].includes(effectiveZone);
+  recording.volume=clamp(volume*(relevant?.42:.0),0,.48);
+  if(!relevant){recording.pause();return}
+  if(recording.paused){
+   const p=recording.play();if(p?.catch)p.catch(()=>{recordingError=true;recordedEnabled=false;recording.pause();publish()});
+  }
+ }
+ function playEvent(){
+  if(!active||!ctx||ctx.state!=="running")return;
+  const p=localProfile(),r=Math.random();
+  if(effectiveZone==="street"){
+   if(r<.26*p.traffic)roadHorn();
+   else if(r<.47)rickshawBell();
+   else if(r<.78)passingVehicle();
+   else footstep();
+  }else if(effectiveZone==="hall"){
+   if(r<.36)footstep();else if(r<.65)ticketGate();else if(r<.77)platformAnnouncement();
+  }else if(effectiveZone==="platform"){
+   if(r<.20)doorBeep();else if(r<.43)platformAnnouncement();
+   else if(r<.65)trainMotor();else footstep();
+  }else if(effectiveZone==="track"){
+   if(r<.38)trainMotor();else if(r<.54)hiss(.45,.07,"track");
+   else if(r<.80*p.traffic)roadHorn();else doorBeep();
+  }else if(effectiveZone==="train"){
+   if(r<.55)trainMotor();else if(r<.67)doorBeep();else hiss(.35,.025,"train");
+  }else if(effectiveZone==="roof"){
+   if(r<.53*p.birds+.12)bird();else if(r<.66)roadHorn();
+  }
+  if(["platform","hall"].includes(effectiveZone)&&Date.now()-lastAnnouncement>23000){
+   platformAnnouncement();lastAnnouncement=Date.now();
+  }
+  if(["train","platform"].includes(effectiveZone)&&Date.now()-lastDoor>38000){
+   doorBeep();lastDoor=Date.now();
+  }
  }
  async function start(){
-   if(!audio)setup();
-   active=true;
-   await audio.resume();
-   update();
-   if(!timer)timer=window.setInterval(soundEvent,1800);
-   soundEvent();
-   return true;
+  if(!ctx)create();
+  await ctx.resume();
+  active=true;
+  effectiveZone=requestedZone==="auto"?zoneFromScene():requestedZone;
+  refresh();if(!timer)timer=window.setInterval(playEvent,1450);playEvent();publish();
+  return true;
  }
  function stop(){
-   active=false;update();
-   if(timer){window.clearInterval(timer);timer=null}
-   // Keep the context suspended and reusable after the fade.
-   const current=audio;
-   window.setTimeout(()=>{if(current&&!active&&current.state==="running")current.suspend().catch(()=>{})},450);
+  active=false;refresh();
+  if(timer){clearInterval(timer);timer=null}
+  if(recording)recording.pause();
+  const c=ctx;
+  setTimeout(()=>{if(c&&!active&&c.state==="running")c.suspend().catch(()=>{})},550);
+  publish();
  }
- function setStation(n){station=Math.max(0,Math.min(15,Number(n)||0));update()}
- function setVolume(v){volume=Math.max(0,Math.min(1,Number(v)));update()}
- document.addEventListener("visibilitychange",()=>{if(document.hidden&&active){stop();window.dispatchEvent(new Event("dhaka-sound-muted"))}});
- window.DhakaSoundscape={start,stop,setStation,setVolume,get active(){return active}};
+ function setStation(i){
+  station=clamp(Math.round(Number(i)||0),0,15);refresh();
+ }
+ function updateScene(details={}){
+  const previous=effectiveZone;
+  const values=["height","distance"];
+  for(const k of values){if(Number.isFinite(details[k]))scene[k]=details[k]}
+  if(typeof details.following==="boolean")scene.following=details.following;
+  if(typeof details.moving==="boolean")scene.moving=details.moving;
+  if(Number.isInteger(details.station))station=clamp(details.station,0,15);
+  effectiveZone=requestedZone==="auto"?zoneFromScene():requestedZone;
+  if(previous!==effectiveZone){refresh();publish()}
+ }
+ function setZone(name){
+  requestedZone=name==="auto"?"auto":ZONES.includes(name)?name:"auto";
+  effectiveZone=requestedZone==="auto"?zoneFromScene():requestedZone;
+  refresh();publish();
+ }
+ function setVolume(v){volume=clamp(Number(v)||0,0,1);refresh();publish()}
+ function useRecordedTrain(enabled){
+  recordedEnabled=!!enabled;recordingError=false;
+  if(recordedEnabled&&!recording){
+   recording=new Audio(SOURCE_URL);recording.loop=true;recording.preload="none";recording.volume=.18;
+   recording.addEventListener("error",()=>{recordingError=true;recordedEnabled=false;publish()});
+  }
+  syncRecording();publish();
+ }
+ function paDemo(){
+  if(!active)return{ok:false,reason:"Sound চালু করো"};
+  platformAnnouncement();
+  // A voice can be offered only when the device supplies an actual Bangla voice.
+  const voices=window.speechSynthesis?.getVoices?.()||[];
+  const bn=voices.find(v=>v.lang&&v.lang.toLowerCase().startsWith("bn"));
+  if(!bn)return{ok:true,voice:false};
+  const name=window.MRT_TRACK?.stations?.[station]?.bn||"মেট্রোরেল স্টেশন";
+  const utterance=new SpeechSynthesisUtterance("এটি একটি ডেমো ঘোষণা। পরবর্তী স্টেশন "+name+"। ধন্যবাদ।");
+  utterance.voice=bn;utterance.lang=bn.lang;utterance.volume=clamp(volume*.8,0,.8);
+  utterance.rate=.88;window.speechSynthesis.cancel();window.speechSynthesis.speak(utterance);
+  return{ok:true,voice:true};
+ }
+ document.addEventListener("visibilitychange",()=>{
+  if(document.hidden&&active){stop();window.dispatchEvent(new Event("dhaka-sound-muted"))}
+  if(document.hidden&&window.speechSynthesis)window.speechSynthesis.cancel();
+ });
+ window.DhakaSoundscape={
+  start,stop,setStation,updateScene,setZone,setVolume,useRecordedTrain,paDemo,
+  onChange(fn){listeners.add(fn);return()=>listeners.delete(fn)},
+  get active(){return active},get zone(){return effectiveZone},
+  get requestedZone(){return requestedZone},get recordedEnabled(){return recordedEnabled},
+  get recordingError(){return recordingError},get volume(){return volume},
+  get realTrainSource(){return SOURCE_URL}
+ };
 })();
