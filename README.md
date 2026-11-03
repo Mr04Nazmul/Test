@@ -174,3 +174,15 @@ In Auto, sound zones depend on the Cesium camera position, height and whether th
 **Authentic Bangladesh recordings investigated, not bundled:** AcousticSceneBD, an East West University 2026 research dataset of field recordings of Dhaka buses, metro, metro stations, park and university environments, CC BY 4.0: https://data.mendeley.com/datasets/bynmzy4dp6/1 (DOI 10.17632/bynmzy4dp6.1). It is 4.87 GB in total, and exact clips have **not** been transferred, so the current synthetic sounds must never be marketed as those recordings. Another Dhaka street sample on Freesound was licensed CC BY-NC 4.0, so it was **not** used on a potentially monetized site.
 
 Smoke test: `node scripts/check-dhaka-audio.mjs`. Synthetic audio has no copyrighted music or automated background playback.
+
+## Ground-truth road geometry replaces fictional station streets
+
+**2026-11-04 accuracy correction:** A prior screenshot showed straight invented dark asphalt lanes, fields, trees and randomly distributed buildings. Those were from procedural local `assets/nearby/*.gltf`, `assets/agargaon-station.gltf` and `assets/photo-stations/*.gltf` rather than known map coordinates. The invented street/neighborhood overlay is now disabled in the viewer; Agargaon's asset generator omits the fabricated road, planted median, pond and traffic positions. Photo-station generator now retains source-inspired station roof/facade details **without** its made-up streetscape.
+
+Actual roads are **mapped OpenStreetMap highway ways**, not copied from Google Maps. The browser loads `actual-roads.js`: first a `data/osm-roads/{station}.json` build-time cache if present, then any mapped roads in the existing local building cache, then the public Overpass API. Alignment uses raw WGS84 (longitude, latitude). If no ways are available, the renderer shows satellite/street-map imagery **without substituting fictional 3D streets**. Road width uses an OSM `width` tag when available, otherwise an explicitly estimated visual width.
+
+To refresh Agargaon roads locally: `node scripts/refresh-real-roads.mjs --station 8` (requires external Overpass access; keeps previous cache on failure). Run `node scripts/check-actual-roads.mjs` to confirm source-only rendering guardrails. © OpenStreetMap contributors, ODbL: https://www.openstreetmap.org/copyright.
+
+**Accuracy boundary:** The map source provides *road centerline position*, not a surveyed 3D street reconstruction or exact curb, lanes, sidewalks, building exterior colors, traffic or real-time GPS. The updated system does not promise a Google Maps photorealistic digital twin. Existing OSM 3D building footprints have estimated heights/illustrative facades.
+
+**GitHub Pages deployment:** The repository's Pages site uses *deploy from branch*; to prevent HTTP 400 concurrent deployment failures, `.github/workflows/deploy-pages.yml` now only generates/persists assets to `main`. GitHub Pages' own branch publishing process serves the files. If Overpass is unavailable, the mapped-road cache may be absent and the fallback imagery will remain.
