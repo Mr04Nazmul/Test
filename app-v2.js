@@ -256,7 +256,7 @@ function updateModeControls(){
  const demo=mode==="demo",onboard=mode==="onboard";
  $("pause").textContent=demo?"◉ ETA Mode":onboard?"◉ Exit My GPS":"▶ Demo Ride";
  $("speed").textContent="▶ "+rate+"× demo speed";
- $("status").textContent=onboard?"MY PHONE GPS · PRIVATE":demo?"DEMO RIDE":"TIMETABLE ESTIMATE";
+ $("status").textContent=onboard?"PHONE GPS · NOT TRAIN GPS":demo?"DEMO RIDE · NOT LIVE":"TIMETABLE ESTIMATE · NOT GPS";
 }
 // Follow view remains user-controlled through orbit/zoom offset; no forced reset.
 function updateFollowCamera(){
@@ -536,8 +536,8 @@ $("togglePanel").addEventListener("click",()=>{
  $("togglePanel").textContent=document.body.classList.contains("panel-hidden")?"▤ Show Panel":"▤ Hide Panel";
 });
 $("follow").addEventListener("click",()=>{
- ride=!ride;$("follow").classList.toggle("primary",ride);
- if(!ride)clearViewLock();
+ if(ride)clearViewLock();
+ else useCameraMode(cameraStyle);
 });
 $("pause").addEventListener("click",()=>{
  if(mode==="onboard"){endPhoneGPS();clearViewLock();playing=true;updateModeControls();return;}
@@ -558,6 +558,7 @@ $("google").addEventListener("click",()=>{
  if(googleMode){
   googleMode=false;viewer.scene.globe.show=true;
   if(osmLayer)osmLayer.show=!satelliteOn;if(satLayer)satLayer.show=satelliteOn;
+  if(roadsLayer)roadsLayer.show=satelliteOn;if(labelsLayer)labelsLayer.show=satelliteOn;
   if(googleTiles)googleTiles.show=false;
   buildings.forEach(e=>e.show=showBuildings);
   if(stationStructure)stationStructure.show=true;
@@ -579,6 +580,7 @@ $("loadGoogle").addEventListener("click",async()=>{
   }else googleTiles.show=true;
   googleMode=true;viewer.scene.globe.show=false;
   if(osmLayer)osmLayer.show=false;if(satLayer)satLayer.show=false;
+   if(roadsLayer)roadsLayer.show=false;if(labelsLayer)labelsLayer.show=false;
   buildings.forEach(e=>e.show=false);if(stationStructure)stationStructure.show=false;
   $("google").textContent="◈ Exit Google 3D";$("key").value="";modal.classList.remove("open");
   announce("Google 3D tiles চালু হয়েছে; ঢাকায় পূর্ণ photorealistic coverage নিশ্চিত নয়।",8000);
@@ -602,9 +604,9 @@ function nearestTrackPoint(lat,lon){
 }
 function endPhoneGPS(){
  if(gpsWatchId!==null&&navigator.geolocation)navigator.geolocation.clearWatch(gpsWatchId);
- gpsWatchId=null;gpsMeters=null;
+ gpsWatchId=null;gpsMeters=null;gpsDisplayMeters=null;
  if(gpsMark){viewer.entities.remove(gpsMark);gpsMark=null;}
- $("myGPS").textContent="📍 My Train GPS";
+ $("myGPS").textContent="📍 My Phone GPS";
  $("myGPS").classList.remove("primary");
  if(mode==="onboard"){mode="estimate";refreshTrainMarkerPositions();updateModeControls();}
 }
@@ -640,7 +642,7 @@ $("myGPS").addEventListener("click",()=>{
 function cleanupModeLabels(){
  $("buildings").textContent="▥ Hide Buildings";$("buildings").classList.add("primary");
 }
-renderStructure(10);updateStationText();refreshTrainMarkerPositions();renderCoachSet();updateModeControls();cleanupModeLabels();
+renderStructure(10);updateStationText();refreshTrainMarkerPositions();renderCoachSet();updateModeControls();cleanupModeLabels();updateCameraLabel();setQuality(1);
 if(window.innerWidth<700){
  document.body.classList.add("panel-hidden");
  $("togglePanel").textContent="▤ Show Panel";
