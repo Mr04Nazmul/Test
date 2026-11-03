@@ -43,9 +43,10 @@ try{
  const len=Number(file.headers.get("content-length")||0);
  if(len>15000000)throw Error("Transcode is too large for small mobile extract");
  await pipeline(Readable.fromWeb(file.body),createWriteStream(tmp));
+ console.log("Wikimedia low-res source obtained:",statSync(tmp).size,"bytes",preferred.src.slice(0,160));
  const cmd=spawnSync("ffmpeg",["-hide_banner","-y","-nostdin","-loglevel","error",
   "-i",tmp,"-t","20","-vn","-ar","22050","-ac","1","-b:a","64k",out],{timeout:23000,encoding:"utf8"});
- if(cmd.status!==0)throw Error("ffmpeg could not extract genuine road audio: "+(cmd.stderr||"").slice(0,300));
+ if(cmd.status!==0)throw Error("ffmpeg status "+cmd.status+" signal "+cmd.signal+" error "+(cmd.error?.message||"")+" details "+(cmd.stderr||"").slice(0,300));
  if(!existsSync(out)||statSync(out).size<50000)throw Error("Extracted audio unexpectedly empty");
  console.log("REAL recorded street audio imported from Wikimedia Commons:",statSync(out).size,"bytes");
 }catch(e){
