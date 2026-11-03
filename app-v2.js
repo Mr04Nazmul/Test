@@ -131,9 +131,14 @@ function modelOrientation(p){return C.Transforms.headingPitchRollQuaternion(lonl
 function renderStructure(index){
  if(stationStructure)viewer.entities.remove(stationStructure);
  const s=st[index],p=at(stopMeters[index]);
- stationStructure=viewer.entities.add({name:s.n+" conceptual 3D station",position:lonlatPoint(s,0),
- orientation:modelOrientation(p),
- model:{uri:"assets/mrt6-station-concept.gltf",scale:1,minimumPixelSize:0}});
+ // Farmgate (index 10) gets its own original landmark geometry: curved
+ // green roof, brick concourse, bridges, facade glass and street furniture.
+ // Illustrative reconstruction, NOT photogrammetry or a measured survey.
+ const farmgate=index===10;
+ stationStructure=viewer.entities.add({name:s.n+(farmgate?" — Farmgate detailed reconstruction":" conceptual 3D station"),
+  position:lonlatPoint(s,0),orientation:modelOrientation(p),
+  model:{uri:farmgate?"assets/farmgate-landmark.gltf":"assets/mrt6-station-concept.gltf",
+   scale:1,minimumPixelSize:0,maximumScale:1}});
 }
 function updateStationText(){
  list.querySelectorAll(".station").forEach(el=>el.classList.toggle("active",Number(el.dataset.index)===selectedStation));
