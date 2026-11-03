@@ -244,6 +244,17 @@ function renderNeighborhoodProps(index){
    distanceDisplayCondition:new C.DistanceDisplayCondition(0,3000)}
  });
 }
+// Original three-level MRT-6 station interiors and entrances, not surveyed floorplans.
+let stationDetailLayer=null;
+function renderStationLevels(index,p,s){
+ if(stationDetailLayer){viewer.entities.remove(stationDetailLayer);stationDetailLayer=null;}
+ stationDetailLayer=viewer.entities.add({
+  name:s.n+" — street entry, fare concourse, and elevated platform (approximate 3D)",
+  position:lonlatPoint(s,0),orientation:modelOrientation(p),
+  model:{uri:"assets/station-detail/"+index+".gltf",scale:1,minimumPixelSize:0,maximumScale:1,
+   distanceDisplayCondition:new C.DistanceDisplayCondition(0,1900)}
+ });
+}
 function renderStructure(index){
  if(window.DhakaSoundscape)window.DhakaSoundscape.setStation(index);
  if(stationStructure)viewer.entities.remove(stationStructure);
@@ -260,6 +271,7 @@ function renderStructure(index){
  setupStreetTraffic(index);
  addFarmgateDetails(index);
  renderNeighborhoodProps(index);
+ renderStationLevels(index,p,s);
  renderPhotoStationDetail(index,p,s);
 }
 // 16 separate original glTF overlays modeled from the 2023 Daily Star aerial
@@ -976,7 +988,7 @@ $("google").addEventListener("click",()=>{
   if(roadsLayer)roadsLayer.show=satelliteOn;if(labelsLayer)labelsLayer.show=satelliteOn;
   if(googleTiles)googleTiles.show=false;
   buildings.forEach(e=>e.show=showBuildings);
-  if(stationStructure)stationStructure.show=true;if(photoStationDetail)photoStationDetail.show=true;
+  if(stationStructure)stationStructure.show=true;if(stationDetailLayer)stationDetailLayer.show=true;if(photoStationDetail)photoStationDetail.show=true;
   if(neighborhoodProps)neighborhoodProps.show=true;
   for(const e of farmgateDetails)e.show=true;
   $("google").textContent="◈ Google 3D";return;
@@ -998,7 +1010,7 @@ $("loadGoogle").addEventListener("click",async()=>{
   googleMode=true;viewer.scene.globe.show=false;
   if(osmLayer)osmLayer.show=false;if(satLayer)satLayer.show=false;
    if(roadsLayer)roadsLayer.show=false;if(labelsLayer)labelsLayer.show=false;
-  buildings.forEach(e=>e.show=false);if(stationStructure)stationStructure.show=false;if(photoStationDetail)photoStationDetail.show=false;
+  buildings.forEach(e=>e.show=false);if(stationStructure)stationStructure.show=false;if(stationDetailLayer)stationDetailLayer.show=false;if(photoStationDetail)photoStationDetail.show=false;
   if(neighborhoodProps)neighborhoodProps.show=false;
   farmgateDetails.forEach(e=>e.show=false);
   $("google").textContent="◈ Exit Google 3D";$("key").value="";modal.classList.remove("open");
