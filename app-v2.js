@@ -522,7 +522,7 @@ function refreshTrainMarkerPositions(){
   }
  }
  for(const [id,m] of miniTrains)m.show=id!==selectedTrain;
- updateTrainsUI();updateTrainRadar();updateModeControls();
+ updateTrainsUI();if(!radarPanel.hidden)updateTrainRadar();updateModeControls();
 }
 function updateTrainsUI(){
  const area=$("trainList");if(!area)return;
