@@ -75,6 +75,8 @@ body.panel-hidden .controls{margin-left:auto}
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/";</script>
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
+<script src="./data/mrt6-track.js"></script>
+<script src="./data/metro-schedule.js"></script>
 </head>
 <body>
 <div id="app"><div id="scene" aria-label="Interactive Dhaka Metro 3D map"></div></div>
@@ -141,6 +143,9 @@ const stations=[
 {n:"Bangladesh Secretariat",bn:"বাংলাদেশ সচিবালয়",lat:23.73001,lon:90.40787},
 {n:"Motijheel",bn:"মতিঝিল",lat:23.72743,lon:90.42018}
 ];
+if(window.MRT_TRACK?.stations?.length===16)window.MRT_TRACK.stations.forEach((p,i)=>{
+ stations[i].lat=p.lat;stations[i].lon=p.lon;stations[i].bn=p.bn;
+});
 const $=id=>document.getElementById(id);
 const notify=(s,ms=6000)=>{ $("notice").textContent=s; if(ms>0)setTimeout(()=>{if($("notice").textContent===s)$("notice").textContent="";},ms); };
 let viewer, googleTiles=null, osmLayer=null, demoRoofs=[], routeEntities=[], cars=[], trainParts=[], satelliteLayer=null, satelliteOn=false, playing=true, ride=false, rate=1, distance=0, length=0, previousTime=0, lastTrainDraw=0, googleMode=false, osmBuildings=[], buildingsEnabled=false, selectedStation=10;
@@ -175,17 +180,18 @@ try{
  viewer.resolutionScale=Math.min(window.devicePixelRatio>2?0.85:1,1);
 }catch(err){notify("3D viewer শুরু হয়নি: "+err.message,0);return;}
 const cart=(p,h=20)=>Cesium.Cartesian3.fromDegrees(p.lon,p.lat,h);
-const lineCoords=stations.map(s=>s.lon).length;
-const coords=stations.flatMap(s=>[s.lon,s.lat,19]);
+const routePts=window.MRT_TRACK?.points?.map(([lat,lon])=>({lat,lon}))||stations;
+const breaks=window.MRT_TRACK?.stationBreaks||stations.map((_,i)=>i);
+const coords=routePts.flatMap(s=>[s.lon,s.lat,19]);
 routeEntities.push(viewer.entities.add({name:"MRT Line-6 (approximate alignment)",polyline:{positions:Cesium.Cartesian3.fromDegreesArrayHeights(coords),width:9,material:new Cesium.PolylineGlowMaterialProperty({glowPower:.15,color:Cesium.Color.fromCssColorString("#14dcb4")})}}));
-routeEntities.push(viewer.entities.add({name:"Railway guideway (approximate)",polyline:{positions:Cesium.Cartesian3.fromDegreesArrayHeights(stations.flatMap(s=>[s.lon,s.lat,18.7])),width:3,material:Cesium.Color.fromCssColorString("#fafbfc")}}));
+routeEntities.push(viewer.entities.add({name:"Railway guideway (approximate)",polyline:{positions:Cesium.Cartesian3.fromDegreesArrayHeights(routePts.flatMap(s=>[s.lon,s.lat,18.7])),width:3,material:Cesium.Color.fromCssColorString("#fafbfc")}}));
 const geodesics=[], cum=[0];
-for(let i=0;i<stations.length-1;i++){
- const a=Cesium.Cartographic.fromDegrees(stations[i].lon,stations[i].lat);
- const b=Cesium.Cartographic.fromDegrees(stations[i+1].lon,stations[i+1].lat);
+for(let i=0;i<routePts.length-1;i++){
+ const a=Cesium.Cartographic.fromDegrees(routePts[i].lon,routePts[i].lat);
+ const b=Cesium.Cartographic.fromDegrees(routePts[i+1].lon,routePts[i+1].lat);
  const g=new Cesium.EllipsoidGeodesic(a,b);geodesics.push(g);cum.push(cum[i]+g.surfaceDistance);
 }length=cum[cum.length-1];
-distance=cum[10]+135; // start with the simulated train near Farmgate, inside the visible camera area
+distance=cum[breaks[10]]+135; // Farmgate on OSM alignment
 function at(d){
  let val=Math.max(0,Math.min(d,length-0.01)),i=0;
  for(;i<geodesics.length-1&&cum[i+1]<val;i++){}
@@ -194,7 +200,7 @@ function at(d){
  return {lat:Cesium.Math.toDegrees(p.latitude),lon:Cesium.Math.toDegrees(p.longitude),heading:g.startHeading};
 }
 function stationHeading(i){
- const g=geodesics[Math.min(i,geodesics.length-1)];
+ const g=geodesics[Math.min(breaks[i],geodesics.length-1)];
  return g.startHeading;
 }
 stations.forEach((s,i)=>{
@@ -251,7 +257,7 @@ for(let i=0;i<6;i++){
 }
 // Support columns along the approximate corridor: intentionally illustrative, not survey accurate.
 const supportMat=Cesium.Color.fromCssColorString("#9aa5af");
-for(let d=60;d<length;d+=210){
+for(let d=60;d<length;d+=145){
  const p=at(d);
  viewer.entities.add({name:"Illustrative elevated rail support",
   position:cart(p,9),
