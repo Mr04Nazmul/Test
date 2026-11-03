@@ -62,6 +62,11 @@ jobs:
           node --check scripts/build-corridor-models.mjs
           node scripts/build-corridor-models.mjs
           node scripts/check-corridor-models.mjs
+      - name: Fetch actual Agargaon OpenStreetMap road geometry
+        run: |
+          node --check scripts/refresh-real-roads.mjs
+          node scripts/refresh-real-roads.mjs --station 8
+          node scripts/check-actual-roads.mjs
       - name: Build textured Dhaka station-area glTF meshes
         run: node scripts/build-urban-models.mjs
       - name: Validate all 16 surrounding 3D city neighborhoods
@@ -139,6 +144,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f assets data/corridor .nojekyll
+          if compgen -G 'data/osm-roads/*.json' > /dev/null; then
+            git add -f data/osm-roads/*.json
+          fi
           if git diff --cached --quiet; then
             echo "No new 3D assets to persist"
           else
