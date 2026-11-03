@@ -139,7 +139,55 @@ function renderStructure(index){
   position:lonlatPoint(s,0),orientation:modelOrientation(p),
   model:{uri:farmgate?"assets/farmgate-landmark.gltf":"assets/mrt6-station-concept.gltf",
    scale:1,minimumPixelSize:0,maximumScale:1}});
+ setupStreetTraffic(index);
 }
+// Illustrated traffic near the detailed Farmgate landmark.
+// Separately modeled buses, rickshaws and cars; animation is a visual demo,
+// NEVER based on GPS, live city traffic or a road survey.
+let streetTraffic=[],streetTransform=null;
+function clearStreetTraffic(){
+ for(const t of streetTraffic)viewer.entities.remove(t.entity);
+ streetTraffic=[];streetTransform=null;
+}
+function makeTrafficWorld(x,z){
+ if(!streetTransform)return null;
+ return C.Matrix4.multiplyByPoint(streetTransform,new C.Cartesian3(x,0,z),new C.Cartesian3());
+}
+function setupStreetTraffic(index){
+ clearStreetTraffic();
+ if(index!==10)return;
+ const s=st[index],p=at(stopMeters[index]),origin=lonlatPoint(s,0);
+ streetTransform=C.Matrix4.fromTranslationQuaternionRotationScale(
+  origin,modelOrientation(p),new C.Cartesian3(1,1,1),new C.Matrix4());
+ const specs=[
+  ["bus",-29,-65,1,5.6],["bus",28,55,-1,5.1],
+  ["car",-24,-42,1,7.5],["car",-32,34,-1,6.6],
+  ["car",23,-7,-1,8.1],["car",32,70,-1,7.1],
+  ["rickshaw",-19,-60,1,2.9],["rickshaw",-36,28,-1,2.5],
+  ["rickshaw",19,40,-1,3.0],["rickshaw",35,-21,1,2.8]
+ ];
+ for(const [kind,x,z,dir,speed] of specs){
+  const heading={...p,heading:p.heading+(dir<0?Math.PI:0)};
+  const entity=viewer.entities.add({
+   name:"Dhaka "+kind+" — simulated street traffic",
+   position:makeTrafficWorld(x,z),orientation:modelOrientation(heading),
+   model:{uri:"assets/dhaka-"+kind+".gltf",scale:1,minimumPixelSize:0,maximumScale:1,
+    distanceDisplayCondition:new C.DistanceDisplayCondition(0,2200)}
+  });
+  streetTraffic.push({kind,x,z,dir,speed,entity});
+ }
+}
+function animateStreetTraffic(dt){
+ if(!streetTransform||!streetTraffic.length)return;
+ for(const item of streetTraffic){
+  item.z+=item.dir*item.speed*dt;
+  if(item.z>78)item.z=-78;
+  if(item.z< -78)item.z=78;
+  item.entity.position=makeTrafficWorld(item.x,item.z);
+  item.entity.show=!googleMode;
+ }
+}
+
 function updateStationText(){
  list.querySelectorAll(".station").forEach(el=>el.classList.toggle("active",Number(el.dataset.index)===selectedStation));
  if(!$("etaPanel"))return;
@@ -297,6 +345,7 @@ function updateNow(t){
  lastFrame=t;
  if(mode==="demo"&&playing){demoMeters+=dt*16*rate;if(demoMeters>trackLength-2)demoMeters=0;}
  renderCoachSet(dt);
+ animateStreetTraffic(dt);
  if(t-lastMarkerAnimation>120){animateTrainMarkers();lastMarkerAnimation=t;}
  if(t-lastMapUpdate>1300){
   if(mode==="estimate")refreshTrainMarkerPositions();
