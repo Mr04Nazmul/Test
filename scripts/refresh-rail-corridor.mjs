@@ -10,7 +10,7 @@
  */
 import {readFileSync,writeFileSync,mkdirSync,existsSync} from 'node:fs';
 const path='data/corridor';mkdirSync(path,{recursive:true});
-const track=JSON.parse(readFileSync('data/mrt6-track.js','utf8').split('window.MRT_TRACK=')[1].trim().replace(/;\\s*$/,''));
+const track=JSON.parse(readFileSync('data/mrt6-track.js','utf8').split('window.MRT_TRACK=')[1].trim().replace(/;$/,''));
 const meters=(a,b)=>Math.hypot((a[1]-b[1])*111320*Math.cos((a[0]+b[0])*Math.PI/360),(a[0]-b[0])*111320);
 const center=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
 const MAX=Number((process.argv.find(x=>x.startsWith('--max='))||'--max=40').split('=')[1]);
