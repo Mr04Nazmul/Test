@@ -743,11 +743,11 @@ renderStructure(8);updateStationText();refreshTrainMarkerPositions();renderCoach
 if(window.innerWidth<700){
  document.body.classList.add("panel-hidden");
  $("togglePanel").textContent="▤ Show Panel";
- // Start close to the current selected train and keep it in frame.
- const p=lastKnown();
- viewer.camera.setView({destination:C.Cartesian3.fromDegrees(p.lon,p.lat,185),
-  orientation:{heading:p.heading,pitch:C.Math.toRadians(-42),roll:0}});
- ride=true;$("follow").classList.add("primary");
+ // Open with the new Agargaon architecture visible. Follow mode stays one tap away.
+ const p=at(stopMeters[8]);
+ viewer.camera.setView({destination:C.Cartesian3.fromDegrees(p.lon,p.lat,265),
+  orientation:{heading:p.heading+C.Math.toRadians(25),pitch:C.Math.toRadians(-61),roll:0}});
+ ride=false;$("follow").classList.remove("primary");
 }
 satelliteToggle();loadBuildings(8);requestAnimationFrame(updateNow);
 announce("OSM real route + 3D trains + satellite + ETA estimates। এটি live GPS নয়।",11000);
