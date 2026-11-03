@@ -216,8 +216,14 @@ function makeModel(data,index){
   const view=pushArray(arr,type),count=arr.length/components;
   const ac={bufferView:view,componentType:type==='float'?5126:5125,count,type:components===3?'VEC3':components===2?'VEC2':'SCALAR'};
   if(withMinMax){
-   ac.min=Array.from({length:components},(_,j)=>Math.min(...arr.filter((_,i)=>i%components===j).slice(0,1200)));
-   ac.max=Array.from({length:components},(_,j)=>Math.max(...arr.filter((_,i)=>i%components===j).slice(0,1200)));
+   // Exact bounding volume across EVERY vertex is required for Cesium culling.
+   // The previous 1,200-value truncation silently hid most neighborhood buildings.
+   ac.min=Array(components).fill(Infinity);ac.max=Array(components).fill(-Infinity);
+   for(let k=0;k<arr.length;k++){
+    const axis=k%components;
+    if(arr[k]<ac.min[axis])ac.min[axis]=arr[k];
+    if(arr[k]>ac.max[axis])ac.max[axis]=arr[k];
+   }
    // recompute bounds over entire array, not a sample
    for(let k=0;k<arr.length;k++){const n=k%components;ac.min[n]=Math.min(ac.min[n],arr[k]);ac.max[n]=Math.max(ac.max[n],arr[k])}
   }
