@@ -32,7 +32,7 @@ for(const id of ['riderGPSButton','riderGPSPanel','riderGPSStart','riderGPSInvit
 assert(rider.includes('id="consent"'),'Onboard passenger consent checkbox missing');
 assert(rider.includes('id="start" disabled'),'GPS must be off until consent');
 assert(rider.includes('id="stop"'),'Rider must be able to stop GPS sharing');
-assert(src.includes('location.hash')===false,'Invite hash should be parsed only on rider's page');
+assert(src.includes("location.hash")===false,"Invite hash is parsed only on the passenger sharing page");
 assert(src.includes('link.hash="watch="'),'Invite secret should not appear in HTTP query or logs');
 assert(src.includes('if(document.hidden&&senderState==="sharing")stopShare()'),
  'Stop sharing when sender tab hidden');
