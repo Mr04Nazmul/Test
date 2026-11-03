@@ -59,6 +59,7 @@ jobs:
         run: |
           node --check scripts/build-neighborhood-props.mjs
           node scripts/build-neighborhood-props.mjs
+          node scripts/check-neighborhood.mjs
       - name: Generate Dhaka vehicles
         run: node scripts/build-dhaka-traffic.mjs
       - name: Build and validate Farmgate street micro-models
