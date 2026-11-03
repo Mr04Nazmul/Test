@@ -35,6 +35,10 @@ jobs:
         run: node scripts/build-urban-models.mjs
       - name: Generate Farmgate landmark 3D model
         run: node scripts/build-farmgate-landmark.mjs
+      - name: Generate Dhaka University station 3D model
+        run: |
+          node --check scripts/build-dhaka-university-landmark.mjs
+          node scripts/build-dhaka-university-landmark.mjs
       - name: Build Agargaon photo-referenced detailed station model
         run: |
           node --check scripts/build-agargaon-station.mjs
