@@ -48,6 +48,11 @@ jobs:
           node scripts/build-neighborhood-details.mjs
           test -s assets/neighborhood/10.gltf
           test -s assets/neighborhood/13.gltf
+      - name: Generate OSM building rooftops and street-facing shopfront details
+        run: |
+          node --check scripts/build-urban-rooftops.mjs
+          node scripts/build-urban-rooftops.mjs
+          node scripts/check-urban-rooftops.mjs
       - name: Generate Farmgate landmark 3D model
         run: node scripts/build-farmgate-landmark.mjs
       - name: Generate Dhaka University station 3D model
