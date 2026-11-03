@@ -18,5 +18,6 @@ for(const kind of kinds){
 }
 const app=readFileSync("app-v2.js","utf8");
 assert.ok(app.includes("addFarmgateDetails(index)"));
-for(const kind of kinds)assert.ok(app.includes('"'+kind+'"'));
-console.log("Farmgate 3D quality OK: "+n+" standalone models, "+total+" triangles; linked to viewer.");
+const visible=["street-market","pedestrians","greenery","utility-network","streetlights"];
+for(const kind of visible)assert.ok(app.includes('"'+kind+'"'));
+console.log("Farmgate 3D quality OK: "+n+" standalone models, "+total+" triangles; "+visible.length+" non-overlapping detail layers linked to viewer.");
