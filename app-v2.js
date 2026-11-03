@@ -345,7 +345,7 @@ async function loadBuildings(i){
    const color=colorPalette[seed%colorPalette.length];
    buildings.push(viewer.entities.add({name:offline?"OSM building footprint (cached)":"OSM building footprint",polygon:{
     hierarchy:new C.PolygonHierarchy(C.Cartesian3.fromDegreesArray(vertices)),
-    height:1.5,extrudedHeight:height,
+    height:0,extrudedHeight:height,
     material:C.Color.fromCssColorString(color).withAlpha(.98),
     outline:false
    }}));
