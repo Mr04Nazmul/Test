@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="bn"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b2836"><title>Dhaka Metro · Private Rider GPS</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans Bengali",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;padding:24px 15px;background:#081e2b;color:#effffb}
+main{max-width:480px;margin:auto}a{color:#81f0cc}.card{background:#102f3c;border:1px solid #ffffff25;border-radius:18px;padding:17px;margin:16px 0;box-shadow:0 8px 25px #001b2440}
+h1{font-size:24px;line-height:1.4}p{font-size:14px;line-height:1.65;color:#bcd3d9}
+label{display:flex;align-items:flex-start;gap:10px;line-height:1.55;font-size:14px}
+input[type=checkbox]{accent-color:#47e4b2;width:20px;height:20px;flex-shrink:0}
+button{width:100%;border-radius:13px;padding:13px;font-weight:700;font-size:15px;margin-top:12px;border:1px solid #48c9aa;background:#116b5b;color:white}
+button:disabled{background:#304550;border-color:#55717d;color:#abbfc1}
+button.danger{background:#783533;border-color:#da8f87}
+#status{font-size:13px;line-height:1.6;color:#a6e9cd}
+small{display:block;color:#8ba9b2;line-height:1.5}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js" crossorigin="anonymous"></script>
+<script src="./live-rider-p2p.js?v=20261104-private-rider-v1"></script>
+</head><body><main>
+<a href="./">← Dhaka Metro 3D</a>
+<h1>📍 Private Rider GPS Sharing</h1>
+<p>তুমি সত্যিই ঢাকা মেট্রোতে থাকলে, নিজের অনুমতি দিয়ে তোমার ফোনের GPS নির্দিষ্ট একজন দর্শকের ম্যাপে পাঠাতে পারবে। এটি **তোমার ফোনের অবস্থান**, ট্রেনের অফিসিয়াল GPS নয়।</p>
+<div class="card">
+<label><input id="consent" type="checkbox"><span>আমি এখন MRT-6 মেট্রোতে যাত্রা করছি এবং এই ব্যক্তিকে আমার ফোনের বর্তমান GPS পাঠাতে রাজি আছি। লোকেশন লিংক পাওয়া ব্যক্তি দেখতে পারবেন।</span></label>
+<button id="start" disabled>📡 Start Sharing My GPS</button>
+<button id="stop" class="danger" disabled>■ Stop Sharing</button>
+<p id="status" role="status">লোকেশন এখনো পাঠানো হচ্ছে না।</p>
+</div>
+<div class="card">
+<strong>গোপনীয়তা ও সীমাবদ্ধতা</strong>
+<p>ব্রাউজার প্রথমে GPS permission চাইবে। ডেটা সরাসরি encrypted WebRTC connection-এ নির্দিষ্ট দর্শকের ব্রাউজারে যাবে; এখানে কোনো স্থায়ী tracking history রাখা হয় না। লিংক অন্যকে দিও না। এই ট্যাব বন্ধ/পেছনে গেলে sharing থামবে।</p>
+<p>PeerJS Cloud connection setup-এ সাহায্য করে। কোনো ফোনে internet, location permission বা peer-to-peer connection না থাকলে কাজ নাও করতে পারে। GPS accuracy খারাপ হলে দর্শকের ম্যাপে Live position দেখানো হবে না।</p>
+</div>
+</main>
+<script>
+(function(){
+ const $=id=>document.getElementById(id),p=new URLSearchParams(location.hash.slice(1)),watchId=p.get("watch");
+ const valid=/^mrt6-[0-9a-f]{32}$/.test(watchId||"");
+ const status=s=>{$("status").textContent=s};
+ $("consent").addEventListener("change",()=>{$("start").disabled=!valid||!$("consent").checked});
+ if(!valid)status("সঠিক private invitation link পাওয়া যায়নি। Viewer থেকে নতুন লিংক নাও।");
+ $("start").addEventListener("click",async()=>{
+  if(!valid||!$("consent").checked)return;
+  $("start").disabled=true;
+  try{
+   await window.MRT_RIDER_P2P.startShare(watchId,status);
+   $("stop").disabled=false;status("✅ Connected · GPS permission ও live location status দেখো");
+  }catch(e){status("Connection failed: "+e.message);$("start").disabled=false}
+ });
+ $("stop").addEventListener("click",()=>{
+  window.MRT_RIDER_P2P.stopShare();$("stop").disabled=true;$("start").disabled=!$("consent").checked;
+  status("Sharing বন্ধ। এখন আর GPS পাঠানো হচ্ছে না।");
+ });
+ document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){$("stop").disabled=true;$("start").disabled=!$("consent").checked}
+ });
+})();
+</script></body></html>
