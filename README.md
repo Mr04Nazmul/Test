@@ -6,6 +6,7 @@ Mobile-friendly 3D map prototype of Dhaka Metro Rail MRT Line 6, Uttara North to
 - 16 station locations, interactive station list, ride / aerial / station camera modes
 - Animated **illustrative** six-car elevated metro train and simplified viaduct
 - OpenStreetMap base map by default (no API key required)
+- Optional 3D extrusion of real OSM building footprints around a selected station (public Overpass endpoint; availability is best effort, building heights are estimated)
 - Optional Google Maps Platform **Photorealistic 3D Tiles** via CesiumJS; requires your own Google Cloud Map Tiles API key with billing enabled
 - Responsive iPhone / Android / desktop controls
 
@@ -20,7 +21,7 @@ Mobile-friendly 3D map prototype of Dhaka Metro Rail MRT Line 6, Uttara North to
 Open `index.html` through GitHub Pages or a local static web server. For optional Google 3D, enable the Maps **Map Tiles API**, set up billing, then paste your restricted API key into the in-page input and select "Load Google 3D".
 
 ## Deploy
-In repository **Settings → Pages**, set **Source: Deploy from a branch**, branch `main`, folder `/(root)`. Then open https://mr04nazmul.github.io/Test/ .
+A deployment workflow is included at `.github/workflows/deploy-pages.yml`. In repository **Settings → Pages**, set **Source: GitHub Actions** to enable publishing. Once deployment succeeds, use https://mr04nazmul.github.io/Test/ . This address is a proposed Pages URL, not a verified live deployment.
 
 ## Attribution
 © OpenStreetMap contributors for base map data. Google imagery © Google and its data providers when loaded through the official Map Tiles API. CesiumJS © Cesium contributors.
