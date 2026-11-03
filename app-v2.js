@@ -527,6 +527,18 @@ function appendAdjacentUrbanTiles(focus){
  }
 }
 
+function appendNeighborhoodFurnishings(index){
+ // Procedural scene props around this selected station. They use OSM
+ // building footprints for placement exclusion, but are NOT a real tree survey.
+ const p=st[index];
+ buildings.push(viewer.entities.add({
+  name:p.n+" — 3D trees, street lamps and neighborhood furnishings (approximate)",
+  position:lonlatPoint(p,0),
+  model:{uri:"./assets/neighborhood/"+index+".gltf",scale:1,minimumPixelSize:0,maximumScale:1,
+   distanceDisplayCondition:new C.DistanceDisplayCondition(0,2900)}
+ }));
+}
+
 async function loadBuildings(i){
  if(!showBuildings||googleMode)return;
  const token=++loadTicket,s=st[i];
@@ -550,6 +562,8 @@ async function loadBuildings(i){
       distanceDisplayCondition:new C.DistanceDisplayCondition(0,5500)}
     }));
     appendAdjacentUrbanTiles(i);
+  appendNeighborhoodFurnishings(i);
+    appendNeighborhoodFurnishings(i);
     announce(s.n+" — বাস্তব OSM footprint-এর 3D building mesh। জানালা/অজানা উচ্চতা আনুমানিক।",9500);
     return;
    }
