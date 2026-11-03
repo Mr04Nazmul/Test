@@ -52,7 +52,7 @@ function makeFacadeTexture(){
    pngChunk('IDAT',deflateSync(pixels,{level:9})),pngChunk('IEND',Buffer.alloc(0))]);
 }
 const facadePNG='data:image/png;base64,'+makeFacadeTexture().toString('base64');
-const colors=['#e0d4c5','#c3c5c1','#e1c3b4','#c0c9c6','#ddd1bb','#b4b6b3','#e4ddcf','#c1a99c'];
+const colors=['#e6c7b4','#c9ddcf','#e3d3bb','#c8d5e6','#eadbaf','#c0ccc6','#e3c2bb','#d3d8c0'];
 function rgba(hex){const s=hex.slice(1);return [parseInt(s.slice(0,2),16)/255,parseInt(s.slice(2,4),16)/255,parseInt(s.slice(4,6),16)/255,1]}
 function material(name,hex,texture=false){
  const pbr={baseColorFactor:rgba(hex),metallicFactor:0.02,roughnessFactor:texture?0.78:0.89};
@@ -90,17 +90,17 @@ function nearRailCorridor(poly,routeXY,stationIndex){
 }
 const materials=[
  ...colors.map((c,i)=>material('windowed-plaster-'+i,c,true)),
- material('roof-concrete','#a7a59b'),material('parapets','#c9c5b8'),
+ material('roof-concrete','#b5aca0'),material('parapets','#c9c1b6'),
  material('roof-utilities','#7d8988'),
- material('ground-floor-shop-glass','#6f91a4'),
- material('corrugated-shop-awning-green','#387968'),
- material('corrugated-shop-awning-red','#a34b44'),
+ material('ground-floor-shop-glass','#7eacbf'),
+ material('corrugated-shop-awning-green','#34896b'),
+ material('corrugated-shop-awning-red','#c35a4d'),
  material('balcony-concrete','#b4aea4'),
  material('balcony-metal-railing','#59666d'),
  material('rooftop-black-water-tank','#33383b'),
  material('rooftop-airconditioning','#879292'),
  material('small-roof-greenery','#506f54'),
- material('osm-road-asphalt','#555658'),material('osm-lane-markings','#e7e2cb'),
+ material('osm-road-asphalt','#4d5359'),material('osm-lane-markings','#e7e2cb'),
  material('osm-tree-bark','#7a583f'),material('osm-tree-leaves','#3b754c'),
  material('osm-tree-leaves-light','#5d8c5d')
 ];
