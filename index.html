@@ -91,6 +91,7 @@ header{display:flex;justify-content:space-between;align-items:center;gap:12px}
 <button id="overview" class="ctrl primary">◉ পুরো রুট</button>
 <button id="follow" class="ctrl">▣ ট্রেনের সাথে</button>
 <button id="pause" class="ctrl">❚❚ Pause</button>
+<button id="buildings" class="ctrl">▥ 3D Buildings</button>
 <button id="google" class="ctrl">◈ Google 3D</button>
 </div>
 </div>
@@ -135,7 +136,7 @@ const stations=[
 ];
 const $=id=>document.getElementById(id);
 const notify=(s,ms=6000)=>{ $("notice").textContent=s; if(ms>0)setTimeout(()=>{if($("notice").textContent===s)$("notice").textContent="";},ms); };
-let viewer, googleTiles=null, osmLayer=null, demoRoofs=[], routeEntities=[], cars=[], playing=true, ride=false, rate=1, distance=0, length=0, previousTime=0, googleMode=false;
+let viewer, googleTiles=null, osmLayer=null, demoRoofs=[], routeEntities=[], cars=[], playing=true, ride=false, rate=1, distance=0, length=0, previousTime=0, googleMode=false, osmBuildings=[], buildingsEnabled=false, selectedStation=10;
 const stationList=$("stationList");
 stations.forEach((s,i)=>{
  const el=document.createElement("button"); el.type="button"; el.className="station";el.setAttribute("data-index",i);
@@ -214,6 +215,7 @@ function setActive(i){
  stationList.querySelectorAll(".station").forEach(el=>el.classList.toggle("active",Number(el.dataset.index)===i));
 }
 function focusStation(i){
+ selectedStation=i;if(buildingsEnabled&&!googleMode)loadOSMBuildings(i);
  ride=false;$("follow").classList.remove("primary");
  setActive(i);
  const s=stations[i];
@@ -242,6 +244,46 @@ function loop(t){
  }
  requestAnimationFrame(loop);
 }
+
+async function loadOSMBuildings(i){
+ if(!buildingsEnabled||googleMode)return;
+ osmBuildings.forEach(e=>viewer.entities.remove(e));osmBuildings=[];
+ const s=stations[i], query='[out:json][timeout:20];way["building"](around:380,'+s.lat+','+s.lon+');out geom;';
+ notify("OpenStreetMap থেকে ভবনের 3D footprint লোড করছি...",9000);
+ try{
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),18000);
+  let response;
+  try{response=await fetch("https://overpass-api.de/api/interpreter?data="+encodeURIComponent(query),{signal:controller.signal});}
+  finally{clearTimeout(timer);}
+  if(!response.ok)throw new Error("OSM server "+response.status);
+  const data=await response.json();
+  if(!buildingsEnabled||googleMode||selectedStation!==i)return;
+  for(const item of (data.elements||[]).slice(0,190)){
+   if(!item.geometry||item.geometry.length<4)continue;
+   const points=item.geometry.filter(p=>Number.isFinite(p.lon)&&Number.isFinite(p.lat)).flatMap(p=>[p.lon,p.lat]);
+   if(points.length<8)continue;
+   const levels=parseFloat(item.tags?.["building:levels"])||3;
+   const height=Math.min(110,Math.max(5,parseFloat(item.tags?.height)||levels*3.2));
+   const shape=viewer.entities.add({name:"OSM building footprint",polygon:{
+    hierarchy:new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(points)),
+    height:0,extrudedHeight:height,material:Cesium.Color.fromCssColorString("#aac1cb").withAlpha(.85),
+    outline:false
+   }});
+   osmBuildings.push(shape);
+  }
+  notify(osmBuildings.length+"টি OSM building 3D extrusion দেখা যাচ্ছে। Heights অনুমানভিত্তিক।",8000);
+ }catch(error){notify("OpenStreetMap ভবন লোড হয়নি। রুট ও ট্রেন আগের মতো চলবে।",9000);}
+}
+$("buildings").addEventListener("click",()=>{
+ if(googleMode){notify("Google 3D mode-এ আলাদা OSM ভবন দেখানো হচ্ছে না।",6000);return;}
+ buildingsEnabled=!buildingsEnabled;
+ $("buildings").classList.toggle("primary",buildingsEnabled);
+ $("buildings").textContent=buildingsEnabled?"▥ Hide Buildings":"▥ 3D Buildings";
+ if(buildingsEnabled)loadOSMBuildings(selectedStation);
+ else{osmBuildings.forEach(e=>viewer.entities.remove(e));osmBuildings=[];}
+});
+
 renderTrain();requestAnimationFrame(loop);
 $("overview").addEventListener("click",overview);
 $("north").addEventListener("click",()=>focusStation(0));
@@ -259,7 +301,7 @@ $("speed").addEventListener("click",()=>{
 });
 const modal=$("settings");
 $("google").addEventListener("click",()=>{
- if(googleMode){googleMode=false;viewer.scene.globe.show=true;if(osmLayer)osmLayer.show=true;if(googleTiles)googleTiles.show=false;demoRoofs.forEach(x=>x.show=true);$("status").textContent="DEMO MAP";$("google").textContent="◈ Google 3D";notify("Free 3D demo map enabled.");return;}
+ if(googleMode){googleMode=false;viewer.scene.globe.show=true;if(osmLayer)osmLayer.show=true;if(googleTiles)googleTiles.show=false;demoRoofs.forEach(x=>x.show=true);osmBuildings.forEach(x=>x.show=buildingsEnabled);$("status").textContent="DEMO MAP";$("google").textContent="◈ Google 3D";notify("Free 3D demo map enabled.");return;}
  modal.classList.add("open");$("key").focus();
 });
 $("close").addEventListener("click",()=>modal.classList.remove("open"));
@@ -277,7 +319,7 @@ $("loadGoogle").addEventListener("click",async()=>{
   }else googleTiles.show=true;
   googleMode=true;viewer.scene.globe.show=false;
   if(osmLayer)osmLayer.show=false;
-  demoRoofs.forEach(x=>x.show=false);
+  demoRoofs.forEach(x=>x.show=false);osmBuildings.forEach(x=>x.show=false);
   $("status").textContent="GOOGLE 3D API";
   $("google").textContent="◈ Demo Map";
   modal.classList.remove("open");$("key").value="";
