@@ -112,3 +112,16 @@ from a single photo**, not surveyed terrain or true architectural replicas. Othe
 existing OSM building-footprint models can visually overlap these illustrative
 facades, especially when viewed from above. Actual DMTCL live vehicle GPS is
 not provided. Google Photorealistic mode hides the conceptual details.
+
+## Agargaon architectural realism upgrade — MRT rail and surroundings
+
+**Status (2026-11-04):** The automatic GitHub Pages workflow regenerates the improved `assets/agargaon-station.gltf`. The older hand-committed glTF file can lag the website version; run `node scripts/build-agargaon-station.mjs` to build the latest model directly.
+
+- Rebuilt the unrealistically wide luminous track as **two ballastless concrete-plinth tracks** with four dark welded rails, guideway parapets/cable channels, overhead traction wire, detailed near-station fixings and local concrete pier/gantry details. Nominal rail gauge **1.435 m** and **1500 V DC** overhead supply follow public DMTCL specifications, though structural offsets remain visual approximations.
+- The **default iPhone station view** is an exterior street-side cinematic approach, rather than a driver-nose viewpoint passing into station roofs. Front view now uses an external cinematic orbit. Native Cesium orbit/zoom controls remain available. An explicitly selected station receives local overhead/pier model details.
+- New **five original embedded PBR textures** for weathered green corrugated roofing, reddish masonry, concrete, reflective glass and asphalt, plus physically tiled UVs and segmented canopy panels. Colors and surfaces are procedural and cannot equal real photographs without site photo textures/survey data.
+- Added **14 illustrative Dhaka mid-rise blocks** with balcony and window layers, street-market stalls, streetlights, landscaped roadside greenery, and a pond/green area to evoke Agargaon's aerial setting. These surrounding structures are visually inferred. Their positions and sizes are **not** a verified GIS footprint survey; OSM data remains separate.
+- The model is authored from **3,120 named original architectural parts**; the generated glTF is GPU-batched into **31 material draw groups** in a single scene mesh for mobile Safari. The authoring source remains inspectable at `scripts/build-agargaon-station.mjs`. The deployed file is larger than the original untextured draft.
+- Mobile toolbar overlays are collapsed into a **More tools** launcher to keep the 3D scene unobstructed. Regeneration and automatic QA are handled in `.github/workflows/deploy-pages.yml`.
+
+Grounding sources: [DMTCL operational/track FAQ](https://dmtcl.gov.bd/pages/static-pages/6922e089933eb65569e27764), [Agargaon aerial / green roof](https://www.thedailystar.net/news/bangladesh/transport/news/birds-eye-view-all-metro-rail-stations-3459691), [Agargaon station Commons photo collection](https://commons.wikimedia.org/wiki/Category:Agargaon_metro_station). **This is a plausible visual reconstruction, not a certified photorealistic digital twin; no verified operator live GPS is connected.**
