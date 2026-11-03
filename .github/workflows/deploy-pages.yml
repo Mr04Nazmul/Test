@@ -32,6 +32,9 @@ jobs:
           node --check scripts/build-dhaka-traffic.mjs
           node scripts/check-metro-quality.mjs
       - name: Refresh mapped buildings, roads and trees for busiest 3 station neighborhoods
+        # Optional network refresh: static Pages deployments use the committed offline OSM cache.
+        # Public Overpass may take minutes or be rate limited; don't block each commit.
+        if: github.event_name == 'workflow_dispatch'
         run: |
           node --check scripts/refresh-osm-neighborhoods.mjs
           node scripts/refresh-osm-neighborhoods.mjs
