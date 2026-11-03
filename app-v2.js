@@ -246,6 +246,21 @@ function updateNow(t){
  if(t-lastMapUpdate>900){
   if(mode==="estimate")refreshTrainMarkerPositions();
   renderCoachSet();lastMapUpdate=t;
+  // When riding, update nearby station architecture and offline OSM building geometry.
+  // Only change once when the train enters the vicinity of another station.
+  if(ride&&focused&&showBuildings&&!googleMode){
+   let closest=0,dist=Number.POSITIVE_INFINITY;
+   for(let j=0;j<stopMeters.length;j++){
+    const d=Math.abs(stopMeters[j]-focused.distance);
+    if(d<dist){closest=j;dist=d;}
+   }
+   if(closest!==selectedStation){
+    selectedStation=closest;
+    renderStructure(closest);
+    updateStationText();
+    loadBuildings(closest);
+   }
+  }
  }
  if(ride&&focused){
   // Look along the train's length from behind, rather than broadside.
