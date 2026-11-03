@@ -199,7 +199,7 @@ function renderCoachSet(){
  focused=at(focus.m,dir);
  for(let i=0;i<trainEntities.length;i++){
   const m=clamp(focus.m+(dir==="south"?-1:1)*i*carLength,0,trackLength-.1),p=at(m,dir);
-  const pos=lonlatPoint(p,0);
+  const pos=lonlatPoint(p,19);
   trainEntities[i].position=pos;trainEntities[i].orientation=modelOrientation(p);
  }
 }
@@ -218,7 +218,7 @@ function updateModeControls(){
 function updateNow(t){
  const dt=Math.min(.10,Math.max(0,(t-lastFrame)/1000||0));lastFrame=t;
  if(mode==="demo"&&playing){demoMeters+=dt*16*rate;if(demoMeters>trackLength-2)demoMeters=0;}
- if(t-lastMapUpdate>250){
+ if(t-lastMapUpdate>900){
   if(mode==="estimate")refreshTrainMarkerPositions();
   renderCoachSet();lastMapUpdate=t;
  }
