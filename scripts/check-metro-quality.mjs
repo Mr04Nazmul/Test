@@ -29,6 +29,8 @@ assert(app.includes('updateFollowCamera();'),'Following camera not animated');
 assert(app.includes('World_Transportation/MapServer'),'Real street/road overlay absent');
 assert(app.includes('assets/urban/'),'OSM building glTF loading missing');
 assert(app.includes('assets/farmgate-landmark.gltf'),'Farmgate landmark is not linked in app');
+assert(html.includes('id="dayNight"'),'Day/night UI is missing');
+assert(app.includes('$("dayNight").addEventListener'),'Day/night UI is not connected');
 assert(html.includes('NOT GPS'),'Simulated data must not be labelled as official GPS');
 for(const vehicle of ['bus','rickshaw','car'])assert(app.includes('assets/dhaka-'+vehicle+'.gltf'),'Missing '+vehicle+' model hook');
 assert(app.includes('animateStreetTraffic(dt);'),'Street traffic must animate every frame');
