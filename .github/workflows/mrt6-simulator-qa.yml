@@ -5,6 +5,8 @@ on:
     paths:
       - 'mrt6-simulator.html'
       - 'mrt6-simulator.js'
+      - 'mrt6-hd-infrastructure.js'
+      - 'scripts/check-mrt6-hd.mjs'
       - 'data/mrt6-track.js'
       - 'data/mrt6-extension.js'
       - 'data/3d-city/manifest.json'
@@ -23,6 +25,9 @@ jobs:
       - name: Validate JavaScript syntax
         run: |
           node --check mrt6-simulator.js
+          node --check mrt6-hd-infrastructure.js
+          node --check scripts/check-mrt6-hd.mjs
+          node scripts/check-mrt6-hd.mjs
           node --check data/mrt6-track.js
           node --check data/mrt6-extension.js
       - name: Validate playable HTML, route, 3D assets and OSM corridor
