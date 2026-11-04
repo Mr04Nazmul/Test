@@ -476,9 +476,39 @@ trainPick.setInputAction(click=>{
 
 // Consent-based, ephemeral live GPS from a rider's *phone*. It is not train
 // telemetry, never counted among DMTCL timetable trains or made public.
-let riderGPSMark=null,riderGPSLatest=null,riderFollowing=false;
+let riderGPSMark=null,riderGPSLatest=null,riderFollowing=false,lastGpsPaint=0;
 const riderPanel=$("riderGPSPanel");
 const riderStatus=$("riderGPSStatus");
+// This status is the single source-of-truth for visible GPS claims.
+// A timetable marker is never counted as telemetry or a valid GPS sample.
+function updateActualGpsStatus(force=false){
+ const now=Date.now();
+ if(!force&&now-lastGpsPaint<1000)return;
+ lastGpsPaint=now;
+ const fresh=!!(riderGPSLatest&&
+  Number.isFinite(riderGPSLatest.time)&&now-riderGPSLatest.time>=-2000&&
+  now-riderGPSLatest.time<=20000&&riderGPSMark?.show!==false);
+ const led=$("actualGpsLed"),head=$("actualGpsHeadline");
+ const details=$("actualGpsDetails"),age=$("actualGpsAge"),quick=$("realGpsQuickStatus");
+ led.dataset.valid=String(fresh);quick.dataset.valid=String(fresh);
+ if(fresh){
+  const seconds=Math.max(0,Math.floor((now-riderGPSLatest.time)/1000));
+  head.textContent="PHONE GPS · 1 consenting rider";
+  details.textContent="যাত্রীর শেয়ার করা বাস্তব ফোন GPS · এটি অফিসিয়াল train telemetry নয়। ±"+
+   Math.round(riderGPSLatest.accuracy)+"m accuracy";
+  age.textContent="Last phone sample: "+seconds+" sec ago";
+  quick.textContent="📍 Rider GPS · "+seconds+"s";
+ }else{
+  const linked=window.MRT_RIDER_P2P?.state==="connected";
+  head.textContent="REAL TRAIN GPS · No connected feed";
+  details.textContent=linked
+   ?"যাত্রীর সংযোগ আছে, তবে যাচাইযোগ্য নতুন GPS নেই। Train Radar-এর তথ্য কেবল সময়সূচি অনুমান।"
+   :"DMTCL operator train location feed সংযুক্ত নয়। যাত্রীর অনুমতি ছাড়া actual GPS পাওয়া যাবে না।";
+  age.textContent="Last valid GPS sample: none";
+  quick.textContent="📡 Real train GPS: none";
+ }
+}
+$("realGpsQuickStatus").addEventListener("click",()=>openTrainRadar(true));
 function openRiderGPS(force){
  riderPanel.hidden=force===undefined?!riderPanel.hidden:!force;
  $("riderGPSButton").setAttribute("aria-expanded",String(!riderPanel.hidden));
@@ -486,6 +516,7 @@ function openRiderGPS(force){
 function removeRiderMarker(){
  if(riderGPSMark){viewer.entities.remove(riderGPSMark);riderGPSMark=null}
  riderGPSLatest=null;riderFollowing=false;
+ updateActualGpsStatus(true);
  $("riderGPSFollow").disabled=true;
  $("riderGPSFollow").textContent="🎯 Follow Rider Phone GPS";
 }
@@ -524,6 +555,7 @@ function onRiderSample(sample){
  },{dist:Infinity,index:0});
  riderStatusMessage("📍 Rider phone GPS (NOT official train) · "+st[nearest.index].bn+
   " এর কাছে · ±"+Math.round(sample.accuracy)+"m · route offset "+Math.round(match.distance)+"m · just updated");
+ updateActualGpsStatus(true);
  if(riderFollowing)focusRiderCamera();
 }
 function focusRiderCamera(){
@@ -533,12 +565,14 @@ function focusRiderCamera(){
   new C.HeadingPitchRange(C.Math.toRadians(160),-0.68,215));
 }
 function updateRiderGPSFreshness(){
+ updateActualGpsStatus();
  if(!riderGPSLatest)return;
  const age=Date.now()-riderGPSLatest.time;
  if(age<=20000)return;
  riderStatusMessage("GPS তথ্য ২০ সেকেন্ডের বেশি পুরোনো। LIVE মার্কার লুকানো হয়েছে; নতুন consented sample-এর অপেক্ষা।");
  if(riderGPSMark)riderGPSMark.show=false;
  riderGPSLatest=null;riderFollowing=false;$("riderGPSFollow").disabled=true;
+ updateActualGpsStatus(true);
  $("riderGPSFollow").textContent="🎯 Follow Rider Phone GPS";
 }
 $("riderGPSButton").addEventListener("click",()=>openRiderGPS());
@@ -578,6 +612,7 @@ $("riderGPSFollow").addEventListener("click",()=>{
  $("riderGPSFollow").textContent=riderFollowing?"◉ Stop Following Rider":"🎯 Follow Rider Phone GPS";
 });
 window.MRT_RIDER_P2P?.onStatus(x=>{
+ updateActualGpsStatus(true);
  if(x.state==="sender-stopped"||x.state==="disconnected"||x.state==="error"){
   removeRiderMarker();riderStatusMessage("Rider GPS connection "+x.state+
    (x.message?": "+x.message:"")+". এখন কোনো LIVE ট্রেনের দাবি করা হচ্ছে না।");
@@ -586,6 +621,7 @@ window.MRT_RIDER_P2P?.onStatus(x=>{
  }
 });
 
+updateActualGpsStatus(true);
 function refreshTrainMarkerPositions(){
  // Only show a timetable estimate when DMTCL's published service period
  // implies a departure. Never inject a demo train into "live" mode.
