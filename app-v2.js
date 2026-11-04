@@ -339,6 +339,16 @@ st.forEach((s,i)=>{
  outlineWidth:3,style:C.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new C.Cartesian2(0,-22),
  distanceDisplayCondition:new C.DistanceDisplayCondition(0,1200),disableDepthTestDistance:0}}));
 });
+// Every MRT-6 station also has its own framed bilingual Bangla + English
+// 3D station sign at the actual OSM station location. Signs near a station
+// are 3D supports and photo-inspired high-resolution letters, not flat city
+// screenshots or operator-certified architectural measurements.
+const bilingualSigns=window.MRTBilingualBoards?.attach(viewer,st,C,{
+ railHeight:18,boardVisibility:2450
+});
+if(bilingualSigns){
+ stationMarkers.forEach(e=>{if(e.label)e.label.show=false;});
+}
 // glTF 2.0 uses +Z-forward; Cesium converts it to +X. Adjust -90 degrees to
 // make the longitudinal axis of all train and station glTF files follow the rail's compass bearing.
 function modelOrientation(p){return C.Transforms.headingPitchRollQuaternion(lonlatPoint(p,0),new C.HeadingPitchRoll(p.heading-C.Math.PI_OVER_TWO,0,0))}
