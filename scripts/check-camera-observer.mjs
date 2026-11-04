@@ -34,7 +34,8 @@ assert.equal(core.validate({...valid,eventId:"pass-4bbbbbb",method:"AI-only"},no
 assert.equal(core.validate({...valid,eventId:"pass-5bbbbbb",source:"operator"},now).ok,false);
 assert.equal(core.validate({...valid,eventId:"pass-6bbbbbb",confidence:.2},now).ok,false);
 assert.equal(core.validate({...valid,eventId:"pass-7bbbbbb",time:now+6000},now).ok,false);
-for(const id of ["cameraWitnessPanel","cameraWatchStart","cameraWatchStop",
+assert(html.includes('id="cameraWitnessPanel"'),"Camera watch container missing");
+for(const id of ["cameraWatchStart","cameraWatchStop",
  "cameraWatchLink","cameraWatchCopy","cameraWatchShare","cameraWatchStatus",
  "cameraWitnessList"]){
  assert(html.includes('id="'+id+'"'),"Camera watch UI missing "+id);
