@@ -533,6 +533,7 @@ function stationCinematicCamera(index,animate=true){
 function focusStation(i){
  if(cinematicOn)leaveCinematicScene();
  selectedStation=i;clearViewLock();
+ if(document.getElementById("mainCorridor")?.getAttribute("aria-pressed")==="true")window.MRT_CORRIDOR_3D?.load(i);
  if(mode==="demo")demoMeters=clamp(stopMeters[i]+145,0,trackLength-3);
  renderStructure(i);updateStationText();
  nearbyRailFurniture(i);
@@ -1899,6 +1900,12 @@ $("myGPS").addEventListener("click",()=>{
 function cleanupModeLabels(){
  $("buildings").textContent="▥ Hide Buildings";$("buildings").classList.add("primary");
 }
+window.MRT_CORRIDOR_3D?.init(viewer,route);
+document.getElementById("mainCorridor")?.addEventListener("click",async function(){
+ const on=this.getAttribute("aria-pressed")!=="true";this.setAttribute("aria-pressed",String(on));
+ this.textContent=on?"🏙 Hide OSM Corridor":"🏙 OSM Corridor Buildings";
+ if(on){await window.MRT_CORRIDOR_3D?.load(selectedStation)}else window.MRT_CORRIDOR_3D?.hide();
+});
 renderStructure(8);nearbyRailFurniture(8);updateStationText();refreshTrainMarkerPositions();renderCoachSet();updateModeControls();cleanupModeLabels();updateCameraLabel();setQuality(1);renderOperationsBoard();
 if(window.innerWidth<700){
  document.body.classList.add("panel-hidden");
