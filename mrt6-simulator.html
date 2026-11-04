@@ -2,7 +2,7 @@
 <html lang="bn"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061522"><meta name="description" content="Play an interactive Dhaka Metro MRT-6 train driving prototype on the OSM-mapped corridor between Uttara and Motijheel, with a planned Kamalapur extension.">
-<title>Dhaka MRT-6 • 3D Train Simulator</title>
+<title>Dhaka MRT-6 • HD Train Simulator</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net"><link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"}}</script>
 <style>
@@ -40,10 +40,10 @@ canvas{display:block;touch-action:none}
 .credits{color:#d1e0e2;font-size:9px}
 @media(min-width:800px){.hud{width:290px}.top{padding:15px 22px}.controls{bottom:18px;padding:14px}.line button{font-size:13px}}
 @media(max-height:760px){.controls{gap:4px}.line button,.line select{padding:6px 8px;min-height:32px}.tips{display:none}.hud{top:calc(env(safe-area-inset-top) + 65px)}}
-</style></head><body>
+@media(max-width:600px){.hud{width:min(228px,55vw)}.hud .panel{padding:8px 10px}.speed{font-size:30px}.controls{border-radius:15px}.line button,.line select{padding:9px 10px;min-height:39px}.brand small{font-size:9px}.tips{font-size:9px}}\n</style></head><body>
 <div id="viewport" aria-label="Playable MRT-6 3D train and city simulator"></div>
 <div id="loading"><div class="card"><h1>🚇 Dhaka Metro 3D Simulator</h1><p>১৬টি অবস্থানভিত্তিক স্টেশন, ১টি পরিকল্পিত স্টেশন এবং দুই পাশে ২৫০ মিটার OSM-ভিত্তিক 3D পরিবেশ। ট্রেন চালাতে নিচে Start চাপুন।</p><button id="start">▶ Start Simulator</button><p id="bootStatus">3D graphics ready to load · Mobile/PC</p></div></div>
-<header class="top"><a href="./">← Metro Map</a><div class="brand">DHAKA MRT-6 • TRAIN SIMULATOR<small>Real OSM buildings • Six-car metro • Touch controls • Not live GPS</small></div></header>
+<header class="top"><a href="./">← Metro Map</a><div class="brand">DHAKA MRT-6 • TRAIN SIMULATOR<small>HD mapped buildings • Catenary power • 6-car metro • Not live GPS</small></div></header>
 <div class="hud">
  <div class="panel"><div class="speed"><span id="speed">0</span><small> km/h</small></div><div class="meta">Power <strong id="powerValue">0</strong> · Brake <strong id="brakeValue">0</strong> · Score <strong id="score">0</strong></div><div class="bar"><span id="progress"></span></div></div>
  <div class="panel"><div class="heading" id="nextStation">Next: Uttara Center</div><div class="meta" id="distance">Distance: —</div><div class="meta" id="trip">MRT-6 • Uttara North → Kamalapur (planned)</div></div>
@@ -59,17 +59,17 @@ canvas{display:block;touch-action:none}
  <button id="doors">🚪 Doors</button>
 </div>
 <div class="line">
- <button id="camera" class="active">📷 Chase</button>
+ <button id="camera" class="active">📷 Chase</button><button id="quality" title="Adaptive high-definition graphics with smooth frame rate">✨ Auto HD</button>
  <button id="sun">☀ Day</button>
  <button id="horn">🔊 Horn</button>
  <button id="time">⏱ 1×</button>
  <button id="reset">⟲ Restart</button>
  <select id="stationJump" aria-label="Choose a station to practice driving"></select>
 </div>
-<div class="tips">কীবোর্ড: W/↑ power · S/↓ brake · Space emergency · C camera · H horn · D doors। স্টেশনে ০ km/h হলে Doors চাপলে পয়েন্ট পাবে। স্পিড ৮০ km/h-এর মধ্যে রাখো।</div>
-<div class="credits">© OpenStreetMap contributors (ODbL). 3D appearance, rail infrastructure and Kamalapur extension approximate. Simulator physics are simplified, not official DMTCL train controls.</div>
+<div class="tips">কীবোর্ড: W/↑ power · S/↓ brake · Space emergency · C camera · H horn · D doors। স্টেশনে ০ km/h হলে Doors চাপলে পয়েন্ট পাবে। ✨ Auto HD মোবাইলে FPS অনুযায়ী নিজে নিজে মান ঠিক করে।</div>
+<div class="credits">© OpenStreetMap contributors (ODbL). Building textures, station roof designs, catenary geometry and Kamalapur extension are illustrative, not surveyed. Simulator physics are simplified, not official DMTCL train controls.</div>
 </section>
 <script src="./data/mrt6-track.js"></script>
 <script src="./data/mrt6-extension.js"></script>
-<script type="module" src="./mrt6-simulator.js?v=20261104-alpha1"></script>
+<script type="module" src="./mrt6-simulator.js?v=20261104-hd2"></script>
 </body></html>
