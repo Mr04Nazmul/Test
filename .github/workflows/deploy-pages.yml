@@ -47,6 +47,11 @@ jobs:
           node --check data/authorized-feed-config.js
           node --check scripts/check-authorized-live-feed.mjs
           node scripts/check-authorized-live-feed.mjs
+          node --check data/camera-observation-core.js
+          node --check camera-observer-p2p.js
+          node --check camera-watch.js
+          node --check scripts/check-camera-observer.mjs
+          node scripts/check-camera-observer.mjs
       - name: Build six loud locally-hosted iPhone audio tracks and check audible RMS
         run: |
           node --check scripts/build-dhaka-audio.mjs
