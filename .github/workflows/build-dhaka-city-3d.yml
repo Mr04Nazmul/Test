@@ -1,4 +1,4 @@
-name: Build Dhaka City 3D Map Tiles (OSM)
+name: Build MRT-6 250m 3D Corridor Tiles (OSM)
 on:
   push:
     branches: [main]
@@ -11,7 +11,7 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: dhaka-citywide-osm-tiles
+  group: mrt6-corridor-osm-tiles
   cancel-in-progress: false
 jobs:
   map-tiles:
@@ -35,10 +35,10 @@ jobs:
             https://download.geofabrik.de/asia/bangladesh-latest.osm.pbf \
             -o build/bangladesh.osm.pbf
           test -s build/bangladesh.osm.pbf
-      - name: Clip geographic extent and export actual mapped building polygons
+      - name: Clip MRT-6 corridor extent and export actual mapped building polygons
         run: |
           osmium extract --overwrite --strategy complete_ways \
-            --bbox 90.25,23.65,90.57,24.03 \
+            --bbox 90.355,23.720,90.434,23.878 \
             -o build/dhaka.osm.pbf build/bangladesh.osm.pbf
           osmium export --overwrite --geometry-types polygon \
             -f geojsonseq -o build/dhaka.geojsonseq build/dhaka.osm.pbf
@@ -55,7 +55,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A data/3d-city
           if ! git diff --cached --quiet; then
-            git commit -m 'data: build real OpenStreetMap Dhaka 3D footprint tiles'
+            git commit -m 'data: build MRT-6 OSM 250m corridor 3D tiles'
             for attempt in 1 2 3; do
               if git push origin HEAD:main; then break; fi
               git fetch origin main
