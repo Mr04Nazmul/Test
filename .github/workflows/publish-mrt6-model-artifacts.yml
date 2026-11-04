@@ -1,0 +1,48 @@
+name: Publish Completed MRT6 3D Models on Isolated Asset Branch
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-mrt6-model-artifacts.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: mrt6-verified-3d-assets-branch
+  cancel-in-progress: false
+jobs:
+  publish-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Recover successful verified GLBs from earlier OSM2World Actions build
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 41761010551
+          github-token: ${{ github.token }}
+          pattern: mrt6-osm-3d-*
+          merge-multiple: true
+          path: assets/osm2world/stations
+      - name: Check real model file inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s assets/osm2world/stations/0.glb
+          test -s assets/osm2world/stations/5.glb
+          test -s assets/osm2world/stations/15.glb
+          node scripts/write-station-osm2world-manifest.mjs
+          find assets/osm2world/stations -name '*.glb' -printf '%f %s bytes\n' | sort -V
+      - name: Publish to independent mrt6-model-assets Git branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f assets/osm2world/stations
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'feat: publish 12 real OSM2World MRT6 3D station tiles and original source tags'
+          git push origin HEAD:refs/heads/mrt6-model-assets
