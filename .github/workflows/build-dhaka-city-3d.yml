@@ -1,0 +1,72 @@
+name: Build Dhaka City 3D Map Tiles (OSM)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-dhaka-city-3d.yml'
+      - 'scripts/build-dhaka-city-tiles.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: dhaka-citywide-osm-tiles
+  cancel-in-progress: false
+jobs:
+  map-tiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install official OSM toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y osmium-tool
+      - name: Download real Geofabrik Bangladesh OSM extract
+        run: |
+          mkdir -p build
+          curl --fail --location --retry 3 --connect-timeout 30 --max-time 1100 \
+            https://download.geofabrik.de/asia/bangladesh-latest.osm.pbf \
+            -o build/bangladesh.osm.pbf
+          test -s build/bangladesh.osm.pbf
+      - name: Clip geographic extent and export actual mapped building polygons
+        run: |
+          osmium extract --overwrite --strategy complete_ways \
+            --bbox 90.25,23.65,90.57,24.03 \
+            -o build/dhaka.osm.pbf build/bangladesh.osm.pbf
+          osmium export --overwrite --geometry-types polygon \
+            -f geojsonseq -o build/dhaka.geojsonseq build/dhaka.osm.pbf
+          test -s build/dhaka.geojsonseq
+      - name: Build spatially streamed geometry tiles
+        run: |
+          python3 -m py_compile scripts/build-dhaka-city-tiles.py
+          python3 scripts/build-dhaka-city-tiles.py build/dhaka.geojsonseq
+          test -s data/3d-city/manifest.json
+      - name: Commit map tiles and metadata
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A data/3d-city
+          if ! git diff --cached --quiet; then
+            git commit -m 'data: build real OpenStreetMap Dhaka 3D footprint tiles'
+            for attempt in 1 2 3; do
+              if git push origin HEAD:main; then break; fi
+              git fetch origin main
+              git rebase origin/main
+              if [ "$attempt" -eq 3 ]; then exit 1; fi
+            done
+          fi
+      - name: Publish generated tile snapshot to GitHub Pages
+        uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
