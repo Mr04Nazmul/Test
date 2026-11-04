@@ -1,9 +1,23 @@
 {
-  "ready": false,
-  "zoom": 14,
-  "bounds": [90.25, 23.65, 90.57, 24.03],
-  "dataSource": "Pending Geofabrik Bangladesh OSM extraction",
+  "ready": true,
+  "zoom": 15,
+  "bounds": [
+    90.355,
+    23.72,
+    90.434,
+    23.878
+  ],
+  "tileCount": 29,
+  "buildingCount": 12610,
+  "unknownHeightCount": 11988,
+  "maxTileBytes": 217864,
+  "generatedAt": "2026-11-04T02:34:27.274190+00:00",
+  "dataSource": "Geofabrik Bangladesh OpenStreetMap extract",
+  "corridor": "MRT-6 Uttara North–Kamalapur planned 17-stop line, 250m each side",
+  "corridorBufferMeters": 250,
+  "plannedTerminal": "Kamalapur; extension geometry indicative, not surveyed",
   "attribution": "© OpenStreetMap contributors, ODbL 1.0",
-  "accuracy": "Mapped footprints only; building appearance and missing heights estimated.",
-  "completeness": "The 16 station footprint snapshots are used until generated Dhaka urban tiles become available."
+  "licenseUrl": "https://www.openstreetmap.org/copyright",
+  "accuracy": "Mapped footprints. Untagged heights and all facade colors are visualization estimates.",
+  "completeness": "Only real OSM building footprints whose centroids lie within 250m of the MRT-6 centerline, no invented buildings."
 }
