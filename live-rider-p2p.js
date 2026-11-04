@@ -42,9 +42,13 @@ function validMessage(x,now=Date.now()){
  return true;
 }
 function stopWatch(){
- if(watchConnection){try{watchConnection.close()}catch(e){}watchConnection=null}
- if(watcher){try{watcher.destroy()}catch(e){}watcher=null}
- watchLink="";callback=null;status("idle");
+ const conn=watchConnection,p=watcher;
+ // Mark closed before dispatching close events: avoid stale "disconnected"
+ // listeners resurrecting an explicitly ended private session.
+ watchConnection=null;watcher=null;watchLink="";callback=null;
+ if(conn)try{conn.close()}catch(e){}
+ if(p)try{p.destroy()}catch(e){}
+ status("idle");
 }
 async function startWatch(onPosition){
  await loadPeer();
@@ -72,7 +76,7 @@ async function startWatch(onPosition){
       speed:Number.isFinite(Number(value.speed))?Number(value.speed):null,
       time:value.time,onBoard:true,source:"consenting rider phone"});
    });
-   conn.on("close",()=>{if(watchConnection===conn)watchConnection=null;status("disconnected")});
+   conn.on("close",()=>{if(watchConnection!==conn)return;watchConnection=null;status("disconnected")});
    conn.on("error",e=>status("error",{message:e.message}));
   });
   p.on("error",e=>{if(!finished){finished=true;clearTimeout(timeout);reject(e)}status("error",{message:e.message})});
@@ -80,11 +84,18 @@ async function startWatch(onPosition){
  });
 }
 function stopShare(){
- if(senderGPS!==null&&navigator.geolocation){navigator.geolocation.clearWatch(senderGPS);senderGPS=null}
- if(senderConnection){try{if(senderConnection.open)senderConnection.send({kind:"mrt6-rider-stop"})}catch(e){}
-  try{senderConnection.close()}catch(e){}senderConnection=null}
- if(sender){try{sender.destroy()}catch(e){}sender=null}
- senderState="idle";return senderState;
+ // Set idle and drop references *before* close(), because PeerJS can emit a
+ // synchronous "close" callback that would otherwise recursively stopShare().
+ senderState="idle";
+ const watchId=senderGPS,conn=senderConnection,p=sender;
+ senderGPS=null;senderConnection=null;sender=null;
+ if(watchId!==null&&navigator.geolocation)try{navigator.geolocation.clearWatch(watchId)}catch(e){}
+ if(conn){
+  try{if(conn.open)conn.send({kind:"mrt6-rider-stop"})}catch(e){}
+  try{conn.close()}catch(e){}
+ }
+ if(p)try{p.destroy()}catch(e){}
+ return senderState;
 }
 async function startShare(peerId,onStatus){
  if(!/^mrt6-[0-9a-f]{32}$/.test(String(peerId)))throw Error("Invalid private watch invite.");
