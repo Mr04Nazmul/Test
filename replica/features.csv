@@ -1,0 +1,10 @@
+feature,area,priority,original,clone,notes
+Interactive 360 orbit and zoom,viewer,must,yes,yes,Cesium built-in controls
+Original detailed Agargaon building station train city GLB,cinematic,must,yes,partial,Original 37MB model hosted and imported via checksum pinned build; CI/visual verification required
+Real map aligned OSM station and roads,map,must,yes,yes,OSM WGS84 data; incomplete road cache gracefully falls back to imagery
+Scene switch with accuracy notice,viewer,must,yes,yes,Cinematic artistic scene separate from mapped buildings
+Detailed physical road/curb/overpass matching photo,geometry,should,yes,partial,Illustrative and not verified dimensions
+All 16 photo-specific MRT6 station geometry,stations,should,yes,partial,Separate existing reference roofs; exact colors/as-built accuracy not guaranteed
+Nearby buildings at exact sites,geometry,should,yes,partial,OSM mapped outlines available; unknown heights/material approximations
+Photoreal Google Maps mesh clone,licensed,skip,yes,skip,Third party Google Earth 3D tiles and proprietary meshes not copied
+Live official operator GPS feed,tracking,skip,yes,skip,No authorized DMTCL train telemetry available
