@@ -60,7 +60,7 @@ const piers=[];
 const trackChunks=[],trackMarkers=[];
 function geometryFromQuads(rows,mat){
  const out=[];
- for(const q of rows){const [a,b,c,d]=q;out.push(...a,...b,...c,...a,...c,...d);}
+ for(const q of rows){const [a,b,c,d]=q;out.push(...a,...c,...b,...a,...d,...c);}
  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(out,3));g.computeVertexNormals();
  return new THREE.Mesh(g,mat);
 }
