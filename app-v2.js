@@ -541,6 +541,32 @@ for(let i=0;i<6;i++){
  }));
 }
 const radarPanel=$("trainRadarPanel");
+let realOnlyMode=false;
+function applyRealOnlyMode(){
+ const button=$("realOnlyButton"),state=$("realOnlyState");
+ button.setAttribute("aria-pressed",String(realOnlyMode));
+ button.textContent=realOnlyMode?"📍 REAL GPS ONLY · ON":"📍 Real GPS Only · OFF";
+ const operator=approvedLiveFeed?.snapshot()?.vehicles||[];
+ const phone=independentMonitor?.snapshot();
+ const phoneActive=phone?.live===true&&phone?.source==="consenting rider phone";
+ state.textContent=realOnlyMode
+  ?(operator.length||phoneActive
+     ?"Only observed real GPS sources displayed. Operator feed: "+operator.length+
+       " vehicle(s) · consenting rider phones: "+(phoneActive?1:0)+
+       ". Phone position is not verified train telemetry."
+     :"REAL GPS ONLY · NO LIVE GPS AVAILABLE. No operator feed, licensed train observation or consenting rider phone GPS. Fake train positions hidden.")
+  :"Simulation and timetable positions visible with NOT GPS labels. Toggle ON to hide them.";
+ for(const e of trainMarkers.values())e.show=!realOnlyMode&&mode==="estimate";
+ for(const e of miniTrains.values())e.show=!realOnlyMode;
+ for(const e of trainEntities)e.show=!realOnlyMode&&e.show;
+ updateModeControls();
+ if(!radarPanel.hidden)updateTrainRadar();
+}
+$("realOnlyButton").addEventListener("click",()=>{
+ realOnlyMode=!realOnlyMode;
+ applyRealOnlyMode();
+});
+
 
 const cameraCore=window.MRT_CAMERA_OBSERVATIONS?.create(st);
 const cameraP2P=window.MRT_CAMERA_P2P;
@@ -669,6 +695,19 @@ function updateTrainRadar(){
  renderOperationsBoard(info);
  renderApprovedVehicleList();
  area.replaceChildren();
+ if(realOnlyMode){
+  const liveOperator=approvedLiveFeed?.snapshot()?.vehicles||[];
+  const rider=independentMonitor?.snapshot();
+  const phoneLive=rider?.live===true&&rider?.source==="consenting rider phone";
+  const text=document.createElement("p");
+  text.className="radar-empty";
+  text.textContent=liveOperator.length||phoneLive
+   ?"OBSERVED ONLY: "+liveOperator.length+" licensed GPS vehicle(s), "+
+     (phoneLive?1:0)+" consenting passenger PHONE GPS. Phone location is not verified train telemetry."
+   :"NO VERIFIED REAL-TIME MRT-6 TRAIN LOCATION. No fresh GPS feed or consenting rider phone connected. All timetable estimates and demo trains are hidden.";
+  area.append(text);
+  return;
+ }
  if(!info.trains.length){
   const box=document.createElement("div");box.className="radar-empty";
   const h=document.createElement("strong");h.textContent="এখন সময়সূচিতে চলমান ট্রেন নেই";
@@ -719,16 +758,16 @@ function renderOperationsBoard(model=null){
   label.textContent="📍 যাত্রীর ফোন GPS · "+phone.nearest+" · "+dir+
    " · ±"+Math.round(phone.accuracy)+"m · ট্রেন যাচাইকৃত নয়";
   positionFraction=phone.metersAlongRoute/(independentMonitor?.routeLength||trackLength);
- }else if(selected){
+ }else if(selected&&!realOnlyMode){
   label.textContent="🚆 "+selected.id+" · "+selected.segment+" · "+selected.directionText+
    " · DMTCL সময়সূচি অনুমান, GPS নয়";
   positionFraction=selected.position/(st.length-1);
- }else if(mode==="demo"){
+ }else if(mode==="demo"&&!realOnlyMode){
   label.textContent="▶ Demo train animation · বাস্তব লোকেশন নয়";
   positionFraction=demoMeters/trackLength;
  }else{
   const next=info.nextDeparture;
-  label.textContent=next?"এখন নির্বাচিত অনুমিত ট্রেন নেই · পরের নির্ধারিত যাত্রা "+next.clock+" BST":"এখন নির্বাচিত ট্রেন নেই";
+  label.textContent=realOnlyMode?"NO LIVE GPS · Observed-only mode · awaiting real coordinates":(next?"এখন নির্বাচিত অনুমিত ট্রেন নেই · পরের নির্ধারিত যাত্রা "+next.clock+" BST":"এখন নির্বাচিত ট্রেন নেই");
  }
  progress.style.width=(Math.min(1,Math.max(0,positionFraction))*100).toFixed(1)+"%";
  const grid=$("opsStationGrid");
@@ -872,10 +911,11 @@ function updateActualGpsStatus(force=false){
   now-riderGPSLatest.time<=20000&&riderGPSMark?.show!==false);
  const led=$("actualGpsLed"),head=$("actualGpsHeadline");
  const details=$("actualGpsDetails"),age=$("actualGpsAge"),quick=$("realGpsQuickStatus");
- led.dataset.valid=String(fresh);quick.dataset.valid=String(fresh);
- if(force&&!radarPanel.hidden)renderOperationsBoard();
  const approved=approvedLiveFeed?.snapshot();
  const authorizedList=approved?.vehicles||[];
+ led.dataset.valid=String(fresh||authorizedList.length>0);
+ quick.dataset.valid=String(fresh||authorizedList.length>0);
+ if(force&&!radarPanel.hidden)renderOperationsBoard();
  if(authorizedList.length){
   const source=authorizedList[0],seconds=Math.max(0,Math.floor((now-source.time)/1000));
   head.textContent=source.operatorVerified?"AUTHORIZED OPERATOR GPS · "+authorizedList.length+" train(s)":
@@ -958,6 +998,7 @@ function onRiderSample(sample){
  riderStatusMessage("📍 Rider phone GPS (NOT official train) · "+st[nearest.index].bn+
   " এর কাছে · ±"+Math.round(sample.accuracy)+"m · route offset "+Math.round(match.distance)+"m · just updated");
  updateActualGpsStatus(true);
+ if(realOnlyMode)applyRealOnlyMode();
  if(riderFollowing)focusRiderCamera();
 }
 function focusRiderCamera(){
@@ -1075,7 +1116,7 @@ function refreshTrainMarkerPositions(){
       distanceDisplayCondition:new C.DistanceDisplayCondition(0,3000)}});
    miniTrains.set(t.id,mini);
   }else{mini.position=lonlatPoint(pos,19);mini.orientation=modelOrientation(pos)}
-  mini.show=t.id!==selectedTrain;
+  mini.show=!realOnlyMode&&t.id!==selectedTrain;
  }
  for(const id of previous){
   viewer.entities.remove(trainMarkers.get(id));trainMarkers.delete(id);
@@ -1091,7 +1132,7 @@ function refreshTrainMarkerPositions(){
    selectedTrain=active.reduce((best,t)=>Math.abs(t.position-selectedStation)<Math.abs(best.position-selectedStation)?t:best,active[0]).id;
   }
  }
- for(const [id,m] of miniTrains)m.show=id!==selectedTrain;
+ for(const [id,m] of miniTrains)m.show=!realOnlyMode&&id!==selectedTrain;
  updateTrainsUI();if(!radarPanel.hidden)updateTrainRadar();updateModeControls();
 }
 function updateTrainsUI(){
@@ -1133,7 +1174,7 @@ function activeFocus(dt=0.016){
 }
 function renderCoachSet(dt=0.016){
  const hasEstimate=mode==="estimate"&&!!selectedTrain&&trainData.some(t=>t.id===selectedTrain);
- const visible=mode==="demo"||mode==="onboard"||hasEstimate;
+ const visible=!realOnlyMode&&(mode==="demo"||mode==="onboard"||hasEstimate);
  for(const coach of trainEntities)coach.show=visible;
  if(!visible){focused=null;return}
  const focus=activeFocus(dt),dir=focus.dir;
@@ -1170,7 +1211,7 @@ function updateModeControls(){
  const demo=mode==="demo",onboard=mode==="onboard";
  $("pause").textContent=demo?"◉ Timetable Mode":onboard?"◉ Exit My GPS":"▶ Demo Ride";
  $("speed").textContent="▶ "+rate+"× demo speed";
- $("status").textContent=cinematicOn?"FULL-COLOR 3D · ARTISTIC":onboard?"MY PHONE · NOT TRAIN GPS":demo?"DEMO RIDE · NOT LIVE":trainData.length?"TRAIN POSITIONS ESTIMATED · NOT GPS":"NO SCHEDULED TRAINS · NOT GPS";
+ $("status").textContent=realOnlyMode?"OBSERVED GPS ONLY · NO TIMETABLE TRAINS":cinematicOn?"FULL-COLOR 3D · ARTISTIC":onboard?"MY PHONE · NOT TRAIN GPS":demo?"DEMO RIDE · NOT LIVE":trainData.length?"TRAIN POSITIONS ESTIMATED · NOT GPS":"NO SCHEDULED TRAINS · NOT GPS";
 }
 // Follow view remains user-controlled through orbit/zoom offset; no forced reset.
 function updateFollowCamera(){
@@ -1192,7 +1233,7 @@ function updateFollowCamera(){
   new C.HeadingPitchRange(heading,pitch,range));
 }
 function animateTrainMarkers(){
- if(mode!=="estimate")return;
+ if(realOnlyMode||mode!=="estimate")return;
  for(const [id,entity] of trainMarkers){
   const sample=svc.positionFor&&svc.positionFor(id);
   if(sample){
@@ -1245,10 +1286,11 @@ function updateNow(t){
  }
  updateFollowCamera();
  updateRiderGPSFreshness();
+ if(realOnlyMode&&t-etaLast>1000)applyRealOnlyMode();
  updateSoundCamera(t);
  if(t-lastMapUpdate<45){
   stationMarkers.forEach((e,i)=>{e.show=!cinematicOn&&(!ride||i===selectedStation)});
-  for(const [id,e] of trainMarkers)e.show=mode==="estimate";
+  for(const [id,e] of trainMarkers)e.show=!realOnlyMode&&mode==="estimate";
  }
  if(t-etaLast>10000){updateStationText();if(!radarPanel.hidden)updateTrainRadar();etaLast=t}
  requestAnimationFrame(updateNow);
