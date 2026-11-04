@@ -62,7 +62,7 @@ const stations=(window.MRT_3D_ROUTE||window.MRT_TRACK).stations,selection=docume
 const stationModel=index=>index===8?osm:index===16?'./assets/mrt6-station-concept.gltf':'./assets/osm2world/stations/'+index+'.glb';
 const stationMapLink=index=>'./full-metro-3d.html?station='+index;
 const archiveModel=index=>'https://raw.githubusercontent.com/Mr04Nazmul/Test/mrt6-model-assets/assets/osm2world/stations/'+index+'.glb';
-let activeStation=8,stationRequest=0;
+let activeStation=8,stationRequest=0,activeModel=osm;
 stations.forEach((s,i)=>{
  const o=document.createElement('option');o.value=String(i);
  o.textContent=String(i+1).padStart(2,'0')+' · '+s.bn+' / '+s.n;
@@ -88,7 +88,7 @@ selection.onchange=async()=>{
   }
   if(request!==stationRequest)return;
   if(!resp.ok)throw Error('Not yet built');
-  mapped.disabled=i===16;selectModel(sourceModel,i===16?'concept':'map');
+  activeModel=sourceModel;mapped.disabled=i===16;selectModel(sourceModel,i===16?'concept':'map');
   status.textContent=i===16?'কমলাপুর পরিকল্পিত স্টেশনের কনসেপ্ট 3D—স্থাপত্য ও ট্র্যাকের alignment আনুমানিক; পরিচালিত স্টেশন নয়।':stations[i].bn+' / '+stations[i].n+' — OSM2World-এ বাস্তব ম্যাপের ভবন/রাস্তা, অনুপস্থিত স্থাপত্যের তথ্য অনুমানভিত্তিক।';
  }catch(e){
   if(request!==stationRequest)return;
@@ -143,8 +143,8 @@ function selectModel(src,mode){
  if(viewer.getAttribute('src')!==src){el('progress').hidden=false;el('loadTitle').textContent='3D মডেল লোড হচ্ছে…';bar.style.width='0';pct.textContent='0%';viewer.src=src;}
  art.setAttribute('aria-pressed',String(mode==='art'));mapped.setAttribute('aria-pressed',String(mode==='map'));
 }
-art.onclick=()=>{selection.value='8';activeStation=8;art.disabled=false;selectModel(base,'art')};
-mapped.onclick=()=>{if(!mapped.disabled)selectModel(stationModel(activeStation),'map')};
+art.onclick=()=>{selection.value='8';activeStation=8;activeModel=osm;art.disabled=false;selectModel(base,'art')};
+mapped.onclick=()=>{if(!mapped.disabled)selectModel(activeModel,'map')};
 el('rotate').onclick=()=>{viewer.autoRotate=!viewer.autoRotate;el('rotate').setAttribute('aria-pressed',String(viewer.autoRotate))};
 el('reset').onclick=()=>{viewer.cameraOrbit='32deg 68deg auto';viewer.cameraTarget='auto auto auto';viewer.resetTurntableRotation()};
 const requested=new URLSearchParams(window.location.search);
