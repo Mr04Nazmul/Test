@@ -32,6 +32,22 @@ try{
 v.entities.add({name:"MRT-6 mapped rail centerline plus planned Kamalapur approximate extension, NOT train GPS",
  polyline:{positions:C.Cartesian3.fromDegreesArrayHeights(track.flatMap(p=>[p[1],p[0],22])),
  width:3,material:tint("#11ba90")}});
+// Full route is one continuous ACTUAL 3D viaduct body, not a thin flat line.
+const surveyedCount=window.MRT_TRACK?.points?.length||track.length;
+const knownTrack=track.slice(0,surveyedCount);
+const proposedTrack=track.slice(Math.max(0,surveyedCount-1));
+function elevatedTrackBody(segment,color,label){
+ if(segment.length<2)return;
+ v.entities.add({name:label,polylineVolume:{
+  positions:segment.map(p=>C.Cartesian3.fromDegrees(p[1],p[0],20)),
+  shape:[new C.Cartesian2(-4.9,-.8),new C.Cartesian2(4.9,-.8),
+         new C.Cartesian2(4.9,.8),new C.Cartesian2(-4.9,.8)],
+  material:tint(color),cornerType:C.CornerType.ROUNDED
+ }});
+}
+elevatedTrackBody(knownTrack,"#b8c1bf","MRT-6 elevated concrete guideway, measured line position, illustrative support geometry");
+elevatedTrackBody(proposedTrack,"#a1b9a9","Future Kamalapur extension: unsurveyed illustrative line");
+
 function heading(i){
  const k=Math.max(1,Math.min(track.length-2,route.stationBreaks[i]));
  const before=track[k-1],after=track[k+1],lat=stations[i].lat;
@@ -121,13 +137,7 @@ function putGuideway(i){
        (p[1]-s.lon)*111320*Math.cos(s.lat*Math.PI/180))<710);
  if(vertices.length<2)return;
  const coords=vertices.map(p=>C.Cartesian3.fromDegrees(p[1],p[0],19.5));
- models.push(v.entities.add({
-   name:"Illustrative elevated MRT-6 guideway (approximate design)",
-   polylineVolume:{positions:coords,shape:[
-    new C.Cartesian2(-4.8,-.65),new C.Cartesian2(4.8,-.65),
-    new C.Cartesian2(4.8,.65),new C.Cartesian2(-4.8,.65)],
-    material:tint("#bdc1c0")}
- }));
+// Guideway mesh spans the full corridor; here we add only nearby support piers.
  let gap=0;
  for(let k=1;k<vertices.length;k++){
   const a=vertices[k-1],b=vertices[k];
