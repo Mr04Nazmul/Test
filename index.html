@@ -379,6 +379,8 @@ body.cinematic-active #scene canvas{
 .real-only-switch button{width:100%;padding:10px;border-radius:9px;background:#1b5c4d;color:white;font-size:12px;font-weight:750;border:1px solid #81eeca88}
 .real-only-switch button[aria-pressed="true"]{background:#207c5b;border-color:#8cfcca}
 .real-only-switch p{margin:8px 0 0;color:#c7e6e1;line-height:1.5;font-size:10px}
+#real3dTop{position:fixed;right:12px;top:calc(env(safe-area-inset-top) + 250px);z-index:55;background:#136e5aef;color:#f8fff8;text-decoration:none;border:1px solid #99f1d0;box-shadow:0 8px 30px #0009;padding:13px 12px;border-radius:13px;font-size:12px;font-weight:800;white-space:nowrap}
+@media(min-width:680px){#real3dTop{top:175px;right:20px}}
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/";</script>
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
@@ -440,6 +442,7 @@ body.cinematic-active #scene canvas{
 <button id="zoomOut" class="cam-action" aria-label="Zoom out">－</button>
 <button id="quality" class="cam-action quality" aria-label="Rendering quality">HD</button>
 </div>
+<a id="real3dTop" href="real-3d-studio.html" aria-label="Open new full-color interactive Agargaon 3D Studio">🏙️ Real 3D Studio</a>
 <div class="floating-bottom">
 <button id="north" class="pill">◎ Uttara</button>
 <button id="central" class="pill">◎ Farmgate</button>
