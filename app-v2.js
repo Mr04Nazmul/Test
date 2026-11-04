@@ -441,6 +441,7 @@ function updateTrainRadar(){
  const info=radar.snapshot(),area=$("trainRadarList");
  $("trainRadarClock").textContent=info.clock+" BST · "+info.date+" · ঢাকা সময়";
  $("trainRadarCount").textContent=info.count+"টি অনুমিত · GPS নয়";
+ renderOperationsBoard(info);
  area.replaceChildren();
  if(!info.trains.length){
   const box=document.createElement("div");box.className="radar-empty";
@@ -460,6 +461,59 @@ function updateTrainRadar(){
   area.append(btn);
  }
 }
+function renderOperationsBoard(model=null){
+ const board=$("opsMonitorBoard");if(!board||!radar)return;
+ const info=model||radar.snapshot();
+ const phone=independentMonitor?.snapshot();
+ const phoneLive=phone?.live===true&&phone?.source==="consenting rider phone";
+ // Operational-control feeds are not installed: never use a schedule or a
+ // consenting rider's own phone to impersonate official CBTC/ATS telemetry.
+ $("opsOfficialStatus").textContent="NOT CONNECTED";
+ const phoneCell=$("opsPhoneStatus");
+ phoneCell.textContent=phoneLive?"1 PHONE · GPS":"NO OBSERVATION";
+ phoneCell.dataset.live=String(phoneLive);
+ $("opsEstimatedStatus").textContent=info.count+" · ESTIMATED";
+ const selected=mode==="estimate"?info.trains.find(x=>x.id===selectedTrain):null;
+ const label=$("opsSelectedTrain"),progress=$("opsProgress");
+ let positionFraction=0;
+ if(phoneLive){
+  const dir=phone.direction==="toward_motijheel"?"মতিঝিলমুখী":phone.direction==="toward_uttara"?"উত্তরামুখী":"দিক অনিশ্চিত";
+  label.textContent="📍 যাত্রীর ফোন GPS · "+phone.nearest+" · "+dir+
+   " · ±"+Math.round(phone.accuracy)+"m · ট্রেন যাচাইকৃত নয়";
+  positionFraction=phone.metersAlongRoute/(independentMonitor?.routeLength||trackLength);
+ }else if(selected){
+  label.textContent="🚆 "+selected.id+" · "+selected.segment+" · "+selected.directionText+
+   " · DMTCL সময়সূচি অনুমান, GPS নয়";
+  positionFraction=selected.position/(st.length-1);
+ }else if(mode==="demo"){
+  label.textContent="▶ Demo train animation · বাস্তব লোকেশন নয়";
+  positionFraction=demoMeters/trackLength;
+ }else{
+  const next=info.nextDeparture;
+  label.textContent=next?"এখন নির্বাচিত অনুমিত ট্রেন নেই · পরের নির্ধারিত যাত্রা "+next.clock+" BST":"এখন নির্বাচিত ট্রেন নেই";
+ }
+ progress.style.width=(Math.min(1,Math.max(0,positionFraction))*100).toFixed(1)+"%";
+ const grid=$("opsStationGrid");
+ if(grid.children.length!==st.length){
+  grid.replaceChildren();
+  st.forEach((station,i)=>{
+   const button=document.createElement("button");button.type="button";button.className="ops-station";
+   button.setAttribute("aria-label","View "+station.n);
+   const name=document.createElement("span");name.textContent=station.bn;
+   const count=document.createElement("b");count.textContent="~0";
+   button.append(name,count);
+   button.addEventListener("click",()=>{focusStation(i);renderOperationsBoard()});
+   grid.append(button);
+  });
+ }
+ const perStation=new Array(st.length).fill(0);
+ for(const item of info.trains){const i=Math.max(0,Math.min(st.length-1,Math.round(item.position)));perStation[i]++}
+ [...grid.children].forEach((btn,i)=>{
+  btn.dataset.selected=String(selectedStation===i);
+  btn.lastChild.textContent="~"+perStation[i];
+ });
+}
+
 $("trainRadarButton").addEventListener("click",()=>openTrainRadar());
 $("trainRadarClose").addEventListener("click",()=>openTrainRadar(false));
 $("trainRadarNearest").addEventListener("click",()=>{openTrainRadar(false);findTrain()});
@@ -505,6 +559,7 @@ function updateActualGpsStatus(force=false){
  const led=$("actualGpsLed"),head=$("actualGpsHeadline");
  const details=$("actualGpsDetails"),age=$("actualGpsAge"),quick=$("realGpsQuickStatus");
  led.dataset.valid=String(fresh);quick.dataset.valid=String(fresh);
+ if(force&&!radarPanel.hidden)renderOperationsBoard();
  if(fresh){
   const seconds=Math.max(0,Math.floor((now-riderGPSLatest.time)/1000));
   head.textContent="PHONE GPS · 1 consenting rider";
@@ -1421,7 +1476,7 @@ $("myGPS").addEventListener("click",()=>{
 function cleanupModeLabels(){
  $("buildings").textContent="▥ Hide Buildings";$("buildings").classList.add("primary");
 }
-renderStructure(8);nearbyRailFurniture(8);updateStationText();refreshTrainMarkerPositions();renderCoachSet();updateModeControls();cleanupModeLabels();updateCameraLabel();setQuality(1);
+renderStructure(8);nearbyRailFurniture(8);updateStationText();refreshTrainMarkerPositions();renderCoachSet();updateModeControls();cleanupModeLabels();updateCameraLabel();setQuality(1);renderOperationsBoard();
 if(window.innerWidth<700){
  document.body.classList.add("panel-hidden");
  $("togglePanel").textContent="▤ Show Panel";
