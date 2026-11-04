@@ -109,7 +109,10 @@ const materials=[
  material('osm-road-asphalt','#4d5359'),material('osm-lane-markings','#e7e2cb'),
  material('osm-tree-bark','#7a583f'),material('osm-tree-leaves','#3b754c'),
  material('osm-tree-leaves-light','#5d8c5d'),
- ...['#b7aaa0','#c4b2a7','#a4aaad','#d1c3b5','#b5ada4','#9eaaa8','#c7bdb1','#aeaca4'].map((h,i)=>material('roof-original-'+i,h))
+ ...['#b7aaa0','#c4b2a7','#a4aaad','#d1c3b5','#b5ada4','#9eaaa8','#c7bdb1','#aeaca4'].map((h,i)=>material('roof-original-'+i,h)),
+ material('reflective-blue-building-window','#83aebb'),
+ material('weathered-white-facade-trim','#c7c4bc'),
+ material('metal-window-frame','#69777c')
 ];
 const osmMaterials={road:19,lane:20,trunk:21,leaf:22,leafLight:23};
 const detailMaterials={shop:11,awningGreen:12,awningRed:13,balcony:14,rail:15,tank:16,aircon:17,green:18};
@@ -236,7 +239,7 @@ function makeModel(data,index){
  const routeXY=trackNodes.map(([lat,lon])=>[(lat-cy)*latScale,(lon-cx)*lonScale]);
  const merged=mergeOSMFootprints(data,index),allBuildings=merged.items;
  // Prevent second overlapping old footprint datasets that made unrealistic blocks.
- let count=0,known=0,triangles=0,clearedNearTrack=0;
+ let count=0,known=0,triangles=0,clearedNearTrack=0,windowPanels=0,facadeShades=0;
  for(const item of allBuildings.slice(0,900)){
   if(!Array.isArray(item.p)||item.p.length<4)continue;
   const coords=item.p.map(([lon,lat])=>[(lat-cy)*latScale,(lon-cx)*lonScale]);
@@ -265,6 +268,36 @@ function makeModel(data,index){
    if(length<.22)continue;
    const nx=orientation*dz/length,nz=-orientation*dx/length;
    appendQuad(g,[p[0],.35,p[1]],[q[0],.35,q[1]],[q[0],height,q[1]],[p[0],height,p[1]],[nx,0,nz],length/4,height/3.2);
+   // Urban detail is anchored to the real OSM facade wall, NOT guessed
+   // building coordinates. Window sizes/colors remain artist approximations.
+   if(index===8&&length>6&&height>9&&Math.hypot((p[0]+q[0])/2,(p[1]+q[1])/2)<460){
+    const columns=Math.min(5,Math.max(1,Math.floor(length/4.8))),floors=Math.min(10,Math.floor((height-2)/3.2));
+    const xx=q[0]-p[0],zz=q[1]-p[1],glass=groups[32],metal=groups[34],trim=groups[33];
+    for(let f=1;f<=floors;f++){
+     const bottom=f*3.13+.43,top=Math.min(height-.7,bottom+1.59);
+     if(top-bottom<.85)continue;
+     for(let k=0;k<columns;k++){
+      const lo=(k+.18)/columns,hi=(k+.82)/columns;
+      const a=[p[0]+xx*lo+nx*.095,p[1]+zz*lo+nz*.095];
+      const b=[p[0]+xx*hi+nx*.095,p[1]+zz*hi+nz*.095];
+      appendQuad(glass,[a[0],bottom,a[1]],[b[0],bottom,b[1]],
+       [b[0],top,b[1]],[a[0],top,a[1]],[nx,0,nz]);
+      appendQuad(metal,[a[0]+nx*.014,top-.04,a[1]+nz*.014],
+       [b[0]+nx*.014,top-.04,b[1]+nz*.014],
+       [b[0]+nx*.014,top+.04,b[1]+nz*.014],
+       [a[0]+nx*.014,top+.04,a[1]+nz*.014],[nx,0,nz]);
+      windowPanels++;
+     }
+     if(f%2===0&&(seed+j)%3===0){
+      const lvl=top+.16;
+      appendQuad(trim,
+       [p[0]+nx*.15,lvl,p[1]+nz*.15],[q[0]+nx*.15,lvl,q[1]+nz*.15],
+       [q[0]+nx*.55,lvl+.05,q[1]+nz*.55],
+       [p[0]+nx*.55,lvl+.05,p[1]+nz*.55],[0,1,0]);
+      facadeShades++;
+     }
+    }
+   }
    // Original illustrative Dhaka street frontage geometry.
    // Footprint and location are OSM; shop presence/design is NOT verified.
    if(seed%4===0&&j===seed%coords.length&&height>8&&length>6&&length<35){
@@ -403,7 +436,7 @@ function makeModel(data,index){
   buffers:[{uri:'data:application/octet-stream;base64,'+binary.toString('base64'),byteLength:binary.length}],
   bufferViews,accessors,
   extras:{station:index,buildingFootprints:count,knownHeights:known,inferredHeights:count-known,mappedWallColours,mappedRoofColours,legacyOSMBuildingCandidates:merged.legacyCount,
-   addedIllustrativeDetails:'shopfront glass and sunshades, balcony slabs, rooftop tanks and AC fixtures',
+   addedIllustrativeDetails:'OSM-anchored Agargaon windows, metal frames, sunshades, balconies, tanks, AC fixtures',windowPanels,facadeShades,
    anchor:{longitude:cx,latitude:cy},coordinateSystem:'Cesium entity glTF X=north Y=up Z=east',provenance:data.source,license:'ODbL 1.0 © OpenStreetMap contributors',
    clearedNearTrack,roadSegments:streetSegments,mappedTreeNodes:treeCount,
    caveat:'Real mapped footprints, visually excluded shapes near train corridor to reduce occlusion; approximate heights/windows are not real building imagery.'}
@@ -417,7 +450,7 @@ for(let index=0;index<16;index++){
  const data=JSON.parse(readFileSync(path,'utf8'));
  const {model,count,known,triangles}=makeModel(data,index);
  const name=index+'.gltf';writeFileSync(join(destination,name),JSON.stringify(model));
- report.push({index,name,buildings:count,knownHeights:known,approximateHeights:count-known,legacyOSMBuildingCandidates:model.extras.legacyOSMBuildingCandidates,triangles,anchor:model.extras.anchor,source:model.extras.provenance,mappedWallColours:model.extras.mappedWallColours,mappedRoofColours:model.extras.mappedRoofColours,clearedNearTrack:model.extras.clearedNearTrack,roadSegments:model.extras.roadSegments,mappedTreeNodes:model.extras.mappedTreeNodes});
+ report.push({index,name,buildings:count,knownHeights:known,approximateHeights:count-known,legacyOSMBuildingCandidates:model.extras.legacyOSMBuildingCandidates,triangles,anchor:model.extras.anchor,source:model.extras.provenance,mappedWallColours:model.extras.mappedWallColours,mappedRoofColours:model.extras.mappedRoofColours,clearedNearTrack:model.extras.clearedNearTrack,roadSegments:model.extras.roadSegments,mappedTreeNodes:model.extras.mappedTreeNodes,windowPanels:model.extras.windowPanels,facadeShades:model.extras.facadeShades});
 }
 writeFileSync(join(destination,'manifest.json'),JSON.stringify({generatedBy:'scripts/build-urban-models.mjs',source:'OpenStreetMap ODbL + procedural surfaces',models:report},null,2));
 console.log('Generated',report.length,'MRT-6 surrounding-area glTF 3D models:',report.map(x=>x.index+':'+x.buildings).join(', '));
