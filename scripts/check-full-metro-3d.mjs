@@ -34,7 +34,7 @@ assert(js.includes('c.fillText(s.n'),"English station board text missing");
 assert(js.includes('allStationModels.push'),"All 16 station 3D architecture models not attached");
 assert(js.includes("loadNeighborhood(i)"),"Per-station 3D building loading missing");
 assert(js.includes('assets/urban/'),"Mapped OSM 3D buildings not connected");
-assert(js.includes("numberPins")&&js.includes("refreshSignVisibility()"),"Adaptive zoom label overlap logic missing");
+assert(js.includes("numberPins")&&js.includes("updateLabels()"),"Adaptive zoom label visibility logic missing");
 assert(js.includes('© OpenStreetMap contributors')||html.includes("© OpenStreetMap contributors"),
  "OpenStreetMap source attribution missing");
 assert(js.includes("NOT live train GPS")||js.includes("NOT live train GPS"),"GPS truthfulness missing");
