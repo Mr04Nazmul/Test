@@ -442,6 +442,7 @@ function updateTrainRadar(){
  $("trainRadarClock").textContent=info.clock+" BST · "+info.date+" · ঢাকা সময়";
  $("trainRadarCount").textContent=info.count+"টি অনুমিত · GPS নয়";
  renderOperationsBoard(info);
+ renderApprovedVehicleList();
  area.replaceChildren();
  if(!info.trains.length){
   const box=document.createElement("div");box.className="radar-empty";
@@ -468,7 +469,12 @@ function renderOperationsBoard(model=null){
  const phoneLive=phone?.live===true&&phone?.source==="consenting rider phone";
  // Operational-control feeds are not installed: never use a schedule or a
  // consenting rider's own phone to impersonate official CBTC/ATS telemetry.
- $("opsOfficialStatus").textContent="NOT CONNECTED";
+ const observed=approvedLiveFeed?.snapshot();
+ const authorized=observed?.vehicles||[];
+ const operator=observed?.sourceType==="operator"?authorized:[];
+ const community=observed?.sourceType==="licensed_community"?authorized:[];
+ $("opsOfficialStatus").textContent=operator.length?operator.length+" · LIVE GPS":"NOT CONNECTED";
+ $("opsLicensedStatus").textContent=community.length?community.length+" · LIVE GPS":"NOT CONNECTED";
  const phoneCell=$("opsPhoneStatus");
  phoneCell.textContent=phoneLive?"1 PHONE · GPS":"NO OBSERVATION";
  phoneCell.dataset.live=String(phoneLive);
@@ -476,7 +482,14 @@ function renderOperationsBoard(model=null){
  const selected=mode==="estimate"?info.trains.find(x=>x.id===selectedTrain):null;
  const label=$("opsSelectedTrain"),progress=$("opsProgress");
  let positionFraction=0;
- if(phoneLive){
+ if(authorized.length){
+  const first=authorized.find(v=>v.id===approvedSelectedVehicle)||authorized[0];
+  const proj=independentMonitor.project(first.lat,first.lon);
+  label.textContent="📡 "+first.id+" · "+
+   (first.operatorVerified?"Licensed operator GPS":"Licensed community GPS")+
+   " · "+first.provider+" · "+Math.round((Date.now()-first.time)/1000)+"s ago";
+  positionFraction=proj.meters/independentMonitor.routeLength;
+ }else if(phoneLive){
   const dir=phone.direction==="toward_motijheel"?"মতিঝিলমুখী":phone.direction==="toward_uttara"?"উত্তরামুখী":"দিক অনিশ্চিত";
   label.textContent="📍 যাত্রীর ফোন GPS · "+phone.nearest+" · "+dir+
    " · ±"+Math.round(phone.accuracy)+"m · ট্রেন যাচাইকৃত নয়";
@@ -532,6 +545,82 @@ trainPick.setInputAction(click=>{
 // telemetry, never counted among DMTCL timetable trains or made public.
 let riderGPSMark=null,riderGPSLatest=null,riderFollowing=false,lastGpsPaint=0;
 const independentMonitor=window.MRT_INDEPENDENT_MONITOR?.monitor(window.MRT_TRACK);
+const approvedLiveFeed=window.MRT_AUTHORIZED_LIVE_FEED?.create(
+ window.MRT_AUTHORIZED_FEED_CONFIG,{project:(lat,lon)=>independentMonitor?.project(lat,lon)});
+const approvedVehicleEntities=new Map();
+let approvedSelectedVehicle=null;
+function paintApprovedVehicles(){
+ const snapshot=approvedLiveFeed?.snapshot();
+ const valid=snapshot?.vehicles||[],active=new Set(valid.map(v=>v.id));
+ for(const [id,entity] of approvedVehicleEntities){
+  if(!active.has(id)){viewer.entities.remove(entity);approvedVehicleEntities.delete(id)}
+ }
+ for(const v of valid){
+  const snapped=independentMonitor.project(v.lat,v.lon);
+  const p=at(snapped.meters,v.direction==="south"?"south":"north");
+  const position=lonlatPoint(p,22);
+  let entity=approvedVehicleEntities.get(v.id);
+  if(!entity){
+   entity=viewer.entities.add({
+    name:"APPROVED GPS · "+v.provider+" · "+v.id,
+    position,orientation:modelOrientation(p),
+    model:{uri:"assets/mrt6-front.gltf",scale:1,minimumPixelSize:0,maximumScale:1},
+    point:{pixelSize:17,color:C.Color.fromCssColorString("#46f5b2"),
+     outlineColor:C.Color.BLACK,outlineWidth:2,disableDepthTestDistance:Number.POSITIVE_INFINITY},
+    label:{text:"📡 APPROVED "+(v.operatorVerified?"OPERATOR":"COMMUNITY")+" GPS · "+v.id,
+     font:"bold 12px sans-serif",fillColor:C.Color.WHITE,outlineColor:C.Color.BLACK,
+     outlineWidth:3,style:C.LabelStyle.FILL_AND_OUTLINE,
+     pixelOffset:new C.Cartesian2(0,-29),
+     disableDepthTestDistance:Number.POSITIVE_INFINITY}
+   });
+   approvedVehicleEntities.set(v.id,entity);
+  }else{entity.position=position;entity.orientation=modelOrientation(p)}
+ }
+ renderApprovedVehicleList();
+ if(!radarPanel.hidden)renderOperationsBoard();
+ updateActualGpsStatus(true);
+}
+function renderApprovedVehicleList(){
+ const area=$("authorizedLiveList");if(!area)return;
+ const state=approvedLiveFeed?.snapshot();
+ const list=state?.vehicles||[];
+ area.replaceChildren();
+ if(!list.length){
+  area.textContent=state?.state==="error"?"Approved provider connection error · "+state.error:
+   state?.licensed?"Approved provider connected/configured; no fresh MRT-6 positions available.":
+   "No approved operator/community real-time vehicle API is connected.";
+  return;
+ }
+ for(const v of list){
+  const button=document.createElement("button");button.type="button";
+  button.className="approved-train";
+  const title=document.createElement("b");
+  title.textContent="📍 "+v.id+" · "+(v.operatorVerified?"Operator data":"Licensed community");
+  const sub=document.createElement("small");
+  sub.textContent="Source: "+v.provider+" · "+Math.max(0,Math.floor((Date.now()-v.time)/1000))+
+   "s ago · "+v.direction+" · observed GPS, not schedule";
+  button.append(title,sub);
+  button.addEventListener("click",()=>{
+   approvedSelectedVehicle=v.id;
+   const current=approvedLiveFeed?.snapshot().vehicles.find(x=>x.id===v.id);
+   if(!current)return;
+   viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(current.lon,current.lat,650),duration:1.4});
+   renderOperationsBoard();
+  });
+  area.append(button);
+ }
+}
+async function pollApprovedVehicles(){
+ if(!approvedLiveFeed?.configured)return;
+ await approvedLiveFeed.poll();
+ paintApprovedVehicles();
+}
+if(approvedLiveFeed?.configured){
+ pollApprovedVehicles();
+ setInterval(pollApprovedVehicles,20000);
+ setInterval(paintApprovedVehicles,5000);
+}
+
 function showIndependentMonitor(data){
  const p=$("independentMonitorStatus");
  if(!p)return;
@@ -560,7 +649,17 @@ function updateActualGpsStatus(force=false){
  const details=$("actualGpsDetails"),age=$("actualGpsAge"),quick=$("realGpsQuickStatus");
  led.dataset.valid=String(fresh);quick.dataset.valid=String(fresh);
  if(force&&!radarPanel.hidden)renderOperationsBoard();
- if(fresh){
+ const approved=approvedLiveFeed?.snapshot();
+ const authorizedList=approved?.vehicles||[];
+ if(authorizedList.length){
+  const source=authorizedList[0],seconds=Math.max(0,Math.floor((now-source.time)/1000));
+  head.textContent=source.operatorVerified?"AUTHORIZED OPERATOR GPS · "+authorizedList.length+" train(s)":
+   "LICENSED COMMUNITY GPS · "+authorizedList.length+" observed";
+  details.textContent="Read-only approved source: "+source.provider+
+   " · latest "+seconds+"s ago · GPS observation. No metro signalling access.";
+  age.textContent="Latest approved GPS: "+seconds+" seconds ago";
+  quick.textContent="📡 "+authorizedList.length+" verified-source GPS";
+ }else if(fresh){
   const seconds=Math.max(0,Math.floor((now-riderGPSLatest.time)/1000));
   head.textContent="PHONE GPS · 1 consenting rider";
   details.textContent="যাত্রীর শেয়ার করা বাস্তব ফোন GPS · এটি অফিসিয়াল train telemetry নয়। ±"+
