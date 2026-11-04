@@ -60,24 +60,38 @@ const osm='./assets/osm2world/agargaon-osm2world.glb';
 const stations=window.MRT_TRACK.stations,selection=document.getElementById('studioStation');
 const stationModel=index=>index===8?osm:'./assets/osm2world/stations/'+index+'.glb';
 const stationMapLink=index=>'./full-metro-3d.html?station='+index;
-let activeStation=8;
+let activeStation=8,stationRequest=0;
 stations.forEach((s,i)=>{
  const o=document.createElement('option');o.value=String(i);
  o.textContent=String(i+1).padStart(2,'0')+' · '+s.bn+' / '+s.n;
  selection.appendChild(o);
 });selection.value='8';
 selection.onchange=async()=>{
- const i=Number(selection.value);activeStation=i;
+ const i=Number(selection.value),request=++stationRequest;
+ activeStation=i;
+ const url=new URL(window.location.href);
+ url.searchParams.set('station',String(i));
+ window.history.replaceState({},'',url.pathname+url.search);
  const model=stationModel(i);mapped.disabled=true;
+ art.disabled=i!==8;
+ mapped.setAttribute('aria-pressed','false');
+ status.textContent='নির্বাচিত স্টেশনের OSM2World 3D খোঁজা হচ্ছে…';
  status.textContent=stations[i].bn+' / '+stations[i].n+' — mapped 3D city model যাচাই হচ্ছে…';
  try{
   const resp=await fetch(model,{method:'HEAD',cache:'no-store'});
+  if(request!==stationRequest)return;
   if(!resp.ok)throw Error('Not yet built');
   mapped.disabled=false;selectModel(model,'map');
   status.textContent=stations[i].bn+' / '+stations[i].n+
    ' — OSM2World-এ বাস্তব ম্যাপের ভবন/রাস্তা, অনুপস্থিত স্থাপত্যের তথ্য অনুমানভিত্তিক।';
  }catch(e){
+  if(request!==stationRequest)return;
   mapped.disabled=true;
+  mapped.setAttribute('aria-pressed','false');
+  viewer.removeAttribute('src');
+  el('progress').hidden=false;
+  el('loadTitle').textContent=stations[i].bn+' / '+stations[i].n+' — 3D এখনো পাওয়া যায়নি';
+  pct.textContent='উপরে অন্য স্টেশন বেছে নাও';
   status.replaceChildren();
   status.append(document.createTextNode('এই স্টেশনের OSM2World GLB এখনও লাইভে নেই। '));
   const a=document.createElement('a');a.href=stationMapLink(i);
@@ -87,12 +101,24 @@ selection.onchange=async()=>{
 const status=document.getElementById('status'),pct=document.getElementById('pct'),bar=document.getElementById('progressbar');
 const el=(id)=>document.getElementById(id);
 viewer.addEventListener('progress',e=>{const n=Math.round(e.detail.totalProgress*100);bar.style.width=n+'%';pct.textContent=n+'%'});
-viewer.addEventListener('load',()=>{el('progress').hidden=true;const isOSM=mapped.getAttribute('aria-pressed')==='true';status.innerHTML=isOSM?'Mapped OSM 3D model: building/road placements are sourced from OpenStreetMap, with inferred colors and missing heights. © OSM contributors.':'<strong>Full Color 3D:</strong> আগারগাঁওয়ের রঙিন original 3D model লোড হয়েছে। কিছু ভবন/রাস্তা অনুমানভিত্তিক, ছবির ১০০% scan নয়।'});
+viewer.addEventListener('load',()=>{el('progress').hidden=true;
+ const isOSM=mapped.getAttribute('aria-pressed')==='true';
+ status.textContent=isOSM?stations[activeStation].bn+' / '+stations[activeStation].n+' — OSM2World mapped 3D; untagged heights/colors are inferred. © OpenStreetMap contributors.'
+ :'Agargaon original Full Color GLB; some buildings and roads are artistic approximations, not a 1:1 scan.';});
 let fallbackOnce=false;
 viewer.addEventListener('error',()=>{
  if(mapped.getAttribute('aria-pressed')==='true'&&!fallbackOnce){
-  fallbackOnce=true;selectModel(base,'art');
-  status.textContent='OSM2World বড় model লোড হয়নি; ছোট Full Color 3D-তে ফেরা হয়েছে।';return;
+  fallbackOnce=true;
+  if(activeStation===8){
+   selectModel(base,'art');
+   status.textContent='OSM2World বড় মডেল লোড হয়নি; আগারগাঁও Full Color 3D দেখানো হচ্ছে।';
+  }else{
+   mapped.setAttribute('aria-pressed','false');
+   viewer.removeAttribute('src');
+   mapped.disabled=true;
+   status.textContent=stations[activeStation].bn+' / '+stations[activeStation].n+' মডেল খোলা যায়নি। Full Route 3D-তে অবস্থান দেখা যাবে।';
+  }
+  return;
  }
  el('progress').hidden=false;el('loadTitle').textContent='এই 3D ফাইল লোড করা যায়নি';
  pct.textContent='মূল Metro Map-এ ফিরে যেতে পারেন।';
@@ -111,10 +137,15 @@ function selectModel(src,mode){
  if(viewer.getAttribute('src')!==src){el('progress').hidden=false;el('loadTitle').textContent='3D মডেল লোড হচ্ছে…';bar.style.width='0';pct.textContent='0%';viewer.src=src;}
  art.setAttribute('aria-pressed',String(mode==='art'));mapped.setAttribute('aria-pressed',String(mode==='map'));
 }
-art.onclick=()=>{selection.value='8';activeStation=8;mapped.disabled=false;selectModel(base,'art')};
+art.onclick=()=>{selection.value='8';activeStation=8;art.disabled=false;selectModel(base,'art')};
 mapped.onclick=()=>{if(!mapped.disabled)selectModel(stationModel(activeStation),'map')};
 el('rotate').onclick=()=>{viewer.autoRotate=!viewer.autoRotate;el('rotate').setAttribute('aria-pressed',String(viewer.autoRotate))};
 el('reset').onclick=()=>{viewer.cameraOrbit='32deg 68deg auto';viewer.cameraTarget='auto auto auto';viewer.resetTurntableRotation()};
-checkMapped();
+const requested=new URLSearchParams(window.location.search);
+const initial=Number(requested.get('station'));
+if(requested.has('station')&&Number.isInteger(initial)&&initial>=0&&initial<16){
+ selection.value=String(initial);
+ selection.onchange();
+}else checkMapped();
 </script>
 </body></html>
