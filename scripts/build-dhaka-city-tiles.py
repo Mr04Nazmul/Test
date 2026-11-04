@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stream real OSM building footprints into small Cesium 3D geometry tiles.
+"""Stream real OSM buildings near the MRT-6 route into Cesium geometry tiles.
 
 Input: GeoJSON Sequence produced by osmium export from Geofabrik Bangladesh.
 No satellite scraping, imaginary road geometry, or building-photo claims.
@@ -13,9 +13,28 @@ import os
 import sys
 from pathlib import Path
 
-Z = 14
-# Greater central Dhaka urban study extent, NOT the whole Dhaka district.
-BBOX = (90.25, 23.65, 90.57, 24.03)
+Z = 15
+# MRT-6 21.26km study corridor: OSM track through Motijheel,
+# with an approximate, non-surveyed extension to Kamalapur.
+# 250m each side: not a citywide model.
+BBOX = (90.355, 23.720, 90.434, 23.878)
+BUFFER_METERS = 250
+with open("data/mrt6-track.js", encoding="utf-8") as route_file:
+    TRACK = json.loads(route_file.read().split("window.MRT_TRACK=",1)[1].strip().rstrip(";"))["points"]
+TRACK += [[23.72855, 90.4201], [23.7297, 90.4221],
+          [23.7313, 90.4240], [23.7329588, 90.4254561]]
+def dist_to_track_m(lon, lat):
+    east = 111320 * math.cos(math.radians(lat))
+    # nearest point on any segment in local XY meters
+    best = float("inf")
+    x, y = lon * east, lat * 111320
+    for (la0, lo0), (la1, lo1) in zip(TRACK, TRACK[1:]):
+        ax, ay = lo0 * east, la0 * 111320
+        bx, by = lo1 * east, la1 * 111320
+        dx, dy = bx - ax, by - ay
+        t = max(0., min(1., ((x-ax)*dx + (y-ay)*dy) / (dx*dx+dy*dy or 1.)))
+        best = min(best, math.hypot(x-(ax+t*dx), y-(ay+t*dy)))
+    return best
 OUT = Path("data/3d-city")
 TILES = OUT / "t"
 MAX_RING = 90
@@ -110,6 +129,8 @@ def build(source):
                 lat = sum(p[1] for p in ring) / len(ring)
                 if not (BBOX[0] <= lon <= BBOX[2] and BBOX[1] <= lat <= BBOX[3]):
                     continue
+                if dist_to_track_m(lon, lat) > BUFFER_METERS:
+                    continue
                 xy = slippy(lon, lat)
                 key = (identifier, part_idx) if identifier else (xy, tuple(ring[:3]))
                 if key in seen:
@@ -139,10 +160,13 @@ def build(source):
         "unknownHeightCount": estimated, "maxTileBytes": max(sizes),
         "generatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "dataSource": "Geofabrik Bangladesh OpenStreetMap extract",
+        "corridor": "MRT-6 Uttara North–Kamalapur planned 17-stop line, 250m each side",
+        "corridorBufferMeters": BUFFER_METERS,
+        "plannedTerminal": "Kamalapur; extension geometry indicative, not surveyed",
         "attribution": "© OpenStreetMap contributors, ODbL 1.0",
         "licenseUrl": "https://www.openstreetmap.org/copyright",
         "accuracy": "Mapped footprints. Untagged heights and all facade colors are visualization estimates.",
-        "completeness": "Tiles represent mapped buildings within the configured central Dhaka bounding box; unmapped structures are absent.",
+        "completeness": "Only real OSM building footprints whose centroids lie within 250m of the MRT-6 centerline, no invented buildings.",
     }
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
