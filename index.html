@@ -358,10 +358,28 @@ body.panel-hidden .controls{margin-left:auto}
 body.cinematic-active #scene canvas{
  filter:saturate(1.17) contrast(1.07) brightness(1.055)
 }
+.camera-witness-panel{border:1px solid #7fd7bd52;background:#082d3499;border-radius:13px;padding:12px;margin:12px 0}
+.camera-witness-panel h4{display:flex;justify-content:space-between;gap:9px;font-size:13px;color:#d5fff1;margin:0 0 7px}
+.camera-witness-panel h4 small{font-size:10px;color:#b4d7d0}
+.camera-witness-panel p,.camera-witness-panel small{font-size:10px;line-height:1.65;color:#bad4d5}
+.camera-witness-panel a{color:#8df1d5}
+.camera-witness-panel strong{color:#ffe2af}
+.camera-watch-buttons{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0}
+.camera-witness-panel button{padding:9px 7px;min-height:38px;font-size:10px;border-radius:8px;border:1px solid #7fd7bd78;background:#155c58;color:white}
+.camera-witness-panel button:disabled{opacity:.45}
+.camera-witness-panel label{display:block;font-size:10px;padding:5px 0}
+.camera-witness-panel input{width:100%;padding:9px;border:1px solid #7fd7bd74;border-radius:7px;background:#122f3d;color:white}
+.camera-sighting{border:1px solid #98d5ac69;background:#10483f55;border-radius:9px;padding:9px;margin:5px 0;width:100%;color:#e3fff3;text-align:left}
+.camera-sighting b,.camera-sighting small{display:block}
+.camera-sighting small{color:#a9d8ce;font-size:10px}
+.camera-witness-panel summary{cursor:pointer;font-size:11px;color:#d2ffe6}
+@media(max-width:390px){.camera-watch-buttons{grid-template-columns:1fr}}
+
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/";</script>
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
 <script src="./data/mrt6-track.js"></script>
+<script src="./data/camera-observation-core.js?v=20261104-camera-v1"></script>
 <script src="./data/metro-schedule.js"></script>
 <script src="./data/train-radar.js?v=20261104-radar-v1"></script>
 <script src="./data/independent-monitor.js?v=20261104-rider-route-monitor-v1"></script>
@@ -491,6 +509,31 @@ body.cinematic-active #scene canvas{
 <div class="radar-clock"><b id="trainRadarClock">Dhaka time loading…</b><span id="trainRadarCount">—</span></div>
  <section class="authorized-live-panel" aria-live="polite"><h4>📡 Approved Real Locations <small>not timetable</small></h4>
  <div id="authorizedLiveList">No approved live vehicle feed is connected.</div></section>
+<section id="cameraWitnessPanel" class="camera-witness-panel" aria-label="Private camera train passage observations">
+  <h4>📷 Camera Sighting Network <small>Not Train GPS</small></h4>
+  <p>নিজের অনুমোদিত ক্যামেরায় ট্রেন পাস করার ঘটনাটি শনাক্ত করে স্টেশন অনুযায়ী ম্যাপে দেখা যাবে। <strong>ক্যামেরা/পর্যবেক্ষক না থাকলে কোনো live sighting নেই।</strong></p>
+  <div class="camera-watch-buttons">
+   <button type="button" id="cameraWatchStart">🔗 Create Private Camera Watch</button>
+   <button type="button" id="cameraWatchStop" disabled>■ Stop Watching</button>
+  </div>
+  <div id="cameraWatchInvite" hidden>
+   <label for="cameraWatchLink">শুধু অনুমোদিত ক্যামেরা পর্যবেক্ষককে লিংক দাও</label>
+   <input id="cameraWatchLink" type="url" readonly autocomplete="off" />
+   <div class="camera-watch-buttons">
+    <button type="button" id="cameraWatchCopy">📋 Copy Invite</button>
+    <button type="button" id="cameraWatchShare">📤 Share Invite</button>
+   </div>
+  </div>
+  <p id="cameraWatchStatus" role="status" aria-live="polite">No camera connected. Camera reports are not official train GPS.</p>
+  <div id="cameraWitnessList" aria-live="polite">No fresh, confirmed camera sightings.</div>
+  <details><summary>Supported camera tools / source labels</summary>
+   <p><a href="https://github.com/TrainsFYI/railwatch" target="_blank" rel="noopener">RailWatch</a> · local Raspberry Pi train recognition; needs actual camera/hardware</p>
+   <p><a href="https://github.com/jo-m/trainbot" target="_blank" rel="noopener">TrainBot</a> · a single permitted track-facing camera</p>
+   <p><a href="https://github.com/rails49/occupancy" target="_blank" rel="noopener">Rails49</a> · model railway occupancy; not validated for real MRT-6</p>
+   <p>ওগুলোর নিজস্ব সফটওয়্যার এখানে সরাসরি চলছে না। Camera Observer পেজে উপযোগী sensor result যাচাই করে নিজে নিশ্চিত করলে স্টেশনের ঘটনা পাঠানো যায়।</p>
+  </details>
+  <small>Human-confirmed station event only · 90-second expiry · not a DMTCL CCTV feed, official GPS or live train-control system.</small>
+ </section>
 <div id="trainRadarList" aria-live="polite"><p>সময়সূচির ট্রেন গণনা হচ্ছে…</p></div>
  <div class="radar-foot">
  <button type="button" id="trainRadarOverview">◉ পুরো রুট দেখো</button>
@@ -532,8 +575,9 @@ body.cinematic-active #scene canvas{
 </section>
 </div>
 <script src="./live-rider-p2p.js?v=20261104-private-rider-v2"></script>
+<script src="./camera-observer-p2p.js?v=20261104-camera-v1"></script>
 <script src="dhaka-soundscape.js?v=20261104-local-audio-fix-v3"></script>
 <script src="actual-roads.js?v=20261104-osm-geometry-v2"></script>
-<script src="app-v2.js?v=20261104-bangladesh-fullcolor-glb-v12"></script>
+<script src="app-v2.js?v=20261104-camera-watch-v13"></script>
 </body>
 </html>
