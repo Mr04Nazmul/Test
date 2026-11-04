@@ -1,5 +1,19 @@
 # MRT-6 actual train telemetry access request — verified status
 
+## Newly verified public evidence (4 November 2026)
+
+1. **JICA DXLab / DMTCL official Dhaka Metro App RFP** issued 16 July 2024 (RFP JICADXL-DMTCL-20240716) proposes, on printed page 32, a **Train Schedule API** and **Notification API**, and identifies an **"App DB for schedule database, Real-Time Train Operations System managed by admin panel"**. That is a design/procurement requirement, **not a published production URL, GTFS-Realtime VehiclePositions feed, or proof that a third party can query train GPS**. [Original official JICA RFP](https://www.jica.go.jp/english/about/dx/jicadx/dxlab/project/detail_11/__icsFiles/afieldfile/2024/07/17/20240716_Dhaka_Metro_App_RFP_3.pdf).
+2. [Bangladesh government data.gov.bd Transport catalog](https://data.gov.bd/group/transport) currently exposes only three listed datasets: road accidents, transport-sector GDP, and intercity train routes. No MRT-6 live position/GTFS-RT dataset was listed on 4 Nov 2026. Their [open-data FAQ](https://data.gov.bd/bn/faqs) says public non-sensitive data is encouraged for reuse, but any dataset's own access conditions and the applicable operator's approval still apply.
+3. [DMTCL FAQ](https://dmtcl.gov.bd/pages/static-pages/6922dc72933eb65569e106c8) confirms its CBTC system has **ATS**, **ATO** and station passenger-information displays, but does not publish an external public feed URL or API credential.
+4. [metrodhaka.com independent source audit](https://metrodhaka.com/about-us/) explicitly reports no public DMTCL API or GTFS-Realtime feed. This is external investigation rather than an official public feed inventory; continue checking when the operator supplies a link.
+5. Two community-driven services may obtain *passenger phone GPS* but not operator telemetry: [BD Train Tracking by Gatishil Ventures](https://gatishil.com/support) and [MRT Mate](https://mrt.touhidapps.com/privacy-policy.php). They do not advertise a third-party redistribution API; their own data requires provider permission and consent. Public app screens, HTML, URLs or SDK code must not be reverse-engineered to bypass access controls.
+
+**User reports having Bangladesh government authorization.** Scope, approved source, and developer endpoint/credentials were not provided to this project. General permission to reuse public government datasets does not create a missing feed URL, permit bypassing an internal control system, or grant rights to private third-party rider GPS.
+
+**Action as of 4 Nov 2026:** A *Gmail draft*, not an outgoing email, was updated for directorom@dmtcl.gov.bd (cc operations/OCC) citing the JICA project reference and specifically asking for a sanitized, read-only, public-facing VehiclePositions/TripUpdates/ETA interface and written connection information. The earlier draft link remains in Gmail. Do not claim to have sent it.
+
+
+
 **Last checked:** 2026-11-04 (Asia/Dhaka / Asia/Tokyo)
 
 ## Current reality
