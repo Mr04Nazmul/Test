@@ -61,6 +61,7 @@ const osm='./assets/osm2world/agargaon-osm2world.glb';
 const stations=(window.MRT_3D_ROUTE||window.MRT_TRACK).stations,selection=document.getElementById('studioStation');
 const stationModel=index=>index===8?osm:index===16?'./assets/mrt6-station-concept.gltf':'./assets/osm2world/stations/'+index+'.glb';
 const stationMapLink=index=>'./full-metro-3d.html?station='+index;
+const archiveModel=index=>'https://raw.githubusercontent.com/Mr04Nazmul/Test/mrt6-model-assets/assets/osm2world/stations/'+index+'.glb';
 let activeStation=8,stationRequest=0;
 stations.forEach((s,i)=>{
  const o=document.createElement('option');o.value=String(i);
@@ -79,10 +80,15 @@ selection.onchange=async()=>{
  status.textContent='নির্বাচিত স্টেশনের OSM2World 3D খোঁজা হচ্ছে…';
  status.textContent=stations[i].bn+' / '+stations[i].n+' — mapped 3D city model যাচাই হচ্ছে…';
  try{
-  const resp=await fetch(model,{method:'HEAD',cache:'no-store'});
+  let sourceModel=model;
+  let resp=await fetch(sourceModel,{method:'HEAD',cache:'no-store'});
+  if(!resp.ok&&i!==8&&i!==16){
+   sourceModel=archiveModel(i);
+   resp=await fetch(sourceModel,{method:'HEAD',cache:'no-store'});
+  }
   if(request!==stationRequest)return;
   if(!resp.ok)throw Error('Not yet built');
-  mapped.disabled=i===16;selectModel(model,i===16?'concept':'map');
+  mapped.disabled=i===16;selectModel(sourceModel,i===16?'concept':'map');
   status.textContent=i===16?'কমলাপুর পরিকল্পিত স্টেশনের কনসেপ্ট 3D—স্থাপত্য ও ট্র্যাকের alignment আনুমানিক; পরিচালিত স্টেশন নয়।':stations[i].bn+' / '+stations[i].n+' — OSM2World-এ বাস্তব ম্যাপের ভবন/রাস্তা, অনুপস্থিত স্থাপত্যের তথ্য অনুমানভিত্তিক।';
  }catch(e){
   if(request!==stationRequest)return;
