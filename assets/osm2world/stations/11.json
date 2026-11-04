@@ -1,0 +1,15 @@
+{
+  "stationIndex": 11,
+  "name": "Karwan Bazar",
+  "bangla": "কারওয়ান বাজার",
+  "latitude": 23.7513044,
+  "longitude": 90.3928149,
+  "requestRadiusM": 170,
+  "source": "© OpenStreetMap contributors (ODbL 1.0)",
+  "inputMode": "official-OSM-map-API",
+  "ways": 162,
+  "buildings": 124,
+  "roads": 42,
+  "bytes": 334263,
+  "accuracy": "Actual mapped 2D features. Unmapped objects absent; facade, colors, roofs, untagged building heights inferred."
+}

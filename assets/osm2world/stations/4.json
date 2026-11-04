@@ -1,0 +1,15 @@
+{
+  "stationIndex": 4,
+  "name": "Mirpur 11",
+  "bangla": "মিরপুর ১১",
+  "latitude": 23.819103,
+  "longitude": 90.3653075,
+  "requestRadiusM": 170,
+  "source": "© OpenStreetMap contributors (ODbL 1.0)",
+  "inputMode": "official-OSM-map-API",
+  "ways": 350,
+  "buildings": 301,
+  "roads": 52,
+  "bytes": 528046,
+  "accuracy": "Actual mapped 2D features. Unmapped objects absent; facade, colors, roofs, untagged building heights inferred."
+}

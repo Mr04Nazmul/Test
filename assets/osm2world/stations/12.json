@@ -1,0 +1,15 @@
+{
+  "stationIndex": 12,
+  "name": "Shahbagh",
+  "bangla": "শাহবাগ",
+  "latitude": 23.7400564,
+  "longitude": 90.3961548,
+  "requestRadiusM": 170,
+  "source": "© OpenStreetMap contributors (ODbL 1.0)",
+  "inputMode": "official-OSM-map-API",
+  "ways": 117,
+  "buildings": 70,
+  "roads": 28,
+  "bytes": 303947,
+  "accuracy": "Actual mapped 2D features. Unmapped objects absent; facade, colors, roofs, untagged building heights inferred."
+}
