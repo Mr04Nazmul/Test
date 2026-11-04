@@ -18,6 +18,9 @@ model-viewer{width:100vw;height:100dvh;display:block;background:radial-gradient(
 .deck{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 12px);left:12px;right:12px;z-index:5;padding:12px;background:#071824ee;backdrop-filter:blur(13px);border:1px solid #ffffff36;border-radius:17px;display:grid;gap:8px}
 .row{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}.btn{padding:11px 12px;background:#162b3b;color:#e7f4fc;border:1px solid #476271;border-radius:11px;font-weight:750;font-size:11px;cursor:pointer}
 .btn[aria-pressed="true"]{background:#2c8d77;color:#fff;border-color:#91f7d2}.btn:disabled{opacity:.46;cursor:not-allowed}
+#studioStation{width:100%;padding:12px;border-radius:11px;border:1px solid #6f9b98;
+ background:#103e43;color:#f5fffe;font:700 12px 'Hind Siliguri',system-ui,sans-serif}
+.selectLabel{font-size:10px;font-weight:700;color:#b7dbcd;text-align:left;margin-bottom:-4px}
 .notice{font-size:10px;color:#bdcbd5;line-height:1.45;text-align:center}.notice strong{color:#f5d0a4}
 @media(min-width:800px){.deck{left:50%;transform:translateX(-50%);width:min(720px,96vw)}.top{padding-left:30px;padding-right:30px}.btn{font-size:13px}}
 .row a.btn{display:inline-flex;align-items:center;text-decoration:none;background:#106d55;border-color:#88e2bd}
@@ -37,6 +40,8 @@ model-viewer{width:100vw;height:100dvh;display:block;background:radial-gradient(
 </div>
 </model-viewer>
 <footer class="deck">
+<div class="selectLabel">কোন স্টেশনটির 3D দেখতে চাও? / Choose a station</div>
+<select id="studioStation" aria-label="Select MRT-6 station in Bengali and English"></select>
 <div class="row">
 <button type="button" class="btn" id="art" aria-pressed="false">🎨 Full Color 3D</button>
 <button type="button" class="btn" id="mapped" aria-pressed="true">🏙️ OSM2World city</button>
@@ -47,10 +52,38 @@ model-viewer{width:100vw;height:100dvh;display:block;background:radial-gradient(
 </div>
 <div class="notice" id="status"><strong>Actual mapped 3D:</strong> OSM2World দিয়ে আগারগাঁওয়ের ভবন, রাস্তা, গাছ, পুকুর ও রেলপথের আসল OpenStreetMap features থেকে তৈরি। ভবনের অনুপস্থিত উচ্চতা, রং ও কাচের নকশা আনুমানিক। © OpenStreetMap contributors (ODbL).</div>
 </footer>
+<script src="./data/mrt6-track.js"></script>
 <script>
 const viewer=document.getElementById('viewer'),art=document.getElementById('art'),mapped=document.getElementById('mapped');
 const base='./assets/cinematic/agargaon-fullcolor-v2.glb';
 const osm='./assets/osm2world/agargaon-osm2world.glb';
+const stations=window.MRT_TRACK.stations,selection=document.getElementById('studioStation');
+const stationModel=index=>index===8?osm:'./assets/osm2world/stations/'+index+'.glb';
+const stationMapLink=index=>'./full-metro-3d.html?station='+index;
+let activeStation=8;
+stations.forEach((s,i)=>{
+ const o=document.createElement('option');o.value=String(i);
+ o.textContent=String(i+1).padStart(2,'0')+' · '+s.bn+' / '+s.n;
+ selection.appendChild(o);
+});selection.value='8';
+selection.onchange=async()=>{
+ const i=Number(selection.value);activeStation=i;
+ const model=stationModel(i);mapped.disabled=true;
+ status.textContent=stations[i].bn+' / '+stations[i].n+' — mapped 3D city model যাচাই হচ্ছে…';
+ try{
+  const resp=await fetch(model,{method:'HEAD',cache:'no-store'});
+  if(!resp.ok)throw Error('Not yet built');
+  mapped.disabled=false;selectModel(model,'map');
+  status.textContent=stations[i].bn+' / '+stations[i].n+
+   ' — OSM2World-এ বাস্তব ম্যাপের ভবন/রাস্তা, অনুপস্থিত স্থাপত্যের তথ্য অনুমানভিত্তিক।';
+ }catch(e){
+  mapped.disabled=true;
+  status.replaceChildren();
+  status.append(document.createTextNode('এই স্টেশনের OSM2World GLB এখনও লাইভে নেই। '));
+  const a=document.createElement('a');a.href=stationMapLink(i);
+  a.textContent='এই স্টেশনের 3D Map খুলুন';a.style.color='#83ecc7';status.append(a);
+ }
+};
 const status=document.getElementById('status'),pct=document.getElementById('pct'),bar=document.getElementById('progressbar');
 const el=(id)=>document.getElementById(id);
 viewer.addEventListener('progress',e=>{const n=Math.round(e.detail.totalProgress*100);bar.style.width=n+'%';pct.textContent=n+'%'});
@@ -78,8 +111,8 @@ function selectModel(src,mode){
  if(viewer.getAttribute('src')!==src){el('progress').hidden=false;el('loadTitle').textContent='3D মডেল লোড হচ্ছে…';bar.style.width='0';pct.textContent='0%';viewer.src=src;}
  art.setAttribute('aria-pressed',String(mode==='art'));mapped.setAttribute('aria-pressed',String(mode==='map'));
 }
-art.onclick=()=>selectModel(base,'art');
-mapped.onclick=()=>{if(!mapped.disabled)selectModel(osm,'map')};
+art.onclick=()=>{selection.value='8';activeStation=8;mapped.disabled=false;selectModel(base,'art')};
+mapped.onclick=()=>{if(!mapped.disabled)selectModel(stationModel(activeStation),'map')};
 el('rotate').onclick=()=>{viewer.autoRotate=!viewer.autoRotate;el('rotate').setAttribute('aria-pressed',String(viewer.autoRotate))};
 el('reset').onclick=()=>{viewer.cameraOrbit='32deg 68deg auto';viewer.cameraTarget='auto auto auto';viewer.resetTurntableRotation()};
 checkMapped();
