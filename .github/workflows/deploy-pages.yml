@@ -43,6 +43,10 @@ jobs:
           node --check data/independent-monitor.js
           node --check scripts/check-independent-monitor.mjs
           node scripts/check-independent-monitor.mjs
+          node --check data/operator-live-feed.js
+          node --check data/authorized-feed-config.js
+          node --check scripts/check-authorized-live-feed.mjs
+          node scripts/check-authorized-live-feed.mjs
       - name: Build six loud locally-hosted iPhone audio tracks and check audible RMS
         run: |
           node --check scripts/build-dhaka-audio.mjs
