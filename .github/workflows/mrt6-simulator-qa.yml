@@ -1,0 +1,53 @@
+name: MRT-6 Playable Simulator QA
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mrt6-simulator.html'
+      - 'mrt6-simulator.js'
+      - 'data/mrt6-track.js'
+      - 'data/mrt6-extension.js'
+      - 'data/3d-city/manifest.json'
+      - '.github/workflows/mrt6-simulator-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate JavaScript syntax
+        run: |
+          node --check mrt6-simulator.js
+          node --check data/mrt6-track.js
+          node --check data/mrt6-extension.js
+      - name: Validate playable HTML, route, 3D assets and OSM corridor
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync,existsSync, readdirSync} from 'node:fs';
+          import {runInNewContext} from 'node:vm';
+          const html=readFileSync('mrt6-simulator.html','utf8');
+          const code=readFileSync('mrt6-simulator.js','utf8');
+          const main=readFileSync('index.html','utf8');
+          const ctx={window:{}};
+          runInNewContext(readFileSync('data/mrt6-track.js','utf8'),ctx);
+          runInNewContext(readFileSync('data/mrt6-extension.js','utf8'),ctx);
+          const route=ctx.window.MRT_3D_ROUTE;
+          assert.equal(route.stations.length,17,'17 station plan including Kamalapur');
+          assert.equal(route.stations.at(-1).n,'Kamalapur');
+          assert(route.stations.at(-1).future,'Kamalapur must be marked as planned');
+          assert(route.points.length>200,'Uses actual mapped MRT-6 route points plus proposed extension');
+          const city=JSON.parse(readFileSync('data/3d-city/manifest.json','utf8'));
+          assert(city.ready&&city.corridorBufferMeters===250,'OSM corridor dataset available');
+          assert(city.buildingCount>1000&&city.tileCount>10,'3D corridor must have real mapped building footprints');
+          assert(html.includes('id="throttleUp"')&&html.includes('id="brakeUp"')&&html.includes('id="start"'),'Controls missing');
+          assert(code.includes('GLTFLoader')&&code.includes('trackAt')&&code.includes('updatePhysics')&&code.includes('buildTile'),'3D or physics integration missing');
+          assert(main.includes('href="mrt6-simulator.html"'),'Main site must link simulator');
+          for(const name of ['front','middle','rear']) assert(existsSync('assets/mrt6-'+name+'.gltf'),'Missing train model '+name);
+          console.log('PASS: 17 planned stops; 250m OSM corridor with '+city.buildingCount+' mapped building footprints; 6-car 3D train; driving UI and site link');
+          NODE
