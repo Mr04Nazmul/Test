@@ -19,7 +19,10 @@ assert.equal(route.stations[15].bn,"মতিঝিল");
 for(const [i,stop] of route.stations.entries()){
  assert(stop.n&&stop.bn&&Number.isFinite(stop.lat)&&Number.isFinite(stop.lon),
  "Station #"+(i+1)+" must have both languages and real geocoded point");
- assert(existsSync("assets/stations/"+i+".gltf"),"Missing distinct station architecture "+i);
+ const architecture=i===8?"assets/agargaon-station.gltf":
+  i===10?"assets/farmgate-landmark.gltf":
+  i===13?"assets/dhaka-university-landmark.gltf":"assets/stations/"+i+".gltf";
+ assert(existsSync(architecture),"Missing station architecture "+i+" ("+architecture+")");
  assert(existsSync("assets/urban/"+i+".gltf"),"Missing mapped 3D district "+i);
 }
 assert(html.includes('data/mrt6-track.js'),"Do not guess any station geographic location");
