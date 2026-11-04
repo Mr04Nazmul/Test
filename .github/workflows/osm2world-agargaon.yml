@@ -1,0 +1,86 @@
+name: Build Real Agargaon City (OSM2World)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/osm2world-agargaon.yml'
+      - 'scripts/prepare-agargaon-osm2world.mjs'
+      - 'scripts/check-osm2world-output.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dhaka-real-osm2world-city
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 19
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Validate and prepare OpenStreetMap geometries
+        run: |
+          node --check scripts/prepare-agargaon-osm2world.mjs
+          node scripts/prepare-agargaon-osm2world.mjs
+          test -s build/osm2world/agargaon-source.osm
+      - name: Cache OSM2World 0.4.0 official binary and PBR style
+        uses: actions/cache@v4
+        with:
+          path: .cache/OSM2World-0.4.0-bin.zip
+          key: osm2world-official-0.4.0-v1
+      - name: Download official OSM2World open-source program
+        run: |
+          set -euo pipefail
+          mkdir -p .cache /tmp/osm2world
+          if [ ! -s .cache/OSM2World-0.4.0-bin.zip ]; then
+            curl --fail --location --retry 3 --connect-timeout 30 --max-time 220 \
+              'https://osm2world.org/download/files/0.4.0/OSM2World-0.4.0-bin.zip' \
+              -o .cache/OSM2World-0.4.0-bin.zip
+          fi
+          unzip -q .cache/OSM2World-0.4.0-bin.zip -d /tmp/osm2world
+          find /tmp/osm2world -type f -iname '*osm2world*.jar' | head -5
+      - name: Convert actual mapped Agargaon buildings roads and trees to textured GLB
+        run: |
+          set -euo pipefail
+          mkdir -p assets/osm2world
+          JAR="$(find /tmp/osm2world -type f -iname '*osm2world*.jar' | head -n 1)"
+          if [ -z "$JAR" ]; then echo 'Official OSM2World JAR missing'; exit 1; fi
+          cd "$(dirname "$JAR")"
+          java -Xmx5g -jar "$JAR" \
+            -i "$GITHUB_WORKSPACE/build/osm2world/agargaon-source.osm" \
+            -o "$GITHUB_WORKSPACE/assets/osm2world/agargaon-osm2world.glb"
+      - name: Verify real GLB mesh and map provenance
+        run: |
+          node --check scripts/check-osm2world-output.mjs
+          node scripts/check-osm2world-output.mjs
+          test -s assets/osm2world/agargaon-osm2world.glb
+      - name: Commit actual map-aligned GLB to live GitHub Pages source
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f assets/osm2world/agargaon-osm2world.glb assets/osm2world/manifest.json
+          if git diff --cached --quiet; then
+            echo 'Real OSM2World GLB is already present.'; exit 0
+          fi
+          git commit -m 'feat: publish OSM2World Agargaon mapped roads buildings and trees [skip ci]'
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo 'Real map-based 3D city published to main.'
+              exit 0
+            fi
+            git fetch origin main
+            git rebase origin/main
+          done
+          echo 'Failed to synchronize generated OSM2World assets'
+          exit 1
