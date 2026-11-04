@@ -96,6 +96,25 @@ function fallbackOSM(){
  if(buildings.length<35||!text.includes("</osm>"))throw Error("Not enough mapped building data to generate OSM2World model");
  return {text,mode:"cached-OSM-footprints",buildings:buildings.length,roads:roads.length,trees:0,ways:ways.length};
 }
+async function directOpenStreetMapAPI(){
+ // OpenStreetMap's primary read-only map extract endpoint, not Google's map.
+ // Small 1.1km bounding box; unlike public Overpass, it requires no OSM query
+ // execution time and returns the actual referenced highway, water and tree tags.
+ const dLat=radius/111200,dLon=radius/(111200*Math.cos(lat*Math.PI/180));
+ const bbox=[lon-dLon,lat-dLat,lon+dLon,lat+dLat].map(x=>x.toFixed(6)).join(",");
+ const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),48000);
+ try{
+  const url="https://api.openstreetmap.org/api/0.6/map?bbox="+bbox;
+  const res=await fetch(url,{signal:ctrl.signal,headers:{"User-Agent":"DhakaMetro3D-OSM2World-source-mapper/1.0"}});
+  if(!res.ok)throw Error("OSM map API HTTP "+res.status);
+  const text=await res.text();
+  const ways=(text.match(/<way\b/g)||[]).length,roadWays=(text.match(/<tag k="highway" v="/g)||[]).length;
+  if(!text.includes("<osm")||!text.includes("</osm>")||ways<50||roadWays<6||text.length>20_000_000)
+   throw Error("Map extract incomplete: "+ways+" ways, "+roadWays+" road ways");
+  return {text,mode:"live-OSM-map-API",ways,roads:roadWays,trees:(text.match(/<tag k="natural" v="tree"/g)||[]).length,host:url.split("?")[0]};
+ }catch(e){console.warn("Primary OSM API unavailable:",String(e));return null}
+ finally{clearTimeout(timer)}
+}
 async function liveOverpass(){
  const area='(around:'+radius+','+lat+','+lon+')';
  const query='[out:xml][timeout:55];('+
@@ -124,7 +143,7 @@ async function liveOverpass(){
  return null;
 }
 const forceCached=process.argv.includes("--cached");
-const osm=!forceCached?await liveOverpass():null;
+const osm=!forceCached?(await directOpenStreetMapAPI()||await liveOverpass()):null;
 const prepared=osm||fallbackOSM();
 writeFileSync(xmlOutput,prepared.text);
 const manifest={
