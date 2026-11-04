@@ -27,22 +27,22 @@ model-viewer{width:100vw;height:100dvh;display:block;background:radial-gradient(
 <a class="back" href="./">← Metro Map</a>
 <div class="brand">DHAKA METRO • REAL 3D STUDIO<small>Actual interactive GLB scene · 360° rotate · zoom · PBR color</small></div>
 </header>
-<model-viewer id="viewer" src="./assets/cinematic/agargaon-fullcolor-v2.glb" alt="Dhaka MRT Line 6 Agargaon original reconstructed 3D urban environment" camera-controls interaction-prompt="auto" touch-action="pan-y" shadow-intensity="1.1" shadow-softness="0.7" environment-image="neutral" tone-mapping="neutral" exposure="1.05" interpolation-decay="130" camera-orbit="32deg 68deg auto" min-camera-orbit="auto 5deg auto" max-camera-orbit="auto 175deg auto" camera-target="auto auto auto" field-of-view="38deg" loading="eager">
+<model-viewer id="viewer" src="./assets/osm2world/agargaon-osm2world.glb" alt="Dhaka MRT Line 6 Agargaon original reconstructed 3D urban environment" camera-controls interaction-prompt="auto" touch-action="pan-y" shadow-intensity="1.1" shadow-softness="0.7" environment-image="neutral" tone-mapping="neutral" exposure="1.05" interpolation-decay="130" camera-orbit="32deg 68deg auto" min-camera-orbit="auto 5deg auto" max-camera-orbit="auto 175deg auto" camera-target="auto auto auto" field-of-view="38deg" loading="eager">
 <div class="progress" id="progress" slot="poster">
 <div class="title" id="loadTitle">রঙিন 3D Scene লোড হচ্ছে…</div>
-<div class="sub">এটি বাস্তব .GLB model, ছবি নয়।<br>৪৩ MB-এর 3D scene ডাউনলোড হতে পারে।</div>
+<div class="sub">এটি বাস্তব .GLB model, ছবি নয়।<br>বাস্তব OpenStreetMap ডেটাভিত্তিক ৭৮ MB scene লোড হচ্ছে।</div>
 <div class="loading"><div id="progressbar"></div></div>
 <div class="sub" id="pct">0%</div>
 </div>
 </model-viewer>
 <footer class="deck">
 <div class="row">
-<button type="button" class="btn" id="art" aria-pressed="true">🎨 Full Color 3D</button>
-<button type="button" class="btn" id="mapped" aria-pressed="false" disabled>🏙️ OSM2World city</button>
+<button type="button" class="btn" id="art" aria-pressed="false">🎨 Full Color 3D</button>
+<button type="button" class="btn" id="mapped" aria-pressed="true">🏙️ OSM2World city</button>
 <button type="button" class="btn" id="rotate" aria-pressed="false">⟳ Auto rotate</button>
 <button type="button" class="btn" id="reset">◎ Reset camera</button>
 </div>
-<div class="notice" id="status"><strong>Full Color:</strong> শিল্পীর তৈরি অনুমানভিত্তিক আগারগাঁও শহর ও স্টেশন। ম্যাপে দেখানো রাস্তা/ভবনের ঠিকানার প্রমাণ নয়। OSM2World layer আসলে বাস্তব OpenStreetMap feature থেকে তৈরি হবে। © OpenStreetMap contributors (ODbL).</div>
+<div class="notice" id="status"><strong>Actual mapped 3D:</strong> OSM2World দিয়ে আগারগাঁওয়ের ভবন, রাস্তা, গাছ, পুকুর ও রেলপথের আসল OpenStreetMap features থেকে তৈরি। ভবনের অনুপস্থিত উচ্চতা, রং ও কাচের নকশা আনুমানিক। © OpenStreetMap contributors (ODbL).</div>
 </footer>
 <script>
 const viewer=document.getElementById('viewer'),art=document.getElementById('art'),mapped=document.getElementById('mapped');
@@ -52,10 +52,24 @@ const status=document.getElementById('status'),pct=document.getElementById('pct'
 const el=(id)=>document.getElementById(id);
 viewer.addEventListener('progress',e=>{const n=Math.round(e.detail.totalProgress*100);bar.style.width=n+'%';pct.textContent=n+'%'});
 viewer.addEventListener('load',()=>{el('progress').hidden=true;const isOSM=mapped.getAttribute('aria-pressed')==='true';status.innerHTML=isOSM?'Mapped OSM 3D model: building/road placements are sourced from OpenStreetMap, with inferred colors and missing heights. © OSM contributors.':'<strong>Full Color 3D:</strong> আগারগাঁওয়ের রঙিন original 3D model লোড হয়েছে। কিছু ভবন/রাস্তা অনুমানভিত্তিক, ছবির ১০০% scan নয়।'});
-viewer.addEventListener('error',()=>{el('progress').hidden=false;el('loadTitle').textContent='এই 3D ফাইল লোড করা যায়নি';pct.textContent='মূল Metro Map-এ ফিরে যেতে পারেন।';status.textContent='মডেল লোডে সমস্যা; নেটওয়ার্ক বা iPhone-এর WebGL মেমোরি সীমা হতে পারে।'});
+let fallbackOnce=false;
+viewer.addEventListener('error',()=>{
+ if(mapped.getAttribute('aria-pressed')==='true'&&!fallbackOnce){
+  fallbackOnce=true;selectModel(base,'art');
+  status.textContent='OSM2World বড় model লোড হয়নি; ছোট Full Color 3D-তে ফেরা হয়েছে।';return;
+ }
+ el('progress').hidden=false;el('loadTitle').textContent='এই 3D ফাইল লোড করা যায়নি';
+ pct.textContent='মূল Metro Map-এ ফিরে যেতে পারেন।';
+ status.textContent='মডেল লোডে সমস্যা; নেটওয়ার্ক বা iPhone-এর WebGL মেমোরি সীমা হতে পারে।';
+});
 async function checkMapped(){
- try{const r=await fetch(osm,{method:'HEAD',cache:'no-store'});if(r.ok){mapped.disabled=false;mapped.title='OpenStreetMap থেকে তৈরি বাস্তব map-aligned 3D city';}}
- catch(e){mapped.disabled=true}
+ try{
+  const r=await fetch(osm,{method:'HEAD',cache:'no-store'});
+  if(r.ok){mapped.disabled=false;mapped.title='OpenStreetMap থেকে তৈরি বাস্তব map-aligned 3D city';return}
+ }catch(e){}
+ // Pages deploy can briefly lag the asset commit: stay useful with existing GLB.
+ mapped.disabled=true;selectModel(base,'art');
+ status.textContent='OSM2World asset এখনও লাইভে নেই। বিদ্যমান Full Color 3D দেখানো হচ্ছে।';
 }
 function selectModel(src,mode){
  if(viewer.getAttribute('src')!==src){el('progress').hidden=false;el('loadTitle').textContent='3D মডেল লোড হচ্ছে…';bar.style.width='0';pct.textContent='0%';viewer.src=src;}
