@@ -143,6 +143,13 @@ jobs:
           node --check scripts/build-urban-details.mjs
           node scripts/build-urban-details.mjs
           node scripts/check-urban-details.mjs
+      - name: Export real downloadable .glb station/building models
+        run: |
+          node --check scripts/export-metro-glb.mjs
+          node scripts/export-metro-glb.mjs
+          test -s assets/glb/agargaon-station.glb
+          test -s assets/glb/agargaon-osm-buildings.glb
+          test -s assets/glb/manifest.json
       - name: Persist generated glTF assets so branch-based Pages can serve them
         # The repository currently runs the built-in pages-build-deployment in
         # addition to this workflow. Without committed assets that branch build
