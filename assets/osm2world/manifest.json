@@ -1,0 +1,20 @@
+{
+  "pipeline": "tordanik/OSM2World 0.4.0 · OpenStreetMap urban geometry",
+  "generatedAt": "2026-11-04T02:00:40.841Z",
+  "center": {
+    "longitude": 90.3801611,
+    "latitude": 23.7784483
+  },
+  "radiusMeters": 560,
+  "inputMode": "cached-OSM-footprints",
+  "source": "© OpenStreetMap contributors, ODbL 1.0",
+  "sourceURL": "https://www.openstreetmap.org/copyright",
+  "accuracy": "Source mapped 2D footprints; missing building heights, window designs and roof colors may be inferred by OSM2World.",
+  "roadLayout": "Source OSM ways only; no invented roads or shop locations",
+  "file": "agargaon-osm2world.glb",
+  "bytes": 12599488,
+  "meshCount": 246,
+  "materialCount": 7,
+  "imageCount": 18,
+  "gltfVersion": "2.0"
+}
