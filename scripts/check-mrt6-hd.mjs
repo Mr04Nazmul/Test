@@ -1,0 +1,31 @@
+#!/usr/bin/env node
+import assert from "node:assert/strict";
+import {readFileSync,existsSync} from "node:fs";
+import {runInNewContext} from "node:vm";
+const js=readFileSync("mrt6-simulator.js","utf8");
+const mod=readFileSync("mrt6-hd-infrastructure.js","utf8");
+const html=readFileSync("mrt6-simulator.html","utf8");
+const main=readFileSync("index.html","utf8");
+const ctx={window:{}};
+runInNewContext(readFileSync("data/mrt6-track.js","utf8"),ctx);
+runInNewContext(readFileSync("data/mrt6-extension.js","utf8"),ctx);
+const route=ctx.window.MRT_3D_ROUTE;
+assert.equal(route.stations.length,17);
+assert(route.stations[16].future);
+const manifest=JSON.parse(readFileSync("data/3d-city/manifest.json","utf8"));
+assert(manifest.ready&&manifest.corridorBufferMeters===250);
+assert(manifest.tileCount>20&&manifest.buildingCount>=1000);
+for(const name of ["mrt6-front.gltf","mrt6-middle.gltf","mrt6-rear.gltf","dhaka-bus.gltf","dhaka-car.gltf","dhaka-rickshaw.gltf","audio/train.wav"])
+ assert(existsSync("assets/"+name), "Missing genuine repo asset: "+name);
+assert(js.includes("const TRAIN_LANE=-2.3"),"Train must use one rail track, not viaduct median");
+assert(js.includes("[-3.34,-1.26,1.26,3.34]"),"Visible rail pairs not aligned to train wheels");
+assert(js.includes("pantographForCar")&&mod.includes("wireSegment"),"Electrical wire/pantograph model missing");
+assert(mod.includes("instanced(mastGeo")&&mod.includes("instanced(lampGeo"),"Efficient visual infrastructure batching missing");
+assert(js.includes("roofQuads")&&js.includes("const mid=side*8.3"),"Separated, thin canopies missing");
+assert(js.includes("filteredLookAt")&&js.includes("camera.position.lerp"),"Smoothed camera missing");
+assert(js.includes("applyRenderScale")&&js.includes('qualityMode==="auto"'),"Adaptive mobile graphics missing");
+assert(html.includes('id="quality"')&&html.includes('id="start"'),"HD mode and game start controls missing");
+assert(js.includes("storefront")&&js.includes("uNight"),"PBR-style apartment/shop detail missing");
+assert(js.includes('bodyLoader.loadAsync("assets/dhaka-')&&js.includes('assets/audio/train.wav'),"Repo vehicle models or local audio missing");
+assert(main.includes('href="mrt6-simulator.html"'),"Missing website game link");
+console.log("PASS MRT-6 HD integration: 17 planned stops, 250m OSM corridor, train+rails, overhead catenary, platform canopies, HD graphics, vehicles, audio and smooth camera.");
