@@ -1,0 +1,20 @@
+#!/usr/bin/env node
+import assert from "node:assert/strict";
+import {readFileSync,statSync} from "node:fs";
+const i=Number(process.argv[2]);
+if(!Number.isInteger(i)||i<0||i>=16||i===8)throw Error("Expected station index 0...15 except existing Agargaon 8");
+const p="assets/osm2world/stations/"+i+".glb",b=readFileSync(p);
+assert(b.length>150_000&&b.length<95_000_000,"Model too small or too big for GitHub");
+assert.equal(b.toString("ascii",0,4),"glTF");
+assert.equal(b.readUInt32LE(4),2);
+assert.equal(b.readUInt32LE(8),b.length);
+assert.equal(b.toString("ascii",16,20),"JSON");
+const n=b.readUInt32LE(12),j=JSON.parse(b.subarray(20,20+n).toString("utf8").trim());
+assert.equal(j.asset.version,"2.0");
+assert(j.meshes?.length>=5,"No viable 3D city meshes found");
+assert(j.accessors?.some(x=>x.type==="VEC3"&&x.count>120),"3D positions missing");
+const meta=JSON.parse(readFileSync("build/osm2world/station-"+i+"-source.json","utf8"));
+assert.equal(meta.stationIndex,i);
+assert.equal(meta.inputMode,"official-OSM-map-API");
+assert(meta.buildings>=10&&meta.roads>=4,"Not based on real mapped buildings and roads");
+console.log("PASS OSM2World station",i,j.meshes.length,"meshes",Math.round(b.length/1024/1024)+"MB",meta.buildings,"OSM buildings",meta.roads,"mapped streets");
