@@ -446,7 +446,7 @@ function animateStreetTraffic(dt){
 }
 
 function updateStationText(){
- stationMarkers.forEach((e,i)=>{e.show=!ride||i===selectedStation});
+ stationMarkers.forEach((e,i)=>{e.show=!cinematicOn&&(!ride||i===selectedStation)});
  list.querySelectorAll(".station").forEach(el=>el.classList.toggle("active",Number(el.dataset.index)===selectedStation));
  if(!$("etaPanel"))return;
  const box=$("etaPanel");box.replaceChildren();
@@ -1044,7 +1044,7 @@ function updateModeControls(){
 }
 // Follow view remains user-controlled through orbit/zoom offset; no forced reset.
 function updateFollowCamera(){
- if(!focused)return;
+ if(cinematicOn||!focused)return;
  // Avoid dark near-field blocks when the first-person camera enters mapped
  // building geometry near the station. Detailed station stays visible.
  const nearStation=Math.abs(focused.distance-stopMeters[selectedStation])<175;
@@ -1097,6 +1097,7 @@ function updateNow(t){
  renderCoachSet(dt);
  animateStreetTraffic(dt);
  if(t-lastMarkerAnimation>120){animateTrainMarkers();lastMarkerAnimation=t;}
+ if(cinematicOn&&t-lastMapUpdate>1300)hideMappedScene();
  if(t-lastMapUpdate>1300){
   if(mode==="estimate")refreshTrainMarkerPositions();
   lastMapUpdate=t;
@@ -1116,7 +1117,7 @@ function updateNow(t){
  updateRiderGPSFreshness();
  updateSoundCamera(t);
  if(t-lastMapUpdate<45){
-  stationMarkers.forEach((e,i)=>{e.show=!ride||i===selectedStation});
+  stationMarkers.forEach((e,i)=>{e.show=!cinematicOn&&(!ride||i===selectedStation)});
   for(const [id,e] of trainMarkers)e.show=mode==="estimate";
  }
  if(t-etaLast>10000){updateStationText();if(!radarPanel.hidden)updateTrainRadar();etaLast=t}
@@ -1193,7 +1194,7 @@ async function appendOSMCorridorSegments(index,ticket){
  const limit=window.innerWidth<700?8:12;
  for(const tile of (manifest.models||[]).filter(x=>distance(x)<extent)
   .sort((a,b)=>distance(a)-distance(b)).slice(0,limit)){
-  if(ticket!==loadTicket||googleMode||!showBuildings)return;
+  if(ticket!==loadTicket||googleMode||!showBuildings||cinematicOn)return;
   buildings.push(viewer.entities.add({
    name:"Mapped OSM rail-corridor 3D buildings and roads (not Google photogrammetry)",
    position:C.Cartesian3.fromDegrees(tile.center.lon,tile.center.lat,0),
@@ -1204,7 +1205,7 @@ async function appendOSMCorridorSegments(index,ticket){
 }
 
 async function loadBuildings(i){
- if(!showBuildings||googleMode)return;
+ if(!showBuildings||googleMode||cinematicOn)return;
  const token=++loadTicket,s=st[i];
  if(bldgRequest)bldgRequest.abort();
  bldgRequest=new AbortController();
@@ -1216,7 +1217,7 @@ async function loadBuildings(i){
    const url="./assets/urban/"+i+".gltf?v=20261104-osm-107-detail-v1";
    const head=await fetch(url,{method:"HEAD",cache:"force-cache",signal:bldgRequest.signal});
    if(head.ok){
-    if(i!==selectedStation||token!==loadTicket||!showBuildings||googleMode)return;
+    if(i!==selectedStation||token!==loadTicket||!showBuildings||googleMode||cinematicOn)return;
     for(const old of buildings)viewer.entities.remove(old);
     buildings=[];
     buildings.push(viewer.entities.add({
@@ -1233,7 +1234,7 @@ async function loadBuildings(i){
      const place=st[zone],uri="./assets/urban-details/"+zone+".gltf";
      fetch(uri,{method:"HEAD",cache:"force-cache",signal:bldgRequest.signal})
       .then(response=>{
-       if(!response.ok||token!==loadTicket||!showBuildings||googleMode)return;
+       if(!response.ok||token!==loadTicket||!showBuildings||googleMode||cinematicOn)return;
        buildings.push(viewer.entities.add({
         name:place.n+" — original close-up 3D urban details (approximate)",
         position:lonlatPoint(place,0),
