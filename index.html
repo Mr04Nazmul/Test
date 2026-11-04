@@ -381,6 +381,10 @@ body.cinematic-active #scene canvas{
 .real-only-switch p{margin:8px 0 0;color:#c7e6e1;line-height:1.5;font-size:10px}
 #real3dTop{position:fixed;right:12px;top:calc(env(safe-area-inset-top) + 250px);z-index:55;background:#136e5aef;color:#f8fff8;text-decoration:none;border:1px solid #99f1d0;box-shadow:0 8px 30px #0009;padding:13px 12px;border-radius:13px;font-size:12px;font-weight:800;white-space:nowrap}
 @media(min-width:680px){#real3dTop{top:175px;right:20px}}
+#wholeRoute3D{position:fixed;right:12px;top:calc(env(safe-area-inset-top) + 303px);z-index:55;
+background:#13434deb;border:1px solid #80e3ca;color:white;border-radius:13px;
+text-decoration:none;padding:12px;font-weight:800;font-size:12px;box-shadow:0 8px 24px #0009}
+@media(min-width:680px){#wholeRoute3D{top:226px;right:20px}}
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/";</script>
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
@@ -443,6 +447,7 @@ body.cinematic-active #scene canvas{
 <button id="quality" class="cam-action quality" aria-label="Rendering quality">HD</button>
 </div>
 <a id="real3dTop" href="real-3d-studio.html" aria-label="Open new full-color interactive Agargaon 3D Studio">🏙️ Real 3D Studio</a>
+<a id="wholeRoute3D" href="full-metro-3d.html" aria-label="Open complete Dhaka MRT-6 3D corridor with all 16 Bangla and English station boards">🚇 ১৬ Station 3D Map</a>
 <div class="floating-bottom">
 <button id="north" class="pill">◎ Uttara</button>
 <button id="central" class="pill">◎ Farmgate</button>
