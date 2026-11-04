@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="bn"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="theme-color" content="#071721"/>
+<title>Dhaka MRT-6 — Complete Bilingual 3D Route (16 Stations)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Widgets/widgets.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#081a22;color:#fff;font-family:system-ui,'Noto Sans Bengali',sans-serif}
+#globe{position:absolute;inset:0}#globe .cesium-viewer-bottom{left:5px!important;bottom:3px!important}
+header{position:absolute;z-index:20;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;gap:8px;
+ padding:calc(env(safe-area-inset-top) + 8px) 12px 12px;background:linear-gradient(180deg,#061822f7,#061822bf,transparent)}
+header .head{font-weight:800;font-size:13px;line-height:1.4}header small{display:block;color:#b5d4d7;font-weight:500;font-size:10px}
+a{color:#b9ffeb;text-decoration:none}
+#back{white-space:nowrap;background:#0a2e35d9;border:1px solid #7edbc682;border-radius:11px;padding:10px;font-size:11px}
+#controls{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 10px);left:10px;right:10px;z-index:30;background:#081c27f0;
+ border:1px solid #74b4a577;border-radius:15px;padding:11px;display:grid;gap:9px;box-shadow:0 8px 35px #0009}
+#controls .row{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}
+button{background:#113843;color:#eafff7;border:1px solid #578f86;border-radius:10px;padding:10px 11px;
+ font-weight:700;font-size:12px;white-space:nowrap;cursor:pointer;font-family:inherit}
+button.active{background:#007d60;border-color:#9efbe0}
+button:disabled{opacity:.5}
+#stationStrip{min-height:43px}#stationStrip button{flex:0 0 auto;line-height:1.4}
+#stationStrip button small{display:block;font-size:9px;font-weight:500}
+#info{font-size:10px;color:#aecacb;line-height:1.4}
+#status{position:absolute;left:10px;top:calc(env(safe-area-inset-top) + 68px);z-index:4;max-width:min(70vw,320px);
+ background:#08242fda;padding:9px 12px;border-radius:10px;border:1px solid #ffffff22;font-size:11px;color:#cbeee6}
+#stationListBtn{background:#186c57}
+@media(min-width:800px){#controls{left:50%;transform:translateX(-50%);max-width:1050px}header{padding:14px 24px}header .head{font-size:17px}}
+</style></head><body>
+<div id="globe" role="application" aria-label="Interactive full Dhaka Metro Line 6 map with all sixteen bilingual 3D station signs"></div>
+<header><div class="head">🚇 DHAKA MRT-6 • FULL ROUTE 3D
+<small>১৬টি স্টেশন · বাংলা + English 3D নামফলক · 360° Map</small></div>
+<a id="back" href="./real-3d-studio.html">← Real 3D Studio</a></header>
+<div id="status">বাংলাদেশ MRT-6 সম্পূর্ণ রুট লোড হচ্ছে…</div>
+<div id="controls">
+<div class="row">
+<button type="button" id="whole" class="active">🌍 পুরো রুট</button>
+<button type="button" id="selected">◎ স্টেশন দেখো</button>
+<button type="button" id="mapLabel" class="active">🪧 বাংলা + English</button>
+<button type="button" id="sceneDetails" class="active">🏙️ Buildings & Roads</button>
+<button type="button" id="towardN">↑ Uttara</button>
+<button type="button" id="towardS">↓ Motijheel</button>
+</div>
+<div class="row" id="stationStrip" aria-label="All sixteen stations"></div>
+<div id="info">রুট ও ভবনের অবস্থান OpenStreetMap-ভিত্তিক। 3D ছাদ, নামফলকের মাপ ও যেসব ভবনের উচ্চতা জানা নেই তা অনুমানভিত্তিক। এটি live train GPS নয়। © OpenStreetMap contributors (ODbL).</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
+<script src="./data/mrt6-track.js"></script>
+<script src="./bilingual-station-boards.js?v=20261104-fullroute-bilingual-v1"></script>
+<script src="./actual-roads.js?v=20261104-osm-geometry-v2"></script>
+<script>
+(async()=>{
+"use strict";
+const C=window.Cesium,route=window.MRT_TRACK;
+if(!C||!route||route.stations?.length!==16){document.getElementById("status").textContent="Station map source unavailable";return}
+const st=route.stations,pts=route.points,selectedButton=document.getElementById("selected");
+let chosen=8,detailsOn=true,boardsOn=true,requestId=0,detailEntities=[];
+const $=id=>document.getElementById(id);
+const provider=new C.OpenStreetMapImageryProvider({url:"https://tile.openstreetmap.org/",credit:new C.Credit("© OpenStreetMap contributors (ODbL)")});
+const viewer=new C.Viewer("globe",{
+ imageryProvider:provider,baseLayerPicker:false,geocoder:false,homeButton:false,
+ navigationHelpButton:false,animation:false,timeline:false,fullscreenButton:false,
+ sceneModePicker:false,selectionIndicator:true,infoBox:false,
+ terrainProvider:new C.EllipsoidTerrainProvider()
+});
+viewer.scene.globe.enableLighting=false;
+viewer.scene.globe.depthTestAgainstTerrain=false;
+viewer.scene.skyAtmosphere.show=true;
+viewer.scene.requestRenderMode=false;
+viewer.camera.setView({destination:C.Cartesian3.fromDegrees(90.3893,23.793,22900),
+ orientation:{heading:0,pitch:C.Math.toRadians(-77),roll:0}});
+function gps(p,h=0){return C.Cartesian3.fromDegrees(p.lon,p.lat,h)}
+function routeCoordinates(metersOffset=0,h=18){
+ return C.Cartesian3.fromDegreesArrayHeights(pts.flatMap((p,i)=>{
+  const prev=pts[Math.max(0,i-1)],next=pts[Math.min(pts.length-1,i+1)];
+  const e=(next[1]-prev[1])*111320*Math.cos(p[0]*Math.PI/180),
+        n=(next[0]-prev[0])*111320,
+        d=Math.max(.001,Math.hypot(e,n));
+  const lon=p[1]-n/d*metersOffset/(111320*Math.cos(p[0]*Math.PI/180));
+  const lat=p[0]+e/d*metersOffset/111320;
+  return [lon,lat,h];
+ }));
+}
+function addRailway(){
+ const arr=pts.flatMap(p=>[p[1],p[0]]);
+ viewer.entities.add({name:"MRT-6 elevated mapped route",corridor:{
+  positions:C.Cartesian3.fromDegreesArray(arr),height:17.8,extrudedHeight:17,
+  width:9.5,material:C.Color.fromCssColorString("#adb3b3")}});
+ for(const center of [-2.25,2.25]){
+  viewer.entities.add({name:"MRT-6 ballastless track bed",corridor:{
+   positions:C.Cartesian3.fromDegreesArray(arr),width:1.94,height:18.25,
+   material:C.Color.fromCssColorString("#c5c9c4")}});
+  for(const off of [-.7175,.7175]){
+   viewer.entities.add({name:"MRT-6 steel rail",polyline:{
+    positions:routeCoordinates(center+off,18.55),width:2,
+    material:C.Color.fromCssColorString("#536066")}});
+  }
+ }
+ for(const offset of [-4.65,4.65]){
+  viewer.entities.add({name:"Elevated viaduct parapet",polyline:{
+   positions:routeCoordinates(offset,19.3),width:2,
+   material:C.Color.fromCssColorString("#bec5c2")}});
+ }
+}
+addRailway();
+const boardApi=window.MRTBilingualBoards.attach(viewer,st,C,{railHeight:18,boardVisibility:2850});
+const collection=$("stationStrip"),buttons=[];
+st.forEach((p,i)=>{
+ const b=document.createElement("button");
+ b.type="button";b.textContent=(i+1)+". "+p.bn;
+ const en=document.createElement("small");en.textContent=p.n;b.appendChild(en);
+ b.addEventListener("click",()=>selectStation(i));
+ collection.appendChild(b);buttons.push(b);
+});
+function orientationFor(i){
+ const prev=st[Math.max(0,i-1)],next=st[Math.min(15,i+1)];
+ const lat=st[i].lat;
+ const angle=Math.atan2((next.lon-prev.lon)*Math.cos(C.Math.toRadians(lat)),next.lat-prev.lat);
+ return C.Transforms.headingPitchRollQuaternion(gps(st[i]),new C.HeadingPitchRoll(angle-C.Math.PI_OVER_TWO,0,0));
+}
+function clearDetails(){
+ for(const e of detailEntities)viewer.entities.remove(e);
+ detailEntities=[];
+}
+async function loadNearby(i){
+ const token=++requestId;
+ clearDetails();
+ if(!detailsOn)return;
+ const neighbours=[i,Math.max(0,i-1),Math.min(15,i+1)].filter((v,p,a)=>a.indexOf(v)===p);
+ const files=[];
+ for(const n of neighbours){
+  files.push({kind:"building",i:n,uri:"./assets/urban/"+n+".gltf"});
+  if(n===i){
+   const scene=n===8?"./assets/agargaon-station.gltf":n===10?
+     "./assets/farmgate-landmark.gltf":n===13?
+     "./assets/dhaka-university-landmark.gltf":
+     "./assets/stations/"+n+".gltf";
+   files.push({kind:"station",i:n,uri:scene});
+   files.push({kind:"platform",i:n,uri:"./assets/station-detail/"+n+".gltf"});
+  }
+ }
+ for(const file of files){
+  if(token!==requestId||!detailsOn)return;
+  try{
+   const res=await fetch(file.uri,{method:"HEAD",cache:"force-cache"});
+   if(!res.ok)continue;
+   const loc=st[file.i];
+   const e=viewer.entities.add({
+    name:loc.bn+" / "+loc.n+" — "+file.kind+" (OSM-derived or illustrated)",
+    position:gps(loc,0),
+    orientation:file.kind==="building"?undefined:orientationFor(file.i),
+    model:{uri:file.uri,scale:1,minimumPixelSize:0,maximumScale:1,
+      distanceDisplayCondition:new C.DistanceDisplayCondition(0,5500)}
+   });
+   detailEntities.push(e);
+  }catch(e){console.warn("Missing detail asset",file.uri,e)}
+ }
+ if(window.MRTActualRoads&&token===requestId)
+  window.MRTActualRoads.show(viewer,i,st[i]);
+}
+function selectStation(i){
+ chosen=i;
+ buttons.forEach((b,j)=>b.classList.toggle("active",j===i));
+ selectedButton.textContent="◎ "+st[i].bn;
+ const p=st[i];
+ viewer.camera.flyTo({
+  destination:C.Cartesian3.fromDegrees(p.lon,p.lat,620),
+  orientation:{heading:C.Math.toRadians(22),pitch:C.Math.toRadians(-49),roll:0},
+  duration:1.3
+ });
+ $("status").textContent=p.bn+" · "+p.n+" | OpenStreetMap 3D surroundings";
+ loadNearby(i);
+}
+$("whole").addEventListener("click",()=>{
+ viewer.camera.flyTo({
+  destination:C.Cartesian3.fromDegrees(90.390,23.795,22900),
+  orientation:{heading:0,pitch:C.Math.toRadians(-78),roll:0},duration:1.5
+ });
+ $("status").textContent="MRT Line-6 · 16 stations · Uttara North → Motijheel";
+});
+$("selected").addEventListener("click",()=>selectStation(chosen));
+$("towardN").addEventListener("click",()=>selectStation(0));
+$("towardS").addEventListener("click",()=>selectStation(15));
+$("sceneDetails").addEventListener("click",()=>{
+ detailsOn=!detailsOn;$("sceneDetails").classList.toggle("active",detailsOn);
+ if(detailsOn)loadNearby(chosen);
+ else{requestId++;clearDetails();window.MRTActualRoads?.hide(viewer)}
+});
+$("mapLabel").addEventListener("click",()=>{
+ boardsOn=!boardsOn;$("mapLabel").classList.toggle("active",boardsOn);
+ for(const label of [...boardApi.boards,...boardApi.labels])label.show=boardsOn;
+});
+viewer.screenSpaceEventHandler.setInputAction(m=>{
+ const picked=viewer.scene.pick(m.position);
+ const idx=picked?.id?.properties?.stationIndex?.getValue?.(C.JulianDate.now());
+ if(Number.isInteger(idx)&&idx>=0&&idx<16)selectStation(idx);
+},C.ScreenSpaceEventType.LEFT_CLICK);
+buttons[8].classList.add("active");
+$("status").textContent="১৬টি bilingual station name board প্রস্তুত · পুরো MRT-6 3D রুট";
+await document.fonts.ready;
+ // A correct Bengali font is loaded before the user approaches each 3D station.
+})();
+</script></body></html>
