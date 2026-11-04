@@ -847,6 +847,25 @@ $("riderGPSCopy").addEventListener("click",async()=>{
  try{await navigator.clipboard.writeText(value);riderStatusMessage("Private invitation link copied. Only send to a trusted rider.")}
  catch(e){$("riderGPSLink").focus();$("riderGPSLink").select();riderStatusMessage("Link নির্বাচিত। Copy করে ট্রেনে থাকা ব্যক্তিকে পাঠাও।")}
 });
+$("riderGPSNativeShare").addEventListener("click",async()=>{
+ const link=$("riderGPSLink").value;
+ if(!link){riderStatusMessage("আগে Create Private Sharing Link চাপো।");return}
+ // Sharing is initiated by the viewer. This does not grant location access:
+ // the recipient must still explicitly opt in on the separate share page.
+ if(navigator.share){
+  try{
+   await navigator.share({title:"Private MRT-6 Rider GPS Invitation",
+    text:"শুধু ট্রেনে থাকলে এবং রাজি থাকলে Share My GPS চাপো।",
+    url:link});
+   riderStatusMessage("iPhone Share Sheet খোলা হয়েছিল। শুধুমাত্র যাত্রীর সম্মতিতে লোকেশন পাওয়া যাবে।");
+   return;
+  }catch(e){if(e.name==="AbortError")return}
+ }
+ try{await navigator.clipboard.writeText(link);
+  riderStatusMessage("Share Sheet unavailable. Link copied; শুধু বিশ্বাসযোগ্য যাত্রীকে পাঠাও।");
+ }catch(e){$("riderGPSLink").focus();$("riderGPSLink").select();
+  riderStatusMessage("Share Sheet unavailable; link selected to copy manually.");}
+});
 $("riderGPSStop").addEventListener("click",()=>{
  window.MRT_RIDER_P2P?.stopWatch();removeRiderMarker();
  $("riderGPSInvite").hidden=true;$("riderGPSLink").value="";
