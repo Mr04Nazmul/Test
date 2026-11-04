@@ -75,7 +75,10 @@ try{
  orientation:{heading:C.Math.toRadians(20),pitch:C.Math.toRadians(-48),roll:0}});
 }catch(e){announce("3D viewer শুরু হয়নি: "+e.message,0);return}
 const originalCameraFov=viewer.camera.frustum.fov;
-const CINEMATIC_GLB="./assets/cinematic/agargaon-detailed.glb?v=20261104-fullcolor-v2";
+const CINEMATIC_GLB_URLS=[
+ "./assets/cinematic/agargaon-fullcolor-v2.glb?v=20261104-richtextures-v3",
+ "./assets/cinematic/agargaon-detailed.glb?v=20261104-original-37mb"
+];
 // This is a user-authored 37MB real glTF 3D scene. Geometry was artistically
 // reconstructed: it is NOT a 1:1 aerial survey or extracted Google Maps mesh.
 let cinematicOn=false,cinematicBusy=false,cinematicPrimitive=null;
@@ -106,6 +109,7 @@ function cinematicOrbit(delta=0,zoom=1){
 function leaveCinematicScene(){
  if(!cinematicOn)return;
  cinematicOn=false;
+ document.body.classList.remove("cinematic-active");
  if(cinematicPrimitive)cinematicPrimitive.show=false;
  viewer.scene.globe.show=previousGlobeVisible;
  for(const [e,show] of hiddenMappedEntities)e.show=show;
@@ -122,7 +126,7 @@ async function toggleCinematicScene(){
  if(googleMode){announce("Google Tiles বন্ধ করে রঙিন 3D খুলুন।",6000);return;}
  cinematicBusy=true;
  const btn=$("cinematicView");
- btn.disabled=true;btn.textContent="⏳ Loading 37MB…";
+ btn.disabled=true;btn.textContent="⏳ Loading Color 3D…";
  $("status").textContent="LOADING REAL TEXTURED 3D";
  try{
   if(!cinematicPrimitive){
@@ -130,11 +134,20 @@ async function toggleCinematicScene(){
    const matrix=C.Transforms.headingPitchRollToFixedFrame(
     position,new C.HeadingPitchRoll(p.heading-C.Math.PI_OVER_TWO,0,0));
    // Wait for the actual glTF to load before switching away from map.
-   const asset=await C.Model.fromGltfAsync({
-    url:CINEMATIC_GLB,modelMatrix:matrix,scale:1,
-    incrementallyLoadTextures:false,show:false,
-    shadows:C.ShadowMode.DISABLED,allowPicking:true
-   });
+   let asset=null,loadError=null;
+   for(const url of CINEMATIC_GLB_URLS){
+    try{
+     asset=await C.Model.fromGltfAsync({
+      url,modelMatrix:matrix,scale:1,
+      incrementallyLoadTextures:false,show:true,
+      shadows:C.ShadowMode.DISABLED,allowPicking:true
+     });
+     console.info("Loaded native 3D GLB model:",url);
+     break;
+    }catch(err){loadError=err;console.warn("3D asset unavailable:",url,err)}
+   }
+   if(!asset)throw loadError||new Error("Both original 3D models are unavailable");
+   asset.show=false;
    cinematicPrimitive=viewer.scene.primitives.add(asset);
   }
   clearViewLock();
@@ -144,6 +157,7 @@ async function toggleCinematicScene(){
   previousGlobeVisible=viewer.scene.globe.show;
   previousResolutionScale=viewer.resolutionScale;
   cinematicOn=true;
+  document.body.classList.add("cinematic-active");
   hideMappedScene();
   viewer.scene.globe.show=false;
   cinematicPrimitive.show=true;
@@ -156,6 +170,7 @@ async function toggleCinematicScene(){
   $("status").textContent="FULL-COLOR 3D · ARTISTIC RECONSTRUCTION";
   announce("রঙিন 3D মডেল লোড হয়েছে। 360° ঘোরাও, zoom করো। রাস্তা/ভবনের কিছু অবস্থান অনুমানভিত্তিক।",10000);
  }catch(err){
+  document.body.classList.remove("cinematic-active");
   cinematicOn=false;
   if(cinematicPrimitive)cinematicPrimitive.show=false;
   viewer.scene.globe.show=previousGlobeVisible;
