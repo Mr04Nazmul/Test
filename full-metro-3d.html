@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#091a25">
+<title>MRT-6 • Full 3D Route & Bilingual Station Boards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap">
+<link href="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+<style>
+:root{color-scheme:dark;font-family:'Hind Siliguri',system-ui,-apple-system,sans-serif;background:#061925;color:#f4fbfd}
+*{box-sizing:border-box}body{margin:0;overflow:hidden}
+#scene{position:fixed;inset:0;background:#163448}
+.top{z-index:5;position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:9px;padding:calc(env(safe-area-inset-top) + 9px) 12px 9px;background:linear-gradient(#061a25ee,#061a25a8,transparent)}
+.back{color:#aaf9dc;background:#10394bde;border:1px solid #ffffff33;border-radius:12px;padding:9px 12px;text-decoration:none;white-space:nowrap;font-size:12px}
+.title{font-size:14px;font-weight:800;letter-spacing:.035em;line-height:1.1}.title small{display:block;font-size:10px;font-weight:500;letter-spacing:0;color:#c4dae6;margin-top:6px;line-height:1.3}
+.tools{position:fixed;z-index:5;bottom:calc(env(safe-area-inset-bottom) + 15px);left:9px;right:9px;background:#061a29ed;border:1px solid #6ec4ab59;backdrop-filter:blur(16px);border-radius:16px;padding:11px;box-shadow:0 14px 40px #0007;display:grid;gap:7px}
+.actions{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.actions button,.actions a,.station-choice{background:#173b4a;border:1px solid #436977;color:#e8fcf4;border-radius:10px;padding:10px 11px;font-size:12px;white-space:nowrap;font-family:inherit;font-weight:700;cursor:pointer;text-decoration:none}
+.actions button.active{background:#167c65;border-color:#67dcb9}
+.location{font-size:11px;line-height:1.45;color:#dce9ee;min-height:20px}
+.location strong{color:#89ebc6}
+#pickStation{width:100%;font-family:inherit;padding:11px;border-radius:11px;border:1px solid #587485;color:#fff;background:#0d3544;font-size:13px}
+#panel{position:fixed;z-index:6;top:calc(env(safe-area-inset-top) + 81px);left:10px;bottom:calc(env(safe-area-inset-bottom) + 160px);width:min(290px,80vw);background:#071c2ce8;border:1px solid #ffffff37;border-radius:15px;backdrop-filter:blur(18px);box-shadow:0 18px 55px #0008;display:none;flex-direction:column;overflow:hidden}
+#panel.open{display:flex}
+.panelHeading{padding:12px;border-bottom:1px solid #ffffff23;display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:800}
+#stationSearch{margin:10px;font:inherit;padding:9px;border:1px solid #637c8a;background:#122e3d;color:white;border-radius:9px}
+#stationList{overflow:auto;flex:1;display:grid;gap:3px;padding:0 8px 10px}
+.station-choice{text-align:left;white-space:normal;line-height:1.4;display:flex;align-items:center;gap:9px}
+.station-choice .number{display:grid;place-items:center;min-width:30px;height:30px;background:#208b6b;border-radius:8px;font-size:11px}
+.station-choice small{display:block;font-size:11px;color:#bfd1de}
+.notice{font-size:9px;opacity:.93;color:#bed4df;line-height:1.5}
+#message{position:fixed;z-index:4;top:calc(env(safe-area-inset-top) + 75px);right:10px;max-width:min(220px,48vw);font-size:11px;background:#061e2bbd;border:1px solid #ffffff28;border-radius:10px;padding:10px;color:#f2f8fc}
+.cesium-viewer-bottom{bottom:155px!important}
+@media(min-width:850px){.tools{width:min(780px,94vw);left:50%;transform:translateX(-50%)}#panel{bottom:170px}}
+</style>
+</head><body>
+<div id="scene" aria-label="Interactive 3D geographic MRT-6 whole route map"></div>
+<header class="top"><a class="back" href="./">← Metro</a>
+<div class="title">DHAKA METRO • FULL LINE 3D<small>১৬টি স্টেশন · বাংলা + English · Map-aligned station models</small></div></header>
+<div id="message">বাস্তব OSM ট্র্যাকের অবস্থান · আশপাশে map imagery · 3D building heights/রং অনুমানভিত্তিক</div>
+<aside id="panel"><div class="panelHeading"><span>🚇 সব স্টেশন / All 16</span><button class="station-choice" id="closePanel" aria-label="Close">✕</button></div><input id="stationSearch" placeholder="স্টেশন খুঁজুন / Search station" aria-label="Search the 16 metro stations"><div id="stationList"></div></aside>
+<footer class="tools">
+<select id="pickStation" aria-label="Choose MRT-6 station in Bengali or English"><option value="">পুরো রুট · Uttara North → Motijheel</option></select>
+<div class="actions"><button id="allLine" class="active">◎ Full Route</button><button id="next">🚇 Next Station</button><button id="stationPanel">☷ 16 Stations</button><button id="zoomIn">＋</button><button id="zoomOut">－</button><a href="real-3d-studio.html">🏙 Agargaon Model</a></div>
+<div class="location" id="status"><strong>Full MRT-6 route:</strong> ১৬টি স্টেশনের জিওগ্রাফিক অবস্থান ও বাংলা-ইংরেজি নামফলক। 360° rotate করতে map drag করুন।</div>
+<div class="notice">© OpenStreetMap contributors (ODbL). Satellite imagery © Esri and contributors. স্টেশন মডেলের অজানা নকশা, রং ও উচ্চতা অনুমানভিত্তিক। কোনো ট্রেনের অবস্থান live GPS নয়।</div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
+<script src="data/mrt6-track.js"></script>
+<script defer src="full-metro-3d.js?v=20261104-bilingual-boards-v1"></script>
+</body></html>
