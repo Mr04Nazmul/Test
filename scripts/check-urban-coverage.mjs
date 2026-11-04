@@ -27,6 +27,14 @@ for(let i=0;i<n;i++){
  assert(model.extras.license.includes('OpenStreetMap'),'OSM license missing: '+i);
  assert(model.meshes[0].primitives.length>0,'No building mesh primitives: '+i);
  assert(model.extras.buildingFootprints>0,'No mapped buildings in tile '+i);
+ if(i===8){
+  assert(model.extras.legacyOSMBuildingCandidates>=45,
+   'Agargaon 2020 + current OSM footprint fusion did not run');
+  assert(model.extras.buildingFootprints>=65,
+   'Agargaon 3D still sparse: expected merged OSM neighborhood');
+  assert(model.extras.windowPanels>=65,
+   'Agargaon 3D individual glass windows / building frames missing');
+ }
  assert(model.materials.some(m=>m.name==='ground-floor-shop-glass'),'No storefront material: '+i);
  assert(model.materials.some(m=>m.name==='rooftop-black-water-tank'),'No rooftop material: '+i);
  for(const a of model.accessors){
