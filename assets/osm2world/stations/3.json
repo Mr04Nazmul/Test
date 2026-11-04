@@ -1,0 +1,15 @@
+{
+  "stationIndex": 3,
+  "name": "Pallabi",
+  "bangla": "পল্লবী",
+  "latitude": 23.8261574,
+  "longitude": 90.3642123,
+  "requestRadiusM": 260,
+  "source": "© OpenStreetMap contributors (ODbL 1.0)",
+  "inputMode": "official-OSM-map-API",
+  "ways": 741,
+  "buildings": 685,
+  "roads": 50,
+  "bytes": 1131649,
+  "accuracy": "Actual mapped 2D features. Unmapped objects absent; facade, colors, roofs, untagged building heights inferred."
+}

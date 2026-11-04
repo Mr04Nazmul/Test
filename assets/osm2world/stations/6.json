@@ -1,0 +1,15 @@
+{
+  "stationIndex": 6,
+  "name": "Kazipara",
+  "bangla": "কাজীপাড়া",
+  "latitude": 23.7992485,
+  "longitude": 90.3720193,
+  "requestRadiusM": 260,
+  "source": "© OpenStreetMap contributors (ODbL 1.0)",
+  "inputMode": "official-OSM-map-API",
+  "ways": 1041,
+  "buildings": 955,
+  "roads": 83,
+  "bytes": 1213746,
+  "accuracy": "Actual mapped 2D features. Unmapped objects absent; facade, colors, roofs, untagged building heights inferred."
+}

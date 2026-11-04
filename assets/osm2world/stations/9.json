@@ -1,0 +1,15 @@
+{
+  "stationIndex": 9,
+  "name": "Bijoy Sarani",
+  "bangla": "বিজয় সরণি",
+  "latitude": 23.7663912,
+  "longitude": 90.3831212,
+  "requestRadiusM": 260,
+  "source": "© OpenStreetMap contributors (ODbL 1.0)",
+  "inputMode": "official-OSM-map-API",
+  "ways": 88,
+  "buildings": 38,
+  "roads": 73,
+  "bytes": 323002,
+  "accuracy": "Actual mapped 2D features. Unmapped objects absent; facade, colors, roofs, untagged building heights inferred."
+}

@@ -1,0 +1,15 @@
+{
+  "stationIndex": 14,
+  "name": "Bangladesh Secretariat",
+  "bangla": "বাংলাদেশ সচিবালয়",
+  "latitude": 23.7300419,
+  "longitude": 90.4075587,
+  "requestRadiusM": 260,
+  "source": "© OpenStreetMap contributors (ODbL 1.0)",
+  "inputMode": "official-OSM-map-API",
+  "ways": 289,
+  "buildings": 227,
+  "roads": 53,
+  "bytes": 451286,
+  "accuracy": "Actual mapped 2D features. Unmapped objects absent; facade, colors, roofs, untagged building heights inferred."
+}

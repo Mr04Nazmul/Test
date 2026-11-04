@@ -1,0 +1,15 @@
+{
+  "stationIndex": 13,
+  "name": "Dhaka University",
+  "bangla": "ঢাকা বিশ্ববিদ্যালয়",
+  "latitude": 23.7316979,
+  "longitude": 90.3968427,
+  "requestRadiusM": 260,
+  "source": "© OpenStreetMap contributors (ODbL 1.0)",
+  "inputMode": "official-OSM-map-API",
+  "ways": 201,
+  "buildings": 56,
+  "roads": 89,
+  "bytes": 587482,
+  "accuracy": "Actual mapped 2D features. Unmapped objects absent; facade, colors, roofs, untagged building heights inferred."
+}

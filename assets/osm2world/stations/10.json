@@ -1,0 +1,15 @@
+{
+  "stationIndex": 10,
+  "name": "Farmgate",
+  "bangla": "ফার্মগেট",
+  "latitude": 23.7590775,
+  "longitude": 90.3870783,
+  "requestRadiusM": 260,
+  "source": "© OpenStreetMap contributors (ODbL 1.0)",
+  "inputMode": "official-OSM-map-API",
+  "ways": 558,
+  "buildings": 454,
+  "roads": 91,
+  "bytes": 845736,
+  "accuracy": "Actual mapped 2D features. Unmapped objects absent; facade, colors, roofs, untagged building heights inferred."
+}

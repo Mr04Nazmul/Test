@@ -1,0 +1,15 @@
+{
+  "stationIndex": 0,
+  "name": "Uttara North",
+  "bangla": "উত্তরা উত্তর",
+  "latitude": 23.8690849,
+  "longitude": 90.3676821,
+  "requestRadiusM": 260,
+  "source": "© OpenStreetMap contributors (ODbL 1.0)",
+  "inputMode": "official-OSM-map-API",
+  "ways": 165,
+  "buildings": 118,
+  "roads": 36,
+  "bytes": 206225,
+  "accuracy": "Actual mapped 2D features. Unmapped objects absent; facade, colors, roofs, untagged building heights inferred."
+}
