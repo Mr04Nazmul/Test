@@ -1,0 +1,54 @@
+name: Import Original Agargaon Cinematic GLB
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/import-cinematic.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mrt6-original-glb-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and integrity-check user's original 37 MB GLB
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/cinematic
+          curl --fail --location --retry 3 --connect-timeout 25 --max-time 160 \
+            'https://media.base44.com/files/public/6acbc399c33294047107126d/fed7c99b4_Agargaon_MRT6_Real_3D_Model_Package.zip' \
+            -o /tmp/original-agargaon.zip
+          echo '26b4c1c9d2e2ee4ac55ffec361969f1b2298ec2605ca1fbe27c37c06581d521b  /tmp/original-agargaon.zip' | sha256sum -c -
+          unzip -p /tmp/original-agargaon.zip Agargaon_MRT6_Detailed_3D_Environment.glb > assets/cinematic/agargaon-detailed.glb
+          echo '742b338e0d39c94c255869aca65968ccfc7cc9741b42500c33e63be151941596  assets/cinematic/agargaon-detailed.glb' | sha256sum -c -
+          node scripts/check-cinematic-model.mjs
+      - name: Commit actual model to Pages source branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f assets/cinematic/agargaon-detailed.glb
+          if git diff --cached --quiet; then
+            echo 'Original cinematic GLB is already committed.'
+            exit 0
+          fi
+          git commit -m 'feat: publish authored Agargaon 37MB GLB as site-owned asset'
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo 'Full detailed 3D model committed for GitHub Pages.'
+              exit 0
+            fi
+            git fetch origin main
+            git rebase origin/main
+          done
+          exit 1
