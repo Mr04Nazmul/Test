@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MRT-6 Camera Observer · Permission Based</title>
+<meta name="theme-color" content="#071b26">
+<style>
+:root{color-scheme:dark;font:15px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;color:#e9f5f4;background:#071b26}
+*{box-sizing:border-box}body{margin:0;padding:15px;max-width:780px;margin-inline:auto;background:radial-gradient(circle at 80% 0,#14544b44,transparent 55%)}
+a{color:#69dcc1}h1{font-size:22px;line-height:1.2;margin:16px 0 6px}h2{font-size:15px}p,small{color:#b7d5d5}
+.panel{border:1px solid #ffffff25;border-radius:16px;padding:16px;background:#0c2a38;margin:13px 0}
+.warning{background:#34291b;border-color:#b68c4255}.warning strong{color:#ffdc9a}
+label{display:block;font-weight:600;margin:10px 0 5px;font-size:13px}
+button,select,textarea{font:inherit;border-radius:11px;border:1px solid #ffffff29;padding:10px;width:100%;background:#184457;color:#f3fffb}
+button{cursor:pointer;font-weight:700;background:#13846d;border-color:#2dd8ae63}
+button.secondary{background:#234656}button:disabled{opacity:.4;cursor:not-allowed}
+.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0}
+.check{display:flex;gap:10px;align-items:start;font-weight:400}.check input{margin-top:5px;flex-shrink:0}
+video{display:block;width:100%;aspect-ratio:16/9;max-height:420px;object-fit:contain;background:#020c14;border-radius:10px}
+#status{margin:10px 0;padding:9px 11px;background:#183740;border-radius:9px;color:#f9f2c9}
+#aiStatus{padding:8px 0;color:#9ee8d3}#cameraBox[hidden],#sensorBox[hidden]{display:none}
+textarea{min-height:90px;resize:vertical}
+footer{font-size:12px;color:#aacacc;padding:18px 0 26px}
+.badge{color:#8af2c6;font-size:11px;border:1px solid #4cbea18a;border-radius:8px;padding:3px 7px}
+</style>
+<script src="./data/mrt6-track.js"></script>
+<script src="./data/camera-observation-core.js?v=20261104-v1"></script>
+</head>
+<body>
+<a href="./index.html">← Dhaka Metro 3D</a>
+<h1>📷 MRT-6 Camera Observer <span class="badge">OPT-IN ONLY</span></h1>
+<p>যে ক্যামেরার ব্যবহার ও ভিডিও ধারণের অনুমতি আছে, সেটি দিয়ে ট্রেন শনাক্ত করো। পর্যবেক্ষণ শুধু ব্যক্তিগত invite-এর মাধ্যমে মূল ম্যাপে যাবে।</p>
+<div class="panel warning">
+ <strong>এটি অফিসিয়াল DMTCL ক্যামেরা বা ট্রেন GPS নয়।</strong>
+ <p>ভিডিও/ছবি, মুখ বা GPS লোকেশন আপলোড হয় না। কেবল তুমি নিশ্চিত করা ট্রেন পাস করার স্টেশন ও সময় পাঠানো হয়। কোনো ব্যক্তিকে গোপনে পর্যবেক্ষণ করো না। স্টেশন বা ট্রেনে ভিডিও ধারণে কর্তৃপক্ষের বিধি মানতে হবে।</p>
+</div>
+<div class="panel">
+ <h2>১. Private camera watch-এ যোগ দাও</h2>
+ <label for="station">স্টেশন (ক্যামেরাটি যে স্থানে আছে)</label>
+ <select id="station"></select>
+ <label class="check"><input type="checkbox" id="consent">আমার এই ক্যামেরা ব্যবহারের বৈধ অনুমতি আছে এবং আমি স্বেচ্ছায় শুধু ট্রেন-পাসের তথ্য শেয়ার করব।</label>
+ <button id="connect" disabled>🔗 Connect to Private Viewer</button>
+ <p id="status" role="status" aria-live="polite">Viewer invitation link খোলা হয়নি।</p>
+</div>
+<div class="panel">
+ <h2>২. নিজের ক্যামেরা / শনাক্তকরণ টুল</h2>
+ <label for="sourceMode">Observation source</label>
+ <select id="sourceMode">
+  <option value="browser-camera">Browser Camera · TensorFlow.js AI + manual review</option>
+  <option value="railwatch-compatible">RailWatch-compatible local camera sensor</option>
+  <option value="trainbot-compatible">TrainBot-compatible local camera sensor</option>
+  <option value="rails49-compatible">Rails49-compatible occupancy sensor (model-rail software)</option>
+ </select>
+ <div id="cameraBox">
+  <div class="row">
+   <button id="startCamera" class="secondary" disabled>📷 Start Camera</button>
+   <button id="stopCamera" class="secondary" disabled>■ Stop Camera</button>
+  </div>
+  <video id="preview" autoplay playsinline muted></video>
+  <button id="startAI" class="secondary" disabled>🤖 Enable on-device AI Train Detection</button>
+  <p id="aiStatus">AI বন্ধ। ট্রেন দেখা গেলে নিচের বোতাম চাপতে পারো।</p>
+ </div>
+ <div id="sensorBox" hidden>
+  <p>RailWatch/TrainBot/Rails49 সরাসরি GitHub Pages-এ চলে না। অনুমোদিত নিজের ডিভাইসের সর্বশেষ sensor result এখানে JSON হিসেবে দাও, যাচাই করে নিজে Confirm করবে।</p>
+  <label for="sensorJson">Fresh local sensor result JSON</label>
+  <textarea id="sensorJson" placeholder='{"train_detected":true,"observed_at":"2026-11-04T00:00:00Z","confidence":0.92}'></textarea>
+  <button id="checkSensor" class="secondary">🔎 Validate Sensor Evidence</button>
+ </div>
+ <button id="confirmTrain" disabled>🚆 I CONFIRM: Train Passed This Station</button>
+ <p><small>পাশের ট্রেনের গতি বা train ID এখানে পাওয়া যায় না। একজন ক্যামেরা পর্যবেক্ষক ভুলও করতে পারেন। মানব যাচাই ছাড়া AI suggestion প্রকাশ করা হবে না।</small></p>
+</div>
+<div class="panel">
+ <h2>৩. Privacy & Controls</h2>
+ <button class="secondary" id="disconnect">Disconnect and Stop Everything</button>
+ <small>সেশন বন্ধ বা ব্রাউজার ট্যাব বন্ধ হলে ক্যামেরা ও ডেটা পাঠানো বন্ধ হবে। কোনো recording store করা হয় না।</small>
+</div>
+<footer>Independent, unofficial train sightings · Not DMTCL CBTC/ATS data · Sensor software projects require their own installation and licences. <a href="https://github.com/Mr04Nazmul/Test/blob/main/docs/camera-observation-integration.md" target="_blank" rel="noopener">Technical details</a></footer>
+<script src="./camera-observer-p2p.js?v=20261104-v1"></script>
+<script src="./camera-watch.js?v=20261104-v1"></script>
+</body></html>
