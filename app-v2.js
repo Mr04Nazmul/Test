@@ -1028,7 +1028,7 @@ async function satelliteToggle(){
   if(roadsLayer)roadsLayer.show=false;
   if(labelsLayer)labelsLayer.show=false;
   if(osmLayer)osmLayer.show=true;
-  btn.textContent="◈ Satellite";btn.classList.remove("primary");return;
+  btn.textContent="🛰 Satellite Map";btn.classList.remove("primary");announce("Street Map চালু। স্যাটেলাইট ছবিও Live Train GPS নয়।",5100);return;
  }
  btn.disabled=true;btn.textContent="Loading…";
  try{
@@ -1042,6 +1042,7 @@ async function satelliteToggle(){
   satelliteOn=true;satLayer.show=true;
   if(osmLayer)osmLayer.show=false;
   btn.textContent="◈ Street Map";btn.classList.add("primary");
+  announce("🛰 Satellite imagery চালু। এই ছবি রিয়েল-টাইম নয়। ট্রেনের GPS শুধু যাচাইযোগ্য উৎস থাকলেই Real হিসেবে দেখাবে।",9000);
   // Reference overlay services are optional; satellite mode works if one fails.
   if(!roadsLayer){
    try{
@@ -1061,7 +1062,7 @@ async function satelliteToggle(){
   }
   if(roadsLayer)roadsLayer.show=true;
   if(labelsLayer)labelsLayer.show=true;
- }catch(e){btn.textContent="◈ Satellite";announce("Satellite imagery load হয়নি; street map ব্যবহার করা হচ্ছে।",6500)}
+ }catch(e){satelliteOn=false;if(osmLayer)osmLayer.show=true;btn.textContent="🛰 Satellite Map";announce("Satellite imagery load হয়নি; street map ব্যবহার করা হচ্ছে।",6500)}
  finally{btn.disabled=false}
 }
 // User-selectable illustrative day/night illumination, separate from GPS or live weather.
