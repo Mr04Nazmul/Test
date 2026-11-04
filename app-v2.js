@@ -541,6 +541,121 @@ for(let i=0;i<6;i++){
  }));
 }
 const radarPanel=$("trainRadarPanel");
+
+const cameraCore=window.MRT_CAMERA_OBSERVATIONS?.create(st);
+const cameraP2P=window.MRT_CAMERA_P2P;
+const cameraReports=new Map(),cameraMarkers=new Map();
+function expireCameraReports(){
+ let changed=false,now=Date.now();
+ for(const [id,report] of cameraReports){
+  if(report.expires<now){
+   cameraReports.delete(id);
+   const marker=cameraMarkers.get(id);
+   if(marker)viewer.entities.remove(marker);
+   cameraMarkers.delete(id);changed=true;
+  }
+ }
+ if(changed)renderCameraReports();
+}
+function clearCameraReports(){
+ for(const marker of cameraMarkers.values())viewer.entities.remove(marker);
+ cameraMarkers.clear();cameraReports.clear();renderCameraReports();
+}
+function renderCameraReports(){
+ const list=$("cameraWitnessList");if(!list)return;
+ const reports=[...cameraReports.values()].sort((a,b)=>b.time-a.time);
+ list.replaceChildren();
+ if(!reports.length){list.textContent="No fresh, user-confirmed camera sightings. These are not actual GPS.";return}
+ for(const event of reports){
+  const button=document.createElement("button");button.type="button";button.className="camera-sighting";
+  const title=document.createElement("b");title.textContent="📷 "+event.stationName+" · REPORT ONLY";
+  const desc=document.createElement("small");
+  desc.textContent="Human-confirmed camera passage · "+event.source+
+   " · "+Math.max(0,Math.floor((Date.now()-event.time)/1000))+" seconds ago · NOT GPS";
+  button.append(title,desc);
+  button.addEventListener("click",()=>focusStation(event.stationIndex));
+  list.append(button);
+ }
+}
+function receiveCameraReport(raw){
+ if(!cameraCore)return;
+ const checked=cameraCore.ingest(raw);
+ if(!checked.ok){
+  $("cameraWatchStatus").textContent="Camera report rejected: "+checked.reason;
+  return;
+ }
+ const event=checked.data;
+ if(cameraReports.size>=24){
+  const oldest=[...cameraReports.values()].sort((a,b)=>a.time-b.time)[0];
+  if(oldest){cameraReports.delete(oldest.eventId);const marker=cameraMarkers.get(oldest.eventId);
+   if(marker)viewer.entities.remove(marker);cameraMarkers.delete(oldest.eventId)}
+ }
+ cameraReports.set(event.eventId,event);
+ const pos=C.Cartesian3.fromDegrees(event.lon,event.lat,44);
+ const marker=viewer.entities.add({
+  id:"camera-passage-"+event.eventId,
+  name:"USER-REPORTED CAMERA PASSAGE · NOT GPS · "+event.stationName,
+  position:pos,
+  properties:{kind:"station-camera-sighting",trainTelemetry:false,gps:false,source:event.source},
+  billboard:undefined,
+  point:{pixelSize:12,color:C.Color.fromCssColorString("#e5a947"),outlineColor:C.Color.BLACK,
+   outlineWidth:2,disableDepthTestDistance:Number.POSITIVE_INFINITY},
+  label:{text:"📷 CAMERA SIGHTING · NOT GPS",font:"bold 12px sans-serif",
+   fillColor:C.Color.WHITE,outlineColor:C.Color.BLACK,outlineWidth:2,
+   style:C.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new C.Cartesian2(0,-27),
+   disableDepthTestDistance:Number.POSITIVE_INFINITY}
+ });
+ cameraMarkers.set(event.eventId,marker);
+ $("cameraWatchStatus").textContent="Camera report at "+event.stationName+
+  " received, source: "+event.source+". NOT verified operator train GPS.";
+ renderCameraReports();if(!radarPanel.hidden)renderOperationsBoard();
+}
+async function startCameraWatch(){
+ if(!cameraP2P||!cameraCore){
+  $("cameraWatchStatus").textContent="Camera observation modules unavailable. Refresh.";return
+ }
+ $("cameraWatchStart").disabled=true;
+ $("cameraWatchStatus").textContent="Creating private camera invitation…";
+ try{
+  const invite=await cameraP2P.startWatch(receiveCameraReport);
+  $("cameraWatchLink").value=invite.link;
+  $("cameraWatchInvite").hidden=false;
+  $("cameraWatchStop").disabled=false;
+  $("cameraWatchStatus").textContent="Private watch ready. Share link only with a person using a permitted camera.";
+ }catch(e){$("cameraWatchStatus").textContent="Camera watch error: "+String(e.message||e)}
+ finally{$("cameraWatchStart").disabled=false}
+}
+function stopCameraWatch(){
+ cameraP2P?.stopWatch();clearCameraReports();
+ $("cameraWatchInvite").hidden=true;$("cameraWatchLink").value="";
+ $("cameraWatchStop").disabled=true;
+ $("cameraWatchStatus").textContent="Camera watch stopped. No sightings retained.";
+}
+$("cameraWatchStart").addEventListener("click",startCameraWatch);
+$("cameraWatchStop").addEventListener("click",stopCameraWatch);
+$("cameraWatchCopy").addEventListener("click",async()=>{
+ const link=$("cameraWatchLink").value;if(!link)return;
+ try{await navigator.clipboard.writeText(link);
+  $("cameraWatchStatus").textContent="Private camera invite copied. Send only to permitted camera operator.";}
+ catch(e){$("cameraWatchLink").focus();$("cameraWatchLink").select();}
+});
+$("cameraWatchShare").addEventListener("click",async()=>{
+ const link=$("cameraWatchLink").value;if(!link)return;
+ if(navigator.share){
+  try{await navigator.share({title:"Private MRT-6 Camera Watch",
+   text:"Only use a legally permitted camera; video stays on-device.",url:link});return}
+  catch(e){if(e.name==="AbortError")return}
+ }
+ try{await navigator.clipboard.writeText(link);
+  $("cameraWatchStatus").textContent="Share not supported. Invite copied.";}
+ catch(e){$("cameraWatchLink").focus();$("cameraWatchLink").select();}
+});
+cameraP2P?.onStatus(message=>{
+ if($("cameraWatchStatus"))$("cameraWatchStatus").textContent=message+
+  " · sightings are not train GPS.";
+});
+setInterval(expireCameraReports,5000);
+
 function openTrainRadar(force){
  radarPanel.hidden=force===undefined?!radarPanel.hidden:!force;
  $("trainRadarButton").setAttribute("aria-expanded",String(!radarPanel.hidden));
