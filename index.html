@@ -385,10 +385,13 @@ body.cinematic-active #scene canvas{
 background:#13434deb;border:1px solid #80e3ca;color:white;border-radius:13px;
 text-decoration:none;padding:12px;font-weight:800;font-size:12px;box-shadow:0 8px 24px #0009}
 @media(min-width:680px){#wholeRoute3D{top:226px;right:20px}}
+#fullRoute3D{position:fixed;right:12px;top:calc(env(safe-area-inset-top) + 307px);z-index:56;background:#0c7a60f2;color:#f8fff8;text-decoration:none;border:1px solid #99f1d0;box-shadow:0 8px 30px #0009;padding:12px 12px;border-radius:13px;font-size:12px;font-weight:800;white-space:nowrap}
+@media(min-width:680px){#fullRoute3D{top:222px;right:20px}}
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/";</script>
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
 <script src="./data/mrt6-track.js"></script>
+<script src="./bilingual-station-boards.js?v=20261104-bn-en-16-v1"></script>
 <script src="./data/camera-observation-core.js?v=20261104-camera-v1"></script>
 <script src="./data/metro-schedule.js"></script>
 <script src="./data/train-radar.js?v=20261104-radar-v1"></script>
@@ -446,6 +449,7 @@ text-decoration:none;padding:12px;font-weight:800;font-size:12px;box-shadow:0 8p
 <button id="zoomOut" class="cam-action" aria-label="Zoom out">－</button>
 <button id="quality" class="cam-action quality" aria-label="Rendering quality">HD</button>
 </div>
+<a id="fullRoute3D" href="full-route-3d.html" aria-label="Open complete 16 station 3D route with Bangla and English station boards">🚇 Full Route 3D • ১৬ স্টেশন</a>
 <a id="real3dTop" href="real-3d-studio.html" aria-label="Open new full-color interactive Agargaon 3D Studio">🏙️ Real 3D Studio</a>
 <a id="wholeRoute3D" href="full-metro-3d.html" aria-label="Open complete Dhaka MRT-6 3D corridor with all 16 Bangla and English station boards">🚇 ১৬ Station 3D Map</a>
 <div class="floating-bottom">
@@ -597,6 +601,6 @@ text-decoration:none;padding:12px;font-weight:800;font-size:12px;box-shadow:0 8p
 <script src="./camera-observer-p2p.js?v=20261104-camera-v1"></script>
 <script src="dhaka-soundscape.js?v=20261104-local-audio-fix-v3"></script>
 <script src="actual-roads.js?v=20261104-osm-geometry-v2"></script>
-<script src="app-v2.js?v=20261104-real-gps-only-v14"></script>
+<script src="app-v2.js?v=20261104-fullroute-signs-v1"></script>
 </body>
 </html>
