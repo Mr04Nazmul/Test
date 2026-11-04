@@ -42,6 +42,19 @@ assert(html.includes('id="independentMonitorStatus"'),"Monitoring status needs a
 assert(html.includes("independent-monitor.js"),"Monitor must load before rendering app");
 assert(app.includes("independentMonitor?.ingest(sample)"),"Receiver must use observed GPS monitor");
 assert(app.includes("showIndependentMonitor(observation)"),"Route/velocity supervision display unwired");
+for(const id of ["opsMonitorBoard","opsOfficialStatus","opsPhoneStatus","opsEstimatedStatus","opsSelectedTrain","opsProgress","opsStationGrid"]){
+ assert(html.includes('id="'+id+'"'),"MRT6 operations board element missing: "+id);
+ assert(app.includes('$("'+id+'")'),"MRT6 operations board is not wired: "+id);
+}
+assert(app.includes("function renderOperationsBoard("),"Operations panel updater missing");
+assert(app.includes("renderOperationsBoard(info)"),"Train Radar must refresh operations panel");
+assert(app.includes("grid.children.length!==st.length"),"Every MRT6 station must be selectable");
+assert(app.includes('$("opsOfficialStatus").textContent="NOT CONNECTED"'),
+ "Must never fabricate official train-telemetry connection");
+assert(app.includes('phone?.source==="consenting rider phone"'),
+ "Only consented rider location may count as phone observation");
+assert(app.includes('selected.position/(st.length-1)'),
+ "Selected timetable train should occupy the real route fraction");
 assert(!js.includes("fetch(")&&!js.includes("WebSocket("),
  "Independent monitor must not connect to restricted signalling APIs");
 console.log("PASS independent monitoring: route projection, explicit rider consent, direction, stale data, no fake operator GPS.");
