@@ -609,6 +609,7 @@ text-decoration:none;padding:12px;font-weight:800;font-size:12px;box-shadow:0 8p
 <script src="dhaka-soundscape.js?v=20261104-local-audio-fix-v3"></script>
 <script src="actual-roads.js?v=20261104-osm-geometry-v2"></script>
 <script src="mrt6-corridor-3d.js?v=20261104-main-integrated-v1"></script>
+<script src="mrt6-street-details.js?v=20261104-v1"></script>
 <script src="app-v2.js?v=20261104-fullroute-signs-v1"></script>
 
 <button type="button" id="openFullRoute" class="full-route-launch" aria-controls="fullRouteOverlay" aria-expanded="false">🗺️ Full MRT-6 3D</button>
@@ -623,5 +624,5 @@ function hide(){overlay.hidden=true;open.setAttribute('aria-expanded','false');f
 open.addEventListener('click',show);close.addEventListener('click',hide);document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!overlay.hidden)hide()});
 })();
 </script>
-<button id="mainCorridor" type="button" style="position:fixed;z-index:29;right:14px;top:calc(env(safe-area-inset-top) + 125px);background:#145d52;color:white;border:1px solid #8af5d3;border-radius:12px;padding:10px;font-weight:700">🏙 OSM Corridor Buildings</button><div id="corridorInfo" role="status" style="position:fixed;z-index:29;right:14px;top:calc(env(safe-area-inset-top) + 171px);max-width:230px;font-size:11px;color:white;background:#092c37cc;border-radius:8px;padding:5px"></div></body>
+<button id="mainCorridor" type="button" style="position:fixed;z-index:29;right:14px;top:calc(env(safe-area-inset-top) + 125px);background:#145d52;color:white;border:1px solid #8af5d3;border-radius:12px;padding:10px;font-weight:700">🏙 OSM Corridor Buildings</button><div id="corridorInfo" role="status" style="position:fixed;z-index:29;right:14px;top:calc(env(safe-area-inset-top) + 171px);max-width:230px;font-size:11px;color:white;background:#092c37cc;border-radius:8px;padding:5px"></div><button id="streetDetails" type="button" aria-pressed="false" style="position:fixed;z-index:29;right:14px;top:calc(env(safe-area-inset-top) + 219px);background:#145d52;color:white;border:1px solid #8af5d3;border-radius:12px;padding:10px;font-weight:700">🏙 Detailed Streets ON</button><div id="streetDetailInfo" style="position:fixed;z-index:29;right:14px;top:calc(env(safe-area-inset-top) + 266px);max-width:230px;font-size:11px;color:white;background:#092c37cc;border-radius:8px;padding:5px"></div></body>
 </html>
