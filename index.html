@@ -354,6 +354,10 @@ body.panel-hidden .controls{margin-left:auto}
 }
 #cinematicView[aria-pressed="true"]{background:#146d5c;border-color:#69f0d0;color:#fff}
 #cinematicView:disabled{opacity:.6}
+/* Color-grade only the physical GLB scene; mapped OSM view is untouched. */
+body.cinematic-active #scene canvas{
+ filter:saturate(1.17) contrast(1.07) brightness(1.055)
+}
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/";</script>
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
@@ -530,6 +534,6 @@ body.panel-hidden .controls{margin-left:auto}
 <script src="./live-rider-p2p.js?v=20261104-private-rider-v2"></script>
 <script src="dhaka-soundscape.js?v=20261104-local-audio-fix-v3"></script>
 <script src="actual-roads.js?v=20261104-osm-geometry-v2"></script>
-<script src="app-v2.js?v=20261104-color-real3d-autoload-v11"></script>
+<script src="app-v2.js?v=20261104-bangladesh-fullcolor-glb-v12"></script>
 </body>
 </html>
