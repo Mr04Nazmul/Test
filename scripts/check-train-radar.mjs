@@ -33,6 +33,18 @@ for(const id of ['trainRadarButton','trainRadarPanel','trainRadarClock','trainRa
  assert(app.includes('$("'+id+'")'),'Radar control not wired '+id);
 }
 assert(html.includes('train-radar.js'),'Radar engine not included');
+assert(html.includes('id="realOnlyButton"'),'Real GPS Only switch missing');
+assert(html.includes('id="realOnlyState"'),'Real GPS only status missing');
+assert(app.includes('let realOnlyMode=false;'),'Real-only mode must be stateful');
+assert(app.includes('function applyRealOnlyMode()'),'Real-only controller missing');
+assert(app.includes('$("realOnlyButton").addEventListener("click"'),'Real-only control not interactive');
+assert(app.includes('const visible=!realOnlyMode'),'Simulated 3D coach meshes must disappear in real-only mode');
+assert(app.includes('mini.show=!realOnlyMode'),'Estimated 3D markers must disappear in real-only mode');
+assert(app.includes('e.show=!realOnlyMode&&mode==="estimate"'),'Timetable map markers must disappear in real-only mode');
+assert(app.includes('NO VERIFIED REAL-TIME MRT-6 TRAIN LOCATION'),'Empty actual GPS source should never invent a vehicle');
+assert(app.includes('REAL GPS ONLY · NO LIVE GPS AVAILABLE'),'Honest no-source state must be visible');
+assert(app.includes('led.dataset.valid=String(fresh||authorizedList.length>0)'),'Real source LED must only follow valid observed GPS data');
+
 assert(html.includes('id="satelliteTrackingNote"'),'Must disclose satellite imagery is not live tracking');
 assert(html.includes('Satellite ≠ Live GPS'),'Satellite source must be labelled non-real-time');
 assert(app.includes('এই ছবি রিয়েল-টাইম নয়'),'Satellite toggle must explain no live GPS telemetry');
