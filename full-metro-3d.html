@@ -36,16 +36,19 @@
 </head><body>
 <div id="scene" aria-label="Interactive 3D geographic MRT-6 whole route map"></div>
 <header class="top"><a class="back" href="./">← Metro</a>
-<div class="title">DHAKA METRO • FULL LINE 3D<small>১৬টি স্টেশন · বাংলা + English · Map-aligned station models</small></div></header>
+<div class="title">DHAKA METRO • FULL LINE 3D<small>১৭টি স্টেশন · বাংলা + English · Map-aligned station models</small></div></header>
 <div id="message">বাস্তব OSM ট্র্যাকের অবস্থান · আশপাশে map imagery · 3D building heights/রং অনুমানভিত্তিক</div>
-<aside id="panel"><div class="panelHeading"><span>🚇 সব স্টেশন / All 16</span><button class="station-choice" id="closePanel" aria-label="Close">✕</button></div><input id="stationSearch" placeholder="স্টেশন খুঁজুন / Search station" aria-label="Search the 16 metro stations"><div id="stationList"></div></aside>
+<aside id="panel"><div class="panelHeading"><span>🚇 সব স্টেশন / All 17</span><button class="station-choice" id="closePanel" aria-label="Close">✕</button></div><input id="stationSearch" placeholder="স্টেশন খুঁজুন / Search station" aria-label="Search the 16 metro stations"><div id="stationList"></div></aside>
 <footer class="tools">
-<select id="pickStation" aria-label="Choose MRT-6 station in Bengali or English"><option value="">পুরো রুট · Uttara North → Motijheel</option></select>
-<div class="actions"><button id="allLine" class="active">◎ Full Route</button><button id="cityToggle" aria-pressed="false" title="Real OSM footprint 3D city tiles">🏙 ঢাকা 3D</button><button id="next">🚇 Next Station</button><button id="stationPanel">☷ 16 Stations</button><button id="zoomIn">＋</button><button id="zoomOut">－</button><a href="real-3d-studio.html">🏙 Agargaon Model</a></div>
-<div class="location" id="status"><strong>Full MRT-6 route:</strong> ১৬টি স্টেশনের জিওগ্রাফিক অবস্থান ও বাংলা-ইংরেজি নামফলক। 360° rotate করতে map drag করুন।</div>
-<div class="location" id="cityStatus" aria-live="polite" hidden></div><div class="notice">© OpenStreetMap contributors (ODbL). Satellite imagery © Esri and contributors. স্টেশন মডেলের অজানা নকশা, রং ও উচ্চতা অনুমানভিত্তিক। কোনো ট্রেনের অবস্থান live GPS নয়।</div>
+<select id="pickStation" aria-label="Choose MRT-6 station in Bengali or English"><option value="">পুরো রুট · Uttara North → Kamalapur (planned)</option></select>
+<div class="actions"><button id="allLine" class="active">◎ Full Route</button><button id="cityToggle" aria-pressed="false" title="Real OSM footprint 3D city tiles">🏙 ঢাকা 3D</button><button id="next">🚇 Next Station</button><button id="stationPanel">☷ 17 Stations</button><button id="zoomIn">＋</button><button id="zoomOut">－</button><a href="real-3d-studio.html">🏙 Agargaon Model</a></div>
+<div class="location" id="corridorInfo" aria-live="polite">OSM 3D corridor tile status will appear here.</div>
+<div class="location" id="status"><strong>Full MRT-6 route:</strong> ১৭টি স্টেশনের জিওগ্রাফিক অবস্থান ও বাংলা-ইংরেজি নামফলক। 360° rotate করতে map drag করুন।</div>
+<div class="location" id="cityStatus" aria-live="polite" hidden></div><div class="notice">© OpenStreetMap contributors (ODbL). Satellite imagery © Esri and contributors. স্টেশন মডেলের অজানা নকশা, রং ও উচ্চতা অনুমানভিত্তিক। কমলাপুর শেষ অংশের রুট পরিকল্পনাভিত্তিক, জরিপকৃত নয়। কোনো ট্রেনের অবস্থান live GPS নয়।</div>
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
 <script src="data/mrt6-track.js"></script>
-<script defer src="full-metro-3d.js?v=20261104-bilingual-boards-v1"></script><script defer src="city-3d.js?v=20261104-dhaka-city-v1"></script>
+<script src="data/mrt6-extension.js"></script>
+<script src="mrt6-corridor-3d.js"></script>
+<script defer src="full-metro-3d.js?v=20261104-corridor-17-v1"></script><script defer src="city-3d.js?v=20261104-dhaka-city-v1"></script>
 </body></html>
