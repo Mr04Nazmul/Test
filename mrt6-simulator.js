@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
+import {installHDInfrastructure} from "./mrt6-hd-infrastructure.js";
 
 // A PLAYABLE approximation, not an operational railway control model.
 // Track and building footprints: © OpenStreetMap contributors (ODbL 1.0).
@@ -90,7 +91,7 @@ function buildInfrastructure(){
    road.push(strip(a,b,26,.08));
    walk.push(strip(a,b,4,.28,-17),strip(a,b,4,.28,17));
    deck.push(strip(a,b,11.5,20.0));
-   for(let k=0;k<4;k++)rails[k].push(strip(a,b,.14,20.14,[-3.05,-1.62,1.62,3.05][k]));
+   for(let k=0;k<4;k++)rails[k].push(strip(a,b,.14,20.14,[-3.34,-1.26,1.26,3.34][k]));
    if(Math.floor(m/12)%2===0){lane.push(strip(a,b,.16,.20,-8),strip(a,b,.16,.20,8));}
    sleepers.push(strip(a,b,.3,20.10,-2.33),strip(a,b,.3,20.10,2.33));
   }
@@ -118,6 +119,8 @@ function buildInfrastructure(){
  planet.add(trunks,crowns);
 }
 buildInfrastructure();
+const hdRail=installHDInfrastructure({scene:planet,trackAt,length:LENGTH,mobile});
+// OSM route shapes are real; infrastructure dimensions are illustrated, not surveyed.
 function stationBoard(s){
  const canvas=document.createElement("canvas");canvas.width=1024;canvas.height=280;
  const c=canvas.getContext("2d");c.fillStyle="#e5f0e6";c.fillRect(0,0,1024,280);
@@ -137,28 +140,47 @@ function buildStations(){
  R.stations.forEach((s,i)=>{
   const o=trackAt(stationD[i]),group=new THREE.Group();
   group.position.copy(o.p);group.rotation.y=Math.atan2(o.t.x,o.t.z);
-  const platformLength=115;
-  // Physical dimensions are a stylised construction.
-  addBox(group,24,1.4,platformLength,0,21.4,0,concrete);
-  addBox(group,4,.35,platformLength,-9.2,22.22,0,yellow);
-  addBox(group,4,.35,platformLength,9.2,22.22,0,yellow);
-  const roofShape=new THREE.Shape();
-  roofShape.moveTo(-13,0);roofShape.lineTo(-13,1.8);
-  for(let k=0;k<=20;k++){const x=-13+26*k/20;roofShape.lineTo(x,3.9+1.35*Math.sin(Math.PI*k/20));}
-  roofShape.lineTo(13,0);roofShape.closePath();
-  const roof=new THREE.Mesh(new THREE.ExtrudeGeometry(roofShape,{depth:platformLength,bevelEnabled:false}),canopy);
-  roof.position.set(0,27,-platformLength/2);group.add(roof);
+  // Side-platform reconstruction. A thin roof replaces the solid roof that
+  // blocked the driver's view in the user-submitted screen recording.
+  const platformLength=116,roofQuads=[];
+  const roofMat=new THREE.MeshStandardMaterial({color:i===16?"#678b7b":"#2e8a77",
+    metalness:.31,roughness:.58,side:THREE.DoubleSide});
+  const edgeMat=new THREE.MeshStandardMaterial({color:"#d4d8ce",roughness:.75});
+  const tactileMat=new THREE.MeshStandardMaterial({color:"#e8bb4d",roughness:.85});
+  const glazingMat=new THREE.MeshStandardMaterial({color:"#7fa8ab",metalness:.33,
+    transparent:true,opacity:.50,roughness:.26,side:THREE.DoubleSide});
   for(const side of [-1,1]){
-    for(let z=-48;z<=48;z+=24)addBox(group,.65,5.6,.65,side*11,25.2,z,concrete);
-    const board=stationBoard(s);board.position.set(side*12,26,4);board.rotation.y=side*Math.PI/2;group.add(board);
+    const mid=side*8.3;
+    addBox(group,7.2,1.1,platformLength,mid,20.70,0,concrete);
+    addBox(group,.38,.12,platformLength,side*4.85,21.33,0,tactileMat);
+    addBox(group,.15,1.25,platformLength,side*11.92,22.02,0,glazingMat);
+    // Ridge-shaped thin canopy, with open track center and unobstructed catenary.
+    for(let z=-platformLength/2;z<platformLength/2;z+=9.5){
+      for(let k=0;k<10;k++){
+        const x0=mid-4.1+k*.82,x1=x0+.82;
+        const y0=29.4+.83*Math.sin(Math.PI*k/10),y1=29.4+.83*Math.sin(Math.PI*(k+1)/10);
+        roofQuads.push([[x0,y0,z],[x1,y1,z],[x1,y1,Math.min(z+9.5,platformLength/2)],
+         [x0,y0,Math.min(z+9.5,platformLength/2)]]);
+      }
+    }
+    for(let z=-48;z<=48;z+=24){
+      addBox(group,.48,7.7,.48,side*11.4,25.05,z,edgeMat);
+      addBox(group,7.7,.20,.28,mid,29.15,z,edgeMat);
+    }
+    const board=stationBoard(s);board.position.set(side*11.7,25.65,0);
+    board.rotation.y=side*Math.PI/2;group.add(board);
+    // Street access volumes: indicative entrances, no surveyed stair topology.
+    addBox(group,4.8,17.8,9,side*17.4,8.9,-38,edgeMat);
+    addBox(group,4.5,2.8,9,side*17.4,18.9,-38,roofMat);
   }
-  // Station access steps represent the elevated entrance, not a surveyed CAD footprint.
-  addBox(group,5,22,10,18,11,0,concrete);
-  addBox(group,5,22,10,-18,11,0,concrete);
-  if(i===16)group.userData.planned=true;
+  group.add(geometryFromQuads(roofQuads,roofMat));
+  // Concourse connects both sides below platform level, keeping rails clear.
+  addBox(group,26.5,2.0,16,0,15.1,35,edgeMat);
+  if(s.future)group.userData.planned=true;
   group.visible=false;stations.push({s,m:stationD[i],mesh:group});planet.add(group);
  });
 }
+
 buildStations();
 const carGroups=[],bodyLoader=new GLTFLoader();
 const fallbackSteel=new THREE.MeshStandardMaterial({color:"#e5e7e4",metalness:.72,roughness:.32});
@@ -173,7 +195,28 @@ function fallbackCar(){
  addBox(car,2.5,1.15,.05,0,2.65,9.63,glass);
  return car;
 }
-for(let i=0;i<6;i++){const root=new THREE.Group();const f=fallbackCar();root.add(f);root.userData.fallback=f;planet.add(root);carGroups.push(root);}
+function pantographForCar(){
+  const group=new THREE.Group();
+  const dark=new THREE.MeshStandardMaterial({color:"#444d54",metalness:.8,roughness:.35});
+  const top=new THREE.MeshStandardMaterial({color:"#ad5f42",metalness:.75,roughness:.38});
+  function beam(a,b,r,mat){
+    const v1=new THREE.Vector3(...a),v2=new THREE.Vector3(...b),d=v2.clone().sub(v1);
+    const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r,r,d.length(),6),mat);
+    mesh.position.copy(v1).add(v2).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());
+    group.add(mesh);
+  }
+  addBox(group,1.5,.15,2.6,0,4.22,0,dark);
+  for(const side of [-1,1]){
+    beam([side*.60,4.30,-.85],[side*.28,5.10,.64],.060,dark);
+    beam([side*.60,4.30,.85],[side*.28,5.10,-.64],.060,dark);
+    beam([side*.28,5.10,-.64],[side*.61,5.38,.60],.054,dark);
+  }
+  beam([-.78,5.42,.65],[.78,5.42,.65],.09,top);
+  return group;
+}
+for(let i=0;i<6;i++){const root=new THREE.Group();const f=fallbackCar();root.add(f);root.userData.fallback=f;
+ if(i===2||i===4)root.add(pantographForCar());
+ planet.add(root);carGroups.push(root);}
 const imported=Promise.all(["front","middle","rear"].map(x=>bodyLoader.loadAsync("assets/mrt6-"+x+".gltf").catch(()=>null)));
 imported.then(([front,middle,rear])=>{
  for(let i=0;i<6;i++){
@@ -184,12 +227,17 @@ imported.then(([front,middle,rear])=>{
   group.remove(f);group.add(model);
  }
 });
+const TRAIN_LANE=-2.3; // one of two side-by-side tracks; not straddling their centerline
 function paintTrain(d){
  carGroups.forEach((root,i)=>{
-  const p=trackAt(d-i*20),yaw=Math.atan2(p.t.x,p.t.z);
-  root.position.copy(p.p);root.position.y=20.23;root.rotation.y=yaw;
+  const m=d-i*20,p=trackAt(m),front=trackAt(m+11),rear=trackAt(m-11);
+  const t=front.p.clone().sub(rear.p).normalize(),n=new THREE.Vector3(t.z,0,-t.x);
+  root.position.copy(p.p).addScaledVector(n,TRAIN_LANE);
+  root.position.y=20.23;
+  root.rotation.y=Math.atan2(t.x,t.z);
  });
 }
+
 const matTraffic=[
  new THREE.MeshStandardMaterial({color:"#a92634"}),
  new THREE.MeshStandardMaterial({color:"#e3bd3b"}),
@@ -241,24 +289,33 @@ function changeDoor(){
 const clock=new THREE.Clock();
 const orbits=new OrbitControls(camera,renderer.domElement);
 orbits.enabled=false;orbits.enableDamping=true;orbits.maxPolarAngle=Math.PI*.49;orbits.minDistance=12;orbits.maxDistance=200;
+const filteredLookAt=new THREE.Vector3();
+let cameraReady=false;
 function updateCamera(dt){
- const f=trackAt(sMeters),t=f.t,p=f.p;
- const lift=new THREE.Vector3(0,1,0),desired=new THREE.Vector3();
- if(mode===0)desired.copy(p).addScaledVector(t,-65).addScaledVector(lift,46);
- if(mode===1)desired.copy(p).addScaledVector(t,7).addScaledVector(lift,24.0);
- if(mode===2)desired.copy(p).addScaledVector(t,-16).addScaledVector(lift,35);
- if(mode===3)desired.copy(p).addScaledVector(lift,170);
+ const sample=trackAt(sMeters),front=trackAt(sMeters+13),back=trackAt(sMeters-13);
+ const t=front.p.clone().sub(back.p).normalize(),n=new THREE.Vector3(t.z,0,-t.x),p=sample.p.clone().addScaledVector(n,TRAIN_LANE);
+ const lift=new THREE.Vector3(0,1,0),desired=p.clone();
+ if(mode===0)desired.addScaledVector(t,-71).addScaledVector(n,18).addScaledVector(lift,41);
+ if(mode===1)desired.addScaledVector(t,9).addScaledVector(lift,24.30);
+ if(mode===2)desired.addScaledVector(t,-32).addScaledVector(n,23).addScaledVector(lift,34);
+ if(mode===3)desired.addScaledVector(t,-75).addScaledVector(lift,165);
  if(mode===4){
   orbits.target.copy(p).addScaledVector(lift,21);
   orbits.update();return;
  }
- camera.position.lerp(desired,clamp(dt*3.1,0,1));
- const target=p.clone().addScaledVector(t,mode===1?90:mode===3?10:25).addScaledVector(lift,mode===1?23:20);
- camera.lookAt(target);
+ const target=p.clone().addScaledVector(t,mode===1?105:mode===3?30:31)
+  .addScaledVector(lift,mode===1?24.2:20);
+ if(!cameraReady){camera.position.copy(desired);filteredLookAt.copy(target);cameraReady=true;}
+ else{
+  const alpha=1-Math.exp(-Math.max(.001,dt)*3.6);
+  camera.position.lerp(desired,alpha);filteredLookAt.lerp(target,alpha);
+ }
+ camera.lookAt(filteredLookAt);
 }
+
 let previousMode=0;
 function setCamera(){
- mode=(mode+1)%5;
+ mode=(mode+1)%5;cameraReady=false;
  if(mode===4){orbits.enabled=true;orbits.target.copy(trackAt(sMeters).p).add(new THREE.Vector3(0,22,0));}
  else orbits.enabled=false;
  $("camera").textContent=["📷 Chase","🚉 Driver Cab","🚆 Roof","🛰️ Drone","🖐 Orbit"][mode];
@@ -287,7 +344,7 @@ function reset(index=0){
  speed=0;power=0;brake=0;doors=false;score=0;served.clear();
  lastTiles="";clearTimeout(window.__simToast);
  uiMessage("নতুন যাত্রা: "+R.stations[i].bn+"। Power + চাপ দিয়ে ট্রেন চালাও।");
- paintTrain(sMeters);updateCamera(1);updateHUD();
+ cameraReady=false;paintTrain(sMeters);updateCamera(1);updateHUD();
 }
 $("throttleUp").onclick=()=>{if(doors){uiMessage("আগে Doors বন্ধ করো।");return;}power=clamp(power+1,0,4);if(power>0)brake=0;updateHUD();};
 $("throttleDown").onclick=()=>{power=clamp(power-1,0,4);updateHUD();};
@@ -410,7 +467,8 @@ function render(){
  if(running){
   updatePhysics(dt*rate);paintTrain(sMeters);
   const f=trackAt(sMeters);ground.position.x=f.p.x;ground.position.z=f.p.z;
-  for(const ch of trackChunks)ch.group.visible=Math.abs(ch.center-sMeters)<1700;
+  for(const ch of trackChunks)ch.group.visible=Math.abs(ch.center-sMeters)<(mobile?1350:1900);
+  hdRail.update(sMeters,mobile?1500:1900);
   for(const st of stations)st.mesh.visible=Math.abs(st.m-sMeters)<1350;
   for(const t of traffic){
    t.s=(t.s+dt*rate*8*t.dir+LENGTH)%LENGTH;
