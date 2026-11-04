@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="bn"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#061522"><meta name="description" content="Play an interactive Dhaka Metro MRT-6 train driving prototype on the OSM-mapped corridor between Uttara and Motijheel, with a planned Kamalapur extension.">
+<title>Dhaka MRT-6 • 3D Train Simulator</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net"><link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"}}</script>
+<style>
+:root{color-scheme:dark;font-family:"Hind Siliguri",system-ui,sans-serif;color:#f7fdff;background:#0a1b28}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;touch-action:manipulation}
+#viewport{position:fixed;inset:0;background:linear-gradient(#9dbdd1,#b7d2ca)}
+canvas{display:block;touch-action:none}
+.top{position:fixed;top:0;left:0;right:0;z-index:4;display:flex;align-items:center;gap:9px;padding:calc(env(safe-area-inset-top) + 9px) 10px 9px;background:linear-gradient(#04141de9,#04141d98,transparent)}
+.top a{flex:none;text-decoration:none;background:#091d2ee5;border:1px solid #ffffff36;border-radius:11px;color:#bdfde4;padding:8px 11px;font-size:12px}
+.brand{min-width:0;font-size:13px;font-weight:800;letter-spacing:.02em;line-height:1.25}
+.brand small{font-size:10px;display:block;color:#c9e2e8;font-weight:400;margin-top:4px;letter-spacing:0}
+.hud{pointer-events:none;position:fixed;z-index:3;top:calc(env(safe-area-inset-top) + 77px);left:10px;display:grid;gap:6px;width:min(260px,58vw)}
+.hud .panel{border:1px solid #ffffff2c;background:#041822d9;backdrop-filter:blur(14px);border-radius:13px;padding:10px 12px;box-shadow:0 12px 25px #0005}
+.speed{font-variant-numeric:tabular-nums;font-size:34px;font-weight:800;letter-spacing:-.035em;line-height:1}.speed small{font-size:12px;font-weight:500;letter-spacing:0}
+.meta{font-size:11px;color:#d1e8e9;line-height:1.6}.meta strong{color:#7bf5be}
+.heading{font-size:11px;font-weight:800;color:#f1fff9;line-height:1.4}
+.bar{height:5px;background:#486675a0;border-radius:10px;margin-top:6px;overflow:hidden}.bar span{display:block;height:100%;background:#56ebb6;width:0;transition:width .15s}
+#message{pointer-events:none;position:fixed;z-index:3;right:9px;top:calc(env(safe-area-inset-top) + 81px);width:min(210px,39vw);border:1px solid #ffffff38;background:#071c2acb;border-radius:12px;padding:8px 9px;line-height:1.45;font-size:10px;backdrop-filter:blur(10px)}
+.controls{position:fixed;z-index:5;bottom:calc(env(safe-area-inset-bottom) + 8px);left:8px;right:8px;display:grid;gap:7px;max-width:920px;margin:auto;background:#061622ed;backdrop-filter:blur(18px);border:1px solid #7baaa65e;border-radius:17px;padding:10px;box-shadow:0 15px 35px #0008}
+.line{display:flex;gap:6px;align-items:center;min-width:0;overflow-x:auto;scrollbar-width:none}.line button,.line select{flex-shrink:0;font:700 11px "Hind Siliguri",sans-serif;color:#e3fff5;background:#123647;border:1px solid #54807e;border-radius:10px;padding:9px 11px;min-height:38px}
+.line button:active,.line button.active{background:#187b62;border-color:#78ffcd}
+.line button:disabled{opacity:.4}
+.line select{max-width:100%;min-width:0;flex:1}
+.line label{font-weight:700;font-size:11px;white-space:nowrap}
+.line input[type=range]{flex:1;min-width:65px;accent-color:#53f3b5;touch-action:auto}
+.line .danger{background:#7b262b;border-color:#c47d7d}
+.line .traction{background:#176d52;border-color:#67d5b0}
+.tips{font-size:9px;color:#bad1d9;line-height:1.4}
+#loading{position:fixed;z-index:8;inset:0;display:grid;place-items:center;background:linear-gradient(145deg,#081724,#244457);padding:20px}
+#loading .card{background:#0a1b29ef;border:1px solid #ffffff35;border-radius:20px;padding:22px;text-align:center;max-width:340px}
+#loading h1{font-size:20px;margin:0 0 8px}#loading p{font-size:12px;line-height:1.7;color:#c8e0e7}
+#loading button{background:#168c6b;color:white;border:1px solid #6befc5;border-radius:12px;padding:12px 22px;font-weight:800;font:inherit;cursor:pointer}
+#loading[hidden]{display:none}
+.credits{color:#d1e0e2;font-size:9px}
+@media(min-width:800px){.hud{width:290px}.top{padding:15px 22px}.controls{bottom:18px;padding:14px}.line button{font-size:13px}}
+@media(max-height:760px){.controls{gap:4px}.line button,.line select{padding:6px 8px;min-height:32px}.tips{display:none}.hud{top:calc(env(safe-area-inset-top) + 65px)}}
+</style></head><body>
+<div id="viewport" aria-label="Playable MRT-6 3D train and city simulator"></div>
+<div id="loading"><div class="card"><h1>🚇 Dhaka Metro 3D Simulator</h1><p>১৬টি অবস্থানভিত্তিক স্টেশন, ১টি পরিকল্পিত স্টেশন এবং দুই পাশে ২৫০ মিটার OSM-ভিত্তিক 3D পরিবেশ। ট্রেন চালাতে নিচে Start চাপুন।</p><button id="start">▶ Start Simulator</button><p id="bootStatus">3D graphics ready to load · Mobile/PC</p></div></div>
+<header class="top"><a href="./">← Metro Map</a><div class="brand">DHAKA MRT-6 • TRAIN SIMULATOR<small>Real OSM buildings • Six-car metro • Touch controls • Not live GPS</small></div></header>
+<div class="hud">
+ <div class="panel"><div class="speed"><span id="speed">0</span><small> km/h</small></div><div class="meta">Power <strong id="powerValue">0</strong> · Brake <strong id="brakeValue">0</strong> · Score <strong id="score">0</strong></div><div class="bar"><span id="progress"></span></div></div>
+ <div class="panel"><div class="heading" id="nextStation">Next: Uttara Center</div><div class="meta" id="distance">Distance: —</div><div class="meta" id="trip">MRT-6 • Uttara North → Kamalapur (planned)</div></div>
+</div>
+<div id="message" role="status" aria-live="polite">বাস্তব OSM footprint-এর ভবন, কিন্তু রং, অনুপস্থিত উচ্চতা, স্টেশন নকশা ও রাস্তার কিছু অংশ অনুমানভিত্তিক।</div>
+<section class="controls" aria-label="Train driving controls">
+<div class="line">
+ <button id="throttleDown" aria-label="Reduce power">− Power</button>
+ <button id="throttleUp" class="traction" aria-label="Increase power">＋ Power</button>
+ <button id="brakeDown" aria-label="Release brake">− Brake</button>
+ <button id="brakeUp" class="danger" aria-label="Increase brake">＋ Brake</button>
+ <button id="emergency" class="danger">🛑 Emergency</button>
+ <button id="doors">🚪 Doors</button>
+</div>
+<div class="line">
+ <button id="camera" class="active">📷 Chase</button>
+ <button id="sun">☀ Day</button>
+ <button id="horn">🔊 Horn</button>
+ <button id="time">⏱ 1×</button>
+ <button id="reset">⟲ Restart</button>
+ <select id="stationJump" aria-label="Choose a station to practice driving"></select>
+</div>
+<div class="tips">কীবোর্ড: W/↑ power · S/↓ brake · Space emergency · C camera · H horn · D doors। স্টেশনে ০ km/h হলে Doors চাপলে পয়েন্ট পাবে। স্পিড ৮০ km/h-এর মধ্যে রাখো।</div>
+<div class="credits">© OpenStreetMap contributors (ODbL). 3D appearance, rail infrastructure and Kamalapur extension approximate. Simulator physics are simplified, not official DMTCL train controls.</div>
+</section>
+<script src="./data/mrt6-track.js"></script>
+<script src="./data/mrt6-extension.js"></script>
+<script type="module" src="./mrt6-simulator.js?v=20261104-alpha1"></script>
+</body></html>
