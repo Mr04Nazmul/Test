@@ -31,6 +31,13 @@ jobs:
           - '11 12 13 14 15'
     steps:
       - uses: actions/checkout@v4
+      - name: Verify OSM2World station build tooling
+        run: |
+          test -s scripts/prepare-station-osm2world.mjs
+          test -s scripts/check-station-osm2world.mjs
+          test -s scripts/write-station-osm2world-manifest.mjs
+          node --check scripts/prepare-station-osm2world.mjs
+          node --check scripts/check-station-osm2world.mjs
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -84,7 +91,7 @@ jobs:
         with:
           name: mrt6-osm-3d-${{ strategy.job-index }}
           path: assets/osm2world/stations/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 4
 
   publish:
@@ -103,6 +110,9 @@ jobs:
           path: assets/osm2world/stations/
       - name: Index available verified OSM city models
         run: |
+          test -s scripts/write-station-osm2world-manifest.mjs
+          node --check scripts/write-station-osm2world-manifest.mjs
+          test -n "$(find assets/osm2world/stations -maxdepth 1 -name '*.glb' -print -quit)"
           node scripts/write-station-osm2world-manifest.mjs
           test -s assets/osm2world/stations/manifest.json
       - name: Commit city tiles to branch-backed GitHub Pages
