@@ -1,0 +1,67 @@
+name: OSM2World — Smaller Dense MRT6 Districts
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/osm2world-mrt6-dense.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: mrt6-osm2world-dense-rebuild
+  cancel-in-progress: false
+jobs:
+  rebuild-dense:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/cache@v4
+        with:
+          path: .cache/OSM2World-0.4.0-bin.zip
+          key: osm2world-official-0.4.0-v1
+      - name: Download OSM2World and rebuild oversized three districts as compact geolocated GLB
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .cache /tmp/osm2world assets/osm2world/stations
+          if [ ! -s .cache/OSM2World-0.4.0-bin.zip ]; then
+            curl -fL --retry 3 --max-time 220 \
+              https://osm2world.org/download/files/0.4.0/OSM2World-0.4.0-bin.zip \
+              -o .cache/OSM2World-0.4.0-bin.zip
+          fi
+          unzip -q .cache/OSM2World-0.4.0-bin.zip -d /tmp/osm2world
+          JAR="$(find /tmp/osm2world -type f -iname '*osm2world*.jar' | head -n1)"
+          jar_dir="$(dirname "$JAR")"
+          for idx in 4 11 12; do
+            echo "::group::Dense station $idx"
+            OSM_RADIUS_M=170 node scripts/prepare-station-osm2world.mjs "$idx"
+            (cd "$jar_dir" && java -Xmx4g -jar "$JAR" \
+              -i "$GITHUB_WORKSPACE/build/osm2world/station-$idx-source.osm" \
+              -o "$GITHUB_WORKSPACE/assets/osm2world/stations/$idx.glb")
+            node scripts/check-station-osm2world.mjs "$idx"
+            cp "build/osm2world/station-$idx-source.json" "assets/osm2world/stations/$idx.json"
+            echo "::endgroup::"
+          done
+      - name: Commit smaller actual OSM-derived city GLBs to Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f assets/osm2world/stations/4.glb assets/osm2world/stations/4.json \
+            assets/osm2world/stations/11.glb assets/osm2world/stations/11.json \
+            assets/osm2world/stations/12.glb assets/osm2world/stations/12.json
+          git commit -m 'feat: mapped OSM2World 3D tile for dense MRT6 stations 4 11 12 [skip ci]'
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            git rebase origin/main
+          done
+          exit 1
