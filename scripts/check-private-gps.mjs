@@ -29,6 +29,11 @@ for(const id of ['riderGPSButton','riderGPSPanel','riderGPSStart','riderGPSInvit
  assert(html.includes('id="'+id+'"'),'Missing privacy-sensitive viewer control '+id);
  assert(app.includes('$("'+id+'")'),'Unwired viewer control '+id);
 }
+assert(html.includes('id="riderGPSNativeShare"'),'Native iPhone share invitation control missing');
+assert(app.includes('$("riderGPSNativeShare").addEventListener("click"'),
+ 'Private GPS invitation not connected to native Share Sheet');
+assert(app.includes('await navigator.share('),'Native iPhone share API missing');
+assert(app.includes('if(e.name==="AbortError")return'),'Cancelling Share Sheet must be allowed');
 assert(rider.includes('id="consent"'),'Onboard passenger consent checkbox missing');
 assert(rider.includes('id="start" disabled'),'GPS must be off until consent');
 assert(rider.includes('id="stop"'),'Rider must be able to stop GPS sharing');
