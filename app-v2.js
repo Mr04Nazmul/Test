@@ -1665,18 +1665,26 @@ $("zoomIn").addEventListener("click",()=>{if(cinematicOn)cinematicOrbit(0,.78);e
 $("zoomOut").addEventListener("click",()=>{if(cinematicOn)cinematicOrbit(0,1.28);else cameraZoom(1.28)});
 let qualityLevel=1;
 const qModes=[
- {name:"Balanced",scale:1.02,error:2.5},
- {name:"HD",scale:1.22,error:1.65},
- {name:"Ultra",scale:1.48,error:1.14}
+ {name:"Balanced",scale:1.0,error:2.5,msaa:1},
+ {name:"HD",scale:1.28,error:1.5,msaa:2},
+ {name:"Ultra",scale:1.65,error:1.05,msaa:4},
+ {name:"Cinema 4K",scale:2.0,error:0.78,msaa:4}
 ];
 function setQuality(level,notify=false){
  qualityLevel=level;
  const q=qModes[level],mobile=window.innerWidth<700;
- viewer.resolutionScale=q.scale*(mobile?0.96:1.13);
+ // Cap the physical render buffer to prevent crashes on high-DPR phones.
+ const maxPixels=mobile?5500000:12500000;
+ const cssPixels=Math.max(1,viewer.canvas.clientWidth*viewer.canvas.clientHeight);
+ const dpr=window.devicePixelRatio||1;
+ const maxScale=Math.sqrt(maxPixels/cssPixels)/Math.max(1,dpr);
+ viewer.resolutionScale=Math.min(q.scale,Math.max(0.65,maxScale));
  viewer.scene.globe.maximumScreenSpaceError=q.error;
  if(viewer.scene.postProcessStages.fxaa)viewer.scene.postProcessStages.fxaa.enabled=level>=1;
+ if(viewer.scene.msaaSupported) viewer.scene.msaaSamples=q.msaa;
+ viewer.scene.globe.showGroundAtmosphere=true;
  $("quality").textContent=q.name;
- if(notify)announce(q.name+" 3D quality নির্বাচিত। ফোন গরম/slow হলে Balanced ব্যবহার করো।",5200);
+ if(notify)announce(q.name+" render quality চালু। আসল texture/ভবনের detail না থাকলে সেটি স্বয়ংক্রিয়ভাবে তৈরি হবে না। ফোন গরম হলে Balanced বেছে নাও।",6500);
 }
 $("quality").addEventListener("click",()=>setQuality((qualityLevel+1)%qModes.length,true));
 $("overview").addEventListener("click",overview);
@@ -1906,7 +1914,7 @@ document.getElementById("mainCorridor")?.addEventListener("click",async function
  this.textContent=on?"🏙 Hide OSM Corridor":"🏙 OSM Corridor Buildings";
  if(on){await window.MRT_CORRIDOR_3D?.load(selectedStation)}else window.MRT_CORRIDOR_3D?.hide();
 });
-renderStructure(8);nearbyRailFurniture(8);updateStationText();refreshTrainMarkerPositions();renderCoachSet();updateModeControls();cleanupModeLabels();updateCameraLabel();setQuality(1);renderOperationsBoard();
+renderStructure(8);nearbyRailFurniture(8);updateStationText();refreshTrainMarkerPositions();renderCoachSet();updateModeControls();cleanupModeLabels();updateCameraLabel();setQuality(2);renderOperationsBoard();
 if(window.innerWidth<700){
  document.body.classList.add("panel-hidden");
  $("togglePanel").textContent="▤ Show Panel";
