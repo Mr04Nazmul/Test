@@ -301,6 +301,11 @@ body.panel-hidden .controls{margin-left:auto}
 .gps-quick-status{font-size:11px!important;line-height:1.25!important;background:#263743!important;color:#d6edeb!important;border:1px solid #75bca6!important}
 .gps-quick-status[data-valid="true"]{background:#105942!important;border-color:#49dfa8!important;color:#e9fff5!important}
 
+
+.radar-satellite-note{font-size:11px;color:#cfdfed;background:#193443;border:1px solid #9cb9cb44;
+ border-radius:10px;padding:9px 11px;line-height:1.45;margin:10px 0}
+.radar-satellite-note a{color:#a8f4ec;text-decoration:underline}
+
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/";</script>
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
@@ -337,7 +342,7 @@ body.panel-hidden .controls{margin-left:auto}
 <button id="sound" class="ctrl primary" type="button" aria-pressed="false" title="Start locally generated Dhaka 3D audio with your tap">🔊 সাউন্ড চালু</button>
 <button id="soundTest" class="ctrl" type="button" title="Immediate short three-tone audio test">🔔 Test Sound</button>
 <button id="soundOptions" type="button" class="ctrl optional-control" aria-controls="soundPanel" aria-expanded="false">🎚 Sound Zones</button>
-<button id="satellite" class="ctrl">◈ Satellite</button>
+<button id="satellite" class="ctrl" title="Historical satellite basemap, never live train tracking">🛰 Satellite Map</button>
 <button id="follow" class="ctrl">▣ ট্রেনের সাথে</button>
 <button id="myGPS" class="ctrl optional-control">📍 My Phone GPS</button>
 <button id="pause" class="ctrl optional-control">▶ Demo Ride</button>
@@ -389,6 +394,8 @@ body.panel-hidden .controls{margin-left:auto}
 <aside id="trainRadarPanel" class="train-radar-panel" hidden aria-label="Dhaka Metro estimated train radar">
  <div class="radar-title"><strong>🚆 MRT-6 Train Radar</strong><button type="button" id="trainRadarClose" aria-label="Close train radar">✕</button></div>
  <p class="radar-notice">সময়সূচি অনুযায়ী অনুমান · এটি Live GPS নয়। DMTCL কোনো উন্মুক্ত train-location feed দেয় না।</p>
+ <p id="satelliteTrackingNote" class="radar-satellite-note">🛰 <strong>Satellite ≠ Live GPS:</strong> স্যাটেলাইট ম্যাপে ঐতিহাসিক ছবি দেখা যায়; চলমান ট্রেনের বর্তমান অবস্থান পাওয়া যায় না। <a href="https://support.google.com/earth/answer/6327779?hl=en" target="_blank" rel="noopener noreferrer">Google Earth imagery explanation</a>।</p>
+
  <div class="gps-source-status" aria-label="Actual train GPS source and freshness">
   <div class="gps-source-line"><span class="gps-led" id="actualGpsLed"></span><strong id="actualGpsHeadline">REAL GPS · No connected source</strong></div>
   <p id="actualGpsDetails" role="status" aria-live="polite">Official train GPS feed unavailable. Private passenger GPS connects only after permission.</p>
@@ -452,6 +459,6 @@ body.panel-hidden .controls{margin-left:auto}
 <script src="./live-rider-p2p.js?v=20261104-private-rider-v2"></script>
 <script src="dhaka-soundscape.js?v=20261104-local-audio-fix-v3"></script>
 <script src="actual-roads.js?v=20261104-osm-geometry-v2"></script>
-<script src="app-v2.js?v=20261104-real-gps-source-v4"></script>
+<script src="app-v2.js?v=20261104-satellite-no-live-claim-v5"></script>
 </body>
 </html>
