@@ -1,6 +1,6 @@
 (async function(){
 "use strict";
-// 16 true, geocoded MRT-6 stop locations; OSM attribution in UI.
+// 16 OSM-geocoded MRT-6 stations, plus planned/approximate Kamalapur terminal.
 const C=window.Cesium,route=window.MRT_3D_ROUTE||window.MRT_TRACK,$=id=>document.getElementById(id);
 if(!C||!route||route.stations.length<16){$("message").textContent="Route/3D engine unavailable";return;}
 const stations=route.stations,track=route.points;
@@ -156,7 +156,8 @@ async function loadNeighborhood(i){
  dropModels();putGuideway(i);const job=buildToken;
  const site=i===8?"assets/agargaon-station.gltf":
   i===10?"assets/farmgate-landmark.gltf":
-  i===13?"assets/dhaka-university-landmark.gltf":"assets/stations/"+i+".gltf";
+  i===13?"assets/dhaka-university-landmark.gltf":
+  i===16?"assets/mrt6-station-concept.gltf":"assets/stations/"+i+".gltf";
  const tasks=[{index:i,path:site,oriented:true}];
  if(i<16)tasks.push(
   {index:i,path:"assets/urban/"+i+".gltf",oriented:false},
@@ -180,7 +181,7 @@ function overview(){
  v.camera.flyTo({destination:C.Cartesian3.fromDegrees(90.389,23.799,27500),
   orientation:{heading:0,pitch:angle(-87),roll:0},duration:1.25});
  $("status").innerHTML="<strong>Full MRT-6:</strong> উত্তরা উত্তর থেকে কমলাপুর · ১৭টি স্টেশন (কমলাপুর পরিকল্পিত)। Zoom করে bilingual nameboards দেখুন।";
- note("পূর্ণ OSM rail alignment দেখানো হচ্ছে, real-time train GPS নয়");
+ note("OSM based route through Motijheel; Kamalapur extension is approximate, NOT live train GPS");
  updateLabels();
 }
 function focus(i){
