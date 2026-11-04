@@ -49,8 +49,10 @@ for(const id of ["opsMonitorBoard","opsOfficialStatus","opsPhoneStatus","opsEsti
 assert(app.includes("function renderOperationsBoard("),"Operations panel updater missing");
 assert(app.includes("renderOperationsBoard(info)"),"Train Radar must refresh operations panel");
 assert(app.includes("grid.children.length!==st.length"),"Every MRT6 station must be selectable");
-assert(app.includes('$("opsOfficialStatus").textContent="NOT CONNECTED"'),
- "Must never fabricate official train-telemetry connection");
+assert(app.includes('observed?.sourceType==="operator"?authorized:[]'),
+ "Official status must come only from a separate licensed operator feed");
+assert(app.includes('operator.length?operator.length+" · LIVE GPS":"NOT CONNECTED"'),
+ "Official status must stay NOT CONNECTED when no operator observations exist");
 assert(app.includes('phone?.source==="consenting rider phone"'),
  "Only consented rider location may count as phone observation");
 assert(app.includes('selected.position/(st.length-1)'),
