@@ -477,6 +477,20 @@ trainPick.setInputAction(click=>{
 // Consent-based, ephemeral live GPS from a rider's *phone*. It is not train
 // telemetry, never counted among DMTCL timetable trains or made public.
 let riderGPSMark=null,riderGPSLatest=null,riderFollowing=false,lastGpsPaint=0;
+const independentMonitor=window.MRT_INDEPENDENT_MONITOR?.monitor(window.MRT_TRACK);
+function showIndependentMonitor(data){
+ const p=$("independentMonitorStatus");
+ if(!p)return;
+ if(!data){p.textContent="স্বতন্ত্র রুট পর্যবেক্ষণ: GPS নেই। ATS/CBTC সিস্টেমে কোনো সংযোগ নেই।";return}
+ const speed=Number.isFinite(data.observedPhoneSpeedKmh)
+  ? " · ফোন থেকে অনুমিত গতি "+Math.round(data.observedPhoneSpeedKmh)+" km/h":"";
+ const dir=data.direction==="toward_motijheel"?"মতিঝিলমুখী":
+  data.direction==="toward_uttara"?"উত্তরামুখী":"দিক যাচাই হয়নি";
+ p.textContent="📍 PHONE GPS · "+data.between.join(" ↔ ")+
+  " · "+dir+" · কাছের স্টেশন "+data.nearest+
+  " · রেলপথ থেকে "+Math.round(data.routeDistance)+"m · ±"+Math.round(data.accuracy)+
+  "m"+speed+"। এটি যাত্রীর ফোন, মেট্রোর অফিসিয়াল ট্রেনের লোকেশন নয়।";
+}
 const riderPanel=$("riderGPSPanel");
 const riderStatus=$("riderGPSStatus");
 // This status is the single source-of-truth for visible GPS claims.
@@ -516,6 +530,7 @@ function openRiderGPS(force){
 function removeRiderMarker(){
  if(riderGPSMark){viewer.entities.remove(riderGPSMark);riderGPSMark=null}
  riderGPSLatest=null;riderFollowing=false;
+ independentMonitor?.clear();showIndependentMonitor(null);
  updateActualGpsStatus(true);
  $("riderGPSFollow").disabled=true;
  $("riderGPSFollow").textContent="🎯 Follow Rider Phone GPS";
@@ -523,6 +538,12 @@ function removeRiderMarker(){
 function riderStatusMessage(message){riderStatus.textContent=message}
 function onRiderSample(sample){
  if(Date.now()-sample.time>20000)return;
+ const checked=independentMonitor?.ingest(sample);
+ if(!checked?.ok){
+  riderStatusMessage("GPS observation যাচাই হয়নি: "+(checked?.reason||"unknown source")+
+   " · প্রকৃত ট্রেনের অবস্থান দাবি করা হবে না।");
+  return;
+ }
  if(sample.accuracy>80){
   riderStatusMessage("Rider GPS signal এসেছে, কিন্তু accuracy ±"+Math.round(sample.accuracy)+"m। 80m-এর মধ্যে না আসা পর্যন্ত Live marker দেখানো হবে না।");
   return;
@@ -532,7 +553,9 @@ function onRiderSample(sample){
   riderStatusMessage("যাত্রীর ফোন MRT-6 রুট থেকে "+Math.round(match.distance)+"m দূরে। যাচাই না হওয়ায় Metro Train হিসেবে দেখাচ্ছি না।");
   return;
  }
+ const observation=checked.data;
  riderGPSLatest={...sample,trackDistance:match.distance,along:match.along};
+ showIndependentMonitor(observation);
  const position=C.Cartesian3.fromDegrees(sample.lon,sample.lat,29);
  if(!riderGPSMark)riderGPSMark=viewer.entities.add({
   name:"Consenting rider PHONE GPS · unverified Metro train",
@@ -572,6 +595,7 @@ function updateRiderGPSFreshness(){
  riderStatusMessage("GPS তথ্য ২০ সেকেন্ডের বেশি পুরোনো। LIVE মার্কার লুকানো হয়েছে; নতুন consented sample-এর অপেক্ষা।");
  if(riderGPSMark)riderGPSMark.show=false;
  riderGPSLatest=null;riderFollowing=false;$("riderGPSFollow").disabled=true;
+ independentMonitor?.clear();showIndependentMonitor(null);
  updateActualGpsStatus(true);
  $("riderGPSFollow").textContent="🎯 Follow Rider Phone GPS";
 }
