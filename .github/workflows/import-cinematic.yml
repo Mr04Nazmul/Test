@@ -31,13 +31,33 @@ jobs:
           unzip -p /tmp/original-agargaon.zip Agargaon_MRT6_Detailed_3D_Environment.glb > assets/cinematic/agargaon-detailed.glb
           echo '742b338e0d39c94c255869aca65968ccfc7cc9741b42500c33e63be151941596  assets/cinematic/agargaon-detailed.glb' | sha256sum -c -
           node scripts/check-cinematic-model.mjs
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build new Full Color Dhaka architectural GLB model
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-noto-core
+          python -m pip install -q --disable-pip-version-check pillow numpy trimesh
+          python scripts/enhance-agargaon-fullcolor.py
+          python - <<'PY'
+          import trimesh
+          path='assets/cinematic/agargaon-fullcolor-v2.glb'
+          model=trimesh.load(path,force='scene',process=False)
+          assert len(model.geometry)>=60
+          assert sum(len(g.faces) for g in model.geometry.values())>500000
+          assert sum('Bangladesh shop 3D sign' in k for k in model.geometry)>=24
+          print('Full-color GLB verified:',len(model.geometry),'3D mesh groups')
+          PY
       - name: Commit actual model to Pages source branch
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -f assets/cinematic/agargaon-detailed.glb
+          git add -f assets/cinematic/agargaon-detailed.glb assets/cinematic/agargaon-fullcolor-v2.glb assets/cinematic/fullcolor-v2-manifest.json
           if git diff --cached --quiet; then
             echo 'Original cinematic GLB is already committed.'
             exit 0
