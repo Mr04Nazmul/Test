@@ -75,6 +75,78 @@ try{
  orientation:{heading:C.Math.toRadians(20),pitch:C.Math.toRadians(-48),roll:0}});
 }catch(e){announce("3D viewer শুরু হয়নি: "+e.message,0);return}
 const originalCameraFov=viewer.camera.frustum.fov;
+const CINEMATIC_GLB="./assets/cinematic/agargaon-detailed.glb?v=20261104-replica-pbr-v1";
+// Separate model data source: hiding estimated map features must not hide the
+// user's original 37 MB authored environment. Its geometry is a cinematic
+// reference, not exact surveyed Agargaon streets/building locations.
+const cinematicSceneLayer=new C.CustomDataSource("Original high detail Agargaon (approximate 3D scene)");
+cinematicSceneLayer.show=false;
+viewer.dataSources.add(cinematicSceneLayer);
+let cinematicOn=false,cinematicSceneEntity=null,cinematicBusy=false,previousResolutionScale=null;
+function leaveCinematicScene(){
+ if(!cinematicOn)return;
+ cinematicSceneLayer.show=false;
+ viewer.entities.show=true;
+ cinematicOn=false;
+ $("cinematicView").setAttribute("aria-pressed","false");
+ $("cinematicView").textContent="🎬 Full Detail 3D";
+ if(previousResolutionScale!==null){
+  viewer.resolutionScale=previousResolutionScale;
+  previousResolutionScale=null;
+ }
+ if(window.MRTActualRoads&&!googleMode)
+  window.MRTActualRoads.show(viewer,selectedStation,st[selectedStation]);
+ announce("OpenStreetMap-based 3D city view restored. Station models have estimated facades.",6500);
+}
+async function toggleCinematicScene(){
+ if(cinematicBusy)return;
+ if(cinematicOn){
+  leaveCinematicScene();
+  stationCinematicCamera(selectedStation,true);
+  return;
+ }
+ if(googleMode){
+  announce("Google 3D mode বন্ধ করে নিজের 3D মডেলটি খুলুন।",6000);return;
+ }
+ cinematicBusy=true;
+ const button=$("cinematicView");
+ button.disabled=true;
+ button.textContent="Loading 3D…";
+ try{
+  const response=await fetch(CINEMATIC_GLB,{method:"HEAD",cache:"no-store"});
+  if(!response.ok)throw Error("3D GLB not published yet (HTTP "+response.status+")");
+  if(!cinematicSceneEntity){
+   const p=at(stopMeters[8]),root=at(stopMeters[8]-63);
+   cinematicSceneEntity=cinematicSceneLayer.entities.add({
+    name:"Agargaon original textured 3D: six-coach train, structures, shops, trees and city (illustrative)",
+    position:lonlatPoint(root,0),
+    orientation:modelOrientation(p),
+    model:{uri:CINEMATIC_GLB,scale:1,minimumPixelSize:0,maximumScale:1}
+   });
+  }
+  clearViewLock();
+  selectedStation=8;
+  if(window.MRTActualRoads)window.MRTActualRoads.hide(viewer);
+  viewer.entities.show=false;
+  cinematicSceneLayer.show=true;
+  cinematicOn=true;
+  previousResolutionScale=viewer.resolutionScale;
+  // Half a million mesh triangles and 37 textures: mobile-friendly preset.
+  viewer.resolutionScale=Math.min(previousResolutionScale,window.innerWidth<700?0.97:1.15);
+  button.textContent="◎ Back to Map";
+  button.setAttribute("aria-pressed","true");
+  stationCinematicCamera(8,true);
+  announce("Original 37 MB 3D environment loaded. Roads/buildings are artistic approximations, not a Google Maps copy or live GPS.",12000);
+ }catch(err){
+  cinematicSceneLayer.show=false;
+  viewer.entities.show=true;
+  button.setAttribute("aria-pressed","false");
+  button.textContent="🎬 Full Detail 3D";
+  announce("বিস্তারিত 3D মডেল এখনও পাওয়া যায়নি: "+err.message,8500);
+ }finally{button.disabled=false;cinematicBusy=false}
+}
+$("cinematicView").addEventListener("click",toggleCinematicScene);
+
 $("status").textContent="ETA ESTIMATE";
 $("notice").textContent="রেলপথ OSM থেকে; ট্রেন অবস্থান সময়সূচিভিত্তিক অনুমান (GPS নয়)।";
 // MRT-6 elevated main line: 1,435 mm standard gauge, 1,500 V DC overhead
@@ -387,6 +459,7 @@ function stationCinematicCamera(index,animate=true){
  else viewer.camera.setView({destination,orientation});
 }
 function focusStation(i){
+ if(cinematicOn)leaveCinematicScene();
  selectedStation=i;clearViewLock();
  if(mode==="demo")demoMeters=clamp(stopMeters[i]+145,0,trackLength-3);
  renderStructure(i);updateStationText();
@@ -901,6 +974,7 @@ function renderCoachSet(dt=0.016){
  }
 }
 function findTrain(preferredId=null){
+ if(cinematicOn)leaveCinematicScene();
  riderFollowing=false;
  if(mode==="estimate"){
   const current=svc.active();
