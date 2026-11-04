@@ -80,3 +80,20 @@ This is a **schema only, not real data**. Non-GPS station progress / ETA can be 
 2. Review and send separate Gatishil Ventures and MRT Mate partnership drafts.
 3. Obtain a specific approved endpoint, authentication mechanism, usage license, public display conditions and at least one validated live example.
 4. Then build the secure adapter, connect it to this repository, test freshness and display genuine observations in a separate LIVE layer.
+
+
+## Independent observation monitor implemented (2026-11-04)
+
+The public website includes `data/independent-monitor.js`, an **independent passenger-phone observation model**, never a connection to the metro signalling or Automatic Train Supervision network. This is conceptually similar to a supervision map's **read-only status display**, not its signalling/control functionality.
+
+- Accepts GPS observations only via the existing consent-based private rider session.
+- Uses the open licensed OSM track polyline and DMTCL station positions.
+- Projects the observed phone's GPS point to the nearest public rail segment; rejects obviously off-route, stale, or inaccurate samples.
+- Shows station-to-station segment and nearest station; can infer travel direction and *phone-derived estimated speed* from consecutive observations when the GPS displacement exceeds uncertainty.
+- Expires the observation after 20 seconds and keeps source explicitly `consenting rider phone`, `isTrainTelemetry:false` and `operatorVerified:false`. It does **not** prove that the phone is actually on a train.
+- It never reads ATS, ATP, ATO, CBTC, interlocking, OCC, or train-control network data. No addresses, ports, authentication bypasses, packet captures or signal-control interfaces are used.
+- `node scripts/check-independent-monitor.mjs` verifies route projection, provenance, freshness, rejects bad GPS, and integration in the frontend. GitHub Pages build runs this check automatically.
+
+**Why this is not actual operator tracking:** MRT-6 uses Communication-Based Train Control, including ATS/ATO/ATP and Moving Block, as described by the [DMTCL official FAQ](https://dmtcl.gov.bd/pages/static-pages/6922e089933eb65569e27764). The system's authoritative vehicle localization is internal to railway operations. An independent website cannot recreate that authoritative knowledge without an approved passenger-information feed; historical satellite imagery and timetable estimates are not substitutes.
+
+**If operator approval is granted:** please obtain the **specific approved read-only public API/base URL, credentials delivered securely, fields/data contract, use license, access scope and source timestamps**. Build a backend proxy for credentialed access (credentials must never be committed to GitHub Pages). Do not ask for or access signalling control networks.
