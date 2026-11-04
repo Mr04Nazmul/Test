@@ -33,6 +33,10 @@ for(const id of ['trainRadarButton','trainRadarPanel','trainRadarClock','trainRa
  assert(app.includes('$("'+id+'")'),'Radar control not wired '+id);
 }
 assert(html.includes('train-radar.js'),'Radar engine not included');
+assert(html.includes('id="satelliteTrackingNote"'),'Must disclose satellite imagery is not live tracking');
+assert(html.includes('Satellite ≠ Live GPS'),'Satellite source must be labelled non-real-time');
+assert(app.includes('এই ছবি রিয়েল-টাইম নয়'),'Satellite toggle must explain no live GPS telemetry');
+assert(app.includes('REAL TRAIN GPS · No connected feed'),'Do not imply live source when none exists');
 assert(!app.includes('mode="demo";updateModeControls();\n   announce("এই মুহূর্তে অনুমিত চালু ট্রেন নেই'),'Automatic fake train mode remains');
 assert(app.includes('miniTrains=new Map()'),'Mapped 3D train lead coaches must be visible');
 assert(app.includes('for(const coach of trainEntities)coach.show=visible;'),'Train mesh must be hidden off-hours');
