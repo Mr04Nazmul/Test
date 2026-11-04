@@ -284,6 +284,23 @@ body.panel-hidden .controls{margin-left:auto}
 @media(max-width:700px){.rider-gps-panel{left:8px;right:8px;width:auto;max-height:min(59vh,520px);
  bottom:calc(env(safe-area-inset-bottom) + 115px);padding:12px}}
 
+
+.gps-source-status{padding:10px 11px;margin:9px 0 10px;border-radius:12px;border:1px solid #ffffff2c;background:#152c3b}
+.gps-source-line{display:flex;align-items:center;gap:8px}
+.gps-source-line strong{font-size:12px}
+.gps-led{display:inline-block;flex:0 0 auto;width:10px;height:10px;border-radius:100%;background:#96a8b4;box-shadow:0 0 0 3px #ffffff14}
+.gps-led[data-valid="true"]{background:#35e7a5;box-shadow:0 0 0 4px #35e7a527}
+.gps-source-status p{font-size:11px;color:#c4d6db;line-height:1.45;margin:7px 0}
+.gps-source-facts{display:flex;gap:5px;flex-wrap:wrap}
+.gps-source-facts span{font-size:10px;color:#9eebe3;background:#124452;border-radius:6px;padding:4px 6px}
+.gps-source-options{margin:8px 0 14px;background:#173342cc;border-radius:12px;padding:10px 11px}
+.gps-source-options summary{cursor:pointer;font-weight:600;color:#aceedc}
+.gps-source-options p{font-size:11px;color:#bed3db;line-height:1.55}
+.gps-provider-links{display:grid;gap:7px}
+.gps-provider-links a{display:block;color:#d0fff1;padding:9px;background:#175548;border-radius:8px;text-decoration:underline;font-size:11px}
+.gps-quick-status{font-size:11px!important;line-height:1.25!important;background:#263743!important;color:#d6edeb!important;border:1px solid #75bca6!important}
+.gps-quick-status[data-valid="true"]{background:#105942!important;border-color:#49dfa8!important;color:#e9fff5!important}
+
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/";</script>
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
@@ -314,6 +331,7 @@ body.panel-hidden .controls{margin-left:auto}
 <div class="controls">
 <button id="overview" class="ctrl optional-control">◉ পুরো রুট</button>
 <button id="findTrain" class="ctrl primary">🎯 Find Nearest Train</button>
+<button id="realGpsQuickStatus" class="ctrl gps-quick-status" type="button" aria-controls="trainRadarPanel">📡 Real GPS: none</button>
 <button id="trainRadarButton" class="ctrl" type="button" aria-controls="trainRadarPanel" aria-expanded="false">🚆 Train Radar</button>
 <button id="riderGPSButton" class="ctrl" type="button" aria-controls="riderGPSPanel" aria-expanded="false">📍 Private Rider GPS</button>
 <button id="sound" class="ctrl primary" type="button" aria-pressed="false" title="Start locally generated Dhaka 3D audio with your tap">🔊 সাউন্ড চালু</button>
@@ -371,6 +389,25 @@ body.panel-hidden .controls{margin-left:auto}
 <aside id="trainRadarPanel" class="train-radar-panel" hidden aria-label="Dhaka Metro estimated train radar">
  <div class="radar-title"><strong>🚆 MRT-6 Train Radar</strong><button type="button" id="trainRadarClose" aria-label="Close train radar">✕</button></div>
  <p class="radar-notice">সময়সূচি অনুযায়ী অনুমান · এটি Live GPS নয়। DMTCL কোনো উন্মুক্ত train-location feed দেয় না।</p>
+ <div class="gps-source-status" aria-label="Actual train GPS source and freshness">
+  <div class="gps-source-line"><span class="gps-led" id="actualGpsLed"></span><strong id="actualGpsHeadline">REAL GPS · No connected source</strong></div>
+  <p id="actualGpsDetails" role="status" aria-live="polite">Official train GPS feed unavailable. Private passenger GPS connects only after permission.</p>
+  <div class="gps-source-facts">
+   <span id="actualGpsAge">Last phone sample: none</span>
+   <span>Source: verified label required</span>
+  </div>
+ </div>
+ <details class="gps-source-options">
+  <summary>📡 GPS data কোথা থেকে আসবে?</summary>
+  <p><strong>DMTCL CBTC/ATS:</strong> অপারেটরের ভেতরের ট্রেন supervision system। Public live GPS/API সংযুক্ত নয়।</p>
+  <p><strong>Private Rider GPS:</strong> যাত্রী স্বেচ্ছায় শেয়ার করলে তাঁর ফোনের GPS এখানে দেখা যাবে। এটি ট্রেনের অফিসিয়াল GPS নয়।</p>
+  <p><strong>Independent community apps:</strong> এগুলোর নিজস্ব যাত্রী GPS আছে, কিন্তু এই ওয়েবসাইটে ব্যবহারযোগ্য অনুমোদিত API পাওয়া যায়নি। লিংকগুলো অন্য অ্যাপে খুলবে; এখানে গোপনে তথ্য আমদানি হবে না।</p>
+  <div class="gps-provider-links">
+   <a href="https://play.google.com/store/apps/details?id=com.traintracker.bd" target="_blank" rel="noopener noreferrer">BD Train Tracker · MRT GPS (external Android)</a>
+   <a href="https://mrt.touhidapps.com/" target="_blank" rel="noopener noreferrer">MRT Mate · passenger sharing (external)</a>
+   <a href="https://dmtcl.gov.bd/pages/static-pages/6922dc72933eb65569e106c8" target="_blank" rel="noopener noreferrer">DMTCL · CBTC/ATS official FAQ</a>
+  </div>
+ </details>
  <div class="radar-clock"><b id="trainRadarClock">Dhaka time loading…</b><span id="trainRadarCount">—</span></div>
  <div id="trainRadarList" aria-live="polite"><p>সময়সূচির ট্রেন গণনা হচ্ছে…</p></div>
  <div class="radar-foot">
@@ -415,6 +452,6 @@ body.panel-hidden .controls{margin-left:auto}
 <script src="./live-rider-p2p.js?v=20261104-private-rider-v2"></script>
 <script src="dhaka-soundscape.js?v=20261104-local-audio-fix-v3"></script>
 <script src="actual-roads.js?v=20261104-osm-geometry-v2"></script>
-<script src="app-v2.js?v=20261104-rider-watch-v3"></script>
+<script src="app-v2.js?v=20261104-real-gps-source-v4"></script>
 </body>
 </html>
