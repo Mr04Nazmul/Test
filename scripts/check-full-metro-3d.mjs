@@ -37,7 +37,7 @@ assert(js.includes('assets/urban/'),"Mapped OSM 3D buildings not connected");
 assert(js.includes("numberPins")&&js.includes("updateLabels()"),"Adaptive zoom label visibility logic missing");
 assert(js.includes('© OpenStreetMap contributors')||html.includes("© OpenStreetMap contributors"),
  "OpenStreetMap source attribution missing");
-assert(js.includes("NOT live train GPS")||js.includes("NOT live train GPS"),"GPS truthfulness missing");
+assert(html.includes("কোনো ট্রেনের অবস্থান live GPS নয়")||js.includes("NOT live train GPS"),"GPS truthfulness missing");
 assert(main.includes('href="full-metro-3d.html"'),"Full route shortcut absent on main map");
 assert(studio.includes('href="full-metro-3d.html"'),"Full route shortcut absent on 3D Studio");
 console.log("PASS sixteen real geocoded MRT-6 stations, all bilingual nameboards, 16 architecture models, mapped neighborhood assets and 2 working entrypoints.");
