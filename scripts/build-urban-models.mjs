@@ -194,7 +194,7 @@ function mergeOSMFootprints(data,index){
   for(const old of obj.features||[]){
    if(!Array.isArray(old.p)||old.p.length<4||identifiers.has(String(old.id)))continue;
    const center=old.p.reduce((a,v)=>[a[0]+v[0]/old.p.length,a[1]+v[1]/old.p.length],[0,0]);
-   if(centers.some(c=>Math.hypot((c[0]-center[0])*101700,(c[1]-center[1])*111320)<6))continue;
+   if(centers.some(c=>Math.hypot((c[0]-center[0])*101700,(c[1]-center[1])*111320)<12))continue;
    items.push({...old,legacySnapshot:true});
    identifiers.add(String(old.id));centers.push(center);legacyCount++;
   }
@@ -234,7 +234,7 @@ function makeModel(data,index){
  // Cesium ModelGraphics defaults: Y-up glTF is upright, with +Z facing east and +X facing north.
  // Map the OSM north/east displacements to those local axes; do not flip north.
  const routeXY=trackNodes.map(([lat,lon])=>[(lat-cy)*latScale,(lon-cx)*lonScale]);
- const merged={items:data.buildings||[],legacyCount:0},allBuildings=merged.items;
+ const merged=mergeOSMFootprints(data,index),allBuildings=merged.items;
  // Prevent second overlapping old footprint datasets that made unrealistic blocks.
  let count=0,known=0,triangles=0,clearedNearTrack=0;
  for(const item of allBuildings.slice(0,900)){
@@ -317,7 +317,7 @@ function makeModel(data,index){
  // Geospatial linework follows real mapped OpenStreetMap highway centerlines.
  // The widths, colors, curb/marking patterns are illustrative, not engineering survey.
  let streetSegments=0,treeCount=0;
- const xy=([lon,lat])=>[(lon-cx)*lonScale,-(lat-cy)*latScale];
+ const xy=([lon,lat])=>[(lat-cy)*latScale,(lon-cx)*lonScale];
  const roadGroup=groups[osmMaterials.road],laneGroup=groups[osmMaterials.lane];
  for(const road of (data.roads||[]).slice(0,350)){
   if(!Array.isArray(road.p)||road.p.length<2)continue;
