@@ -335,6 +335,13 @@ body.panel-hidden .controls{margin-left:auto}
 .ops-footnote{display:block;line-height:1.5;color:#b2c7ce;margin-top:11px;font-size:10px}
 @media(max-width:370px){.ops-sources{grid-template-columns:1fr}.ops-sources small{min-height:auto}}
 
+.authorized-live-panel{border:1px solid #50c7b858;background:#0a2d32a8;padding:10px;margin:10px 0;border-radius:10px}
+.authorized-live-panel h4{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 8px;color:#cbffea;font-size:12px}
+.authorized-live-panel h4 small{color:#d3dee1;font-size:10px}
+#authorizedLiveList{font-size:11px;color:#c4d8db;line-height:1.6}
+.approved-train{display:block;text-align:left;width:100%;background:#124a3c;color:#e8fff5;border:1px solid #6ce3ac73;border-radius:8px;padding:9px;margin:5px 0}
+.approved-train b{display:block;font-size:11px}.approved-train small{font-size:10px;color:#b0ece0}
+
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/";</script>
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
@@ -342,6 +349,8 @@ body.panel-hidden .controls{margin-left:auto}
 <script src="./data/metro-schedule.js"></script>
 <script src="./data/train-radar.js?v=20261104-radar-v1"></script>
 <script src="./data/independent-monitor.js?v=20261104-rider-route-monitor-v1"></script>
+<script src="./data/authorized-feed-config.js?v=20261104-v1"></script>
+<script src="./data/operator-live-feed.js?v=20261104-v1"></script>
 </head>
 <body>
 <div id="app"><div id="scene" aria-label="Interactive Dhaka Metro 3D map"></div></div>
@@ -450,6 +459,7 @@ body.panel-hidden .controls{margin-left:auto}
   <h3>📡 MRT-6 Operations Monitor <small>Read-only · Independent</small></h3>
   <div class="ops-sources">
    <div><small>Official train telemetry</small><strong id="opsOfficialStatus">NOT CONNECTED</strong></div>
+   <div><small>Licensed community feed</small><strong id="opsLicensedStatus">NOT CONNECTED</strong></div>
    <div><small>Consented rider phone GPS</small><strong id="opsPhoneStatus">NO OBSERVATION</strong></div>
    <div><small>Timetable trains (estimated)</small><strong id="opsEstimatedStatus">—</strong></div>
   </div>
@@ -461,7 +471,9 @@ body.panel-hidden .controls{margin-left:auto}
   <small class="ops-footnote">এই প্যানেল শুধু পাবলিক রুট + সময়সূচি + যাত্রীর অনুমতিপ্রাপ্ত ফোন GPS ব্যবহার করে। DMTCL ATS, ATP, ATO, CBTC বা নিয়ন্ত্রণ ব্যবস্থা থেকে তথ্য নেয় না।</small>
  </section>
 <div class="radar-clock"><b id="trainRadarClock">Dhaka time loading…</b><span id="trainRadarCount">—</span></div>
- <div id="trainRadarList" aria-live="polite"><p>সময়সূচির ট্রেন গণনা হচ্ছে…</p></div>
+ <section class="authorized-live-panel" aria-live="polite"><h4>📡 Approved Real Locations <small>not timetable</small></h4>
+ <div id="authorizedLiveList">No approved live vehicle feed is connected.</div></section>
+<div id="trainRadarList" aria-live="polite"><p>সময়সূচির ট্রেন গণনা হচ্ছে…</p></div>
  <div class="radar-foot">
  <button type="button" id="trainRadarOverview">◉ পুরো রুট দেখো</button>
  <button type="button" id="trainRadarNearest">🎯 সবচেয়ে কাছের ট্রেন</button>
@@ -504,6 +516,6 @@ body.panel-hidden .controls{margin-left:auto}
 <script src="./live-rider-p2p.js?v=20261104-private-rider-v2"></script>
 <script src="dhaka-soundscape.js?v=20261104-local-audio-fix-v3"></script>
 <script src="actual-roads.js?v=20261104-osm-geometry-v2"></script>
-<script src="app-v2.js?v=20261104-ops-board-v7"></script>
+<script src="app-v2.js?v=20261104-authorized-feed-v8"></script>
 </body>
 </html>
