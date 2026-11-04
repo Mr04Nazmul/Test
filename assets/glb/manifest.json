@@ -1,0 +1,101 @@
+{
+  "provenance": "Actual 3D geometry, built from OSM mapped footprints or photo-inspired architectural approximations (not exact scanned city).",
+  "license": "© OpenStreetMap contributors / ODbL; new procedural 3D art",
+  "models": [
+    {
+      "path": "assets/glb/agargaon-station.glb",
+      "bytes": 1212492,
+      "meshPrimitives": 15
+    },
+    {
+      "path": "assets/glb/agargaon-osm-buildings.glb",
+      "bytes": 1142500,
+      "meshPrimitives": 26
+    },
+    {
+      "path": "assets/glb/bijoy-sarani-reference.glb",
+      "bytes": 215396,
+      "meshPrimitives": 10
+    },
+    {
+      "path": "assets/glb/station-0-photo-reference.glb",
+      "bytes": 216732,
+      "meshPrimitives": 8
+    },
+    {
+      "path": "assets/glb/station-1-photo-reference.glb",
+      "bytes": 210612,
+      "meshPrimitives": 8
+    },
+    {
+      "path": "assets/glb/station-2-photo-reference.glb",
+      "bytes": 204552,
+      "meshPrimitives": 8
+    },
+    {
+      "path": "assets/glb/station-3-photo-reference.glb",
+      "bytes": 204532,
+      "meshPrimitives": 8
+    },
+    {
+      "path": "assets/glb/station-4-photo-reference.glb",
+      "bytes": 204540,
+      "meshPrimitives": 8
+    },
+    {
+      "path": "assets/glb/station-5-photo-reference.glb",
+      "bytes": 204560,
+      "meshPrimitives": 8
+    },
+    {
+      "path": "assets/glb/station-6-photo-reference.glb",
+      "bytes": 204556,
+      "meshPrimitives": 8
+    },
+    {
+      "path": "assets/glb/station-7-photo-reference.glb",
+      "bytes": 210788,
+      "meshPrimitives": 8
+    },
+    {
+      "path": "assets/glb/station-8-photo-reference.glb",
+      "bytes": 7984,
+      "meshPrimitives": 1
+    },
+    {
+      "path": "assets/glb/station-9-photo-reference.glb",
+      "bytes": 215396,
+      "meshPrimitives": 10
+    },
+    {
+      "path": "assets/glb/station-10-photo-reference.glb",
+      "bytes": 7880,
+      "meshPrimitives": 1
+    },
+    {
+      "path": "assets/glb/station-11-photo-reference.glb",
+      "bytes": 204560,
+      "meshPrimitives": 8
+    },
+    {
+      "path": "assets/glb/station-12-photo-reference.glb",
+      "bytes": 204448,
+      "meshPrimitives": 8
+    },
+    {
+      "path": "assets/glb/station-13-photo-reference.glb",
+      "bytes": 7980,
+      "meshPrimitives": 1
+    },
+    {
+      "path": "assets/glb/station-14-photo-reference.glb",
+      "bytes": 198240,
+      "meshPrimitives": 8
+    },
+    {
+      "path": "assets/glb/station-15-photo-reference.glb",
+      "bytes": 209408,
+      "meshPrimitives": 10
+    }
+  ]
+}

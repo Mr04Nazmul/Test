@@ -5,11 +5,11 @@
     {
       "index": 0,
       "name": "0.gltf",
-      "buildings": 84,
+      "buildings": 127,
       "knownHeights": 0,
-      "approximateHeights": 84,
-      "legacyOSMBuildingCandidates": 0,
-      "triangles": 1766,
+      "approximateHeights": 127,
+      "legacyOSMBuildingCandidates": 43,
+      "triangles": 2641,
       "anchor": {
         "longitude": 90.3676821,
         "latitude": 23.8690849
@@ -19,7 +19,9 @@
       "mappedRoofColours": 0,
       "clearedNearTrack": 1,
       "roadSegments": 0,
-      "mappedTreeNodes": 0
+      "mappedTreeNodes": 0,
+      "windowPanels": 0,
+      "facadeShades": 0
     },
     {
       "index": 1,
@@ -38,7 +40,9 @@
       "mappedRoofColours": 0,
       "clearedNearTrack": 0,
       "roadSegments": 0,
-      "mappedTreeNodes": 0
+      "mappedTreeNodes": 0,
+      "windowPanels": 0,
+      "facadeShades": 0
     },
     {
       "index": 2,
@@ -57,7 +61,9 @@
       "mappedRoofColours": 0,
       "clearedNearTrack": 0,
       "roadSegments": 0,
-      "mappedTreeNodes": 0
+      "mappedTreeNodes": 0,
+      "windowPanels": 0,
+      "facadeShades": 0
     },
     {
       "index": 3,
@@ -76,7 +82,9 @@
       "mappedRoofColours": 0,
       "clearedNearTrack": 2,
       "roadSegments": 0,
-      "mappedTreeNodes": 0
+      "mappedTreeNodes": 0,
+      "windowPanels": 0,
+      "facadeShades": 0
     },
     {
       "index": 4,
@@ -95,16 +103,18 @@
       "mappedRoofColours": 0,
       "clearedNearTrack": 0,
       "roadSegments": 0,
-      "mappedTreeNodes": 0
+      "mappedTreeNodes": 0,
+      "windowPanels": 0,
+      "facadeShades": 0
     },
     {
       "index": 5,
       "name": "5.gltf",
-      "buildings": 426,
+      "buildings": 509,
       "knownHeights": 12,
-      "approximateHeights": 414,
-      "legacyOSMBuildingCandidates": 0,
-      "triangles": 8328,
+      "approximateHeights": 497,
+      "legacyOSMBuildingCandidates": 83,
+      "triangles": 9971,
       "anchor": {
         "longitude": 90.3682791,
         "latitude": 23.8083683
@@ -114,7 +124,9 @@
       "mappedRoofColours": 0,
       "clearedNearTrack": 8,
       "roadSegments": 0,
-      "mappedTreeNodes": 0
+      "mappedTreeNodes": 0,
+      "windowPanels": 0,
+      "facadeShades": 0
     },
     {
       "index": 6,
@@ -133,7 +145,9 @@
       "mappedRoofColours": 0,
       "clearedNearTrack": 2,
       "roadSegments": 0,
-      "mappedTreeNodes": 0
+      "mappedTreeNodes": 0,
+      "windowPanels": 0,
+      "facadeShades": 0
     },
     {
       "index": 7,
@@ -152,16 +166,18 @@
       "mappedRoofColours": 0,
       "clearedNearTrack": 6,
       "roadSegments": 0,
-      "mappedTreeNodes": 0
+      "mappedTreeNodes": 0,
+      "windowPanels": 0,
+      "facadeShades": 0
     },
     {
       "index": 8,
       "name": "8.gltf",
-      "buildings": 30,
+      "buildings": 107,
       "knownHeights": 3,
-      "approximateHeights": 27,
-      "legacyOSMBuildingCandidates": 0,
-      "triangles": 950,
+      "approximateHeights": 104,
+      "legacyOSMBuildingCandidates": 78,
+      "triangles": 14464,
       "anchor": {
         "longitude": 90.3801611,
         "latitude": 23.7784483
@@ -169,9 +185,11 @@
       "source": "© OpenStreetMap contributors (ODbL 1.0)",
       "mappedWallColours": 0,
       "mappedRoofColours": 0,
-      "clearedNearTrack": 5,
+      "clearedNearTrack": 6,
       "roadSegments": 0,
-      "mappedTreeNodes": 0
+      "mappedTreeNodes": 0,
+      "windowPanels": 2902,
+      "facadeShades": 162
     },
     {
       "index": 9,
@@ -190,16 +208,18 @@
       "mappedRoofColours": 0,
       "clearedNearTrack": 0,
       "roadSegments": 0,
-      "mappedTreeNodes": 0
+      "mappedTreeNodes": 0,
+      "windowPanels": 0,
+      "facadeShades": 0
     },
     {
       "index": 10,
       "name": "10.gltf",
-      "buildings": 345,
+      "buildings": 434,
       "knownHeights": 31,
-      "approximateHeights": 314,
-      "legacyOSMBuildingCandidates": 0,
-      "triangles": 8145,
+      "approximateHeights": 403,
+      "legacyOSMBuildingCandidates": 91,
+      "triangles": 10438,
       "anchor": {
         "longitude": 90.3870783,
         "latitude": 23.7590775
@@ -207,18 +227,20 @@
       "source": "© OpenStreetMap contributors, Open Database License ODbL 1.0",
       "mappedWallColours": 0,
       "mappedRoofColours": 0,
-      "clearedNearTrack": 1,
+      "clearedNearTrack": 3,
       "roadSegments": 0,
-      "mappedTreeNodes": 0
+      "mappedTreeNodes": 0,
+      "windowPanels": 0,
+      "facadeShades": 0
     },
     {
       "index": 11,
       "name": "11.gltf",
-      "buildings": 165,
+      "buildings": 267,
       "knownHeights": 18,
-      "approximateHeights": 147,
-      "legacyOSMBuildingCandidates": 0,
-      "triangles": 3679,
+      "approximateHeights": 249,
+      "legacyOSMBuildingCandidates": 109,
+      "triangles": 5570,
       "anchor": {
         "longitude": 90.3928149,
         "latitude": 23.7513044
@@ -226,18 +248,20 @@
       "source": "© OpenStreetMap contributors ODbL 1.0",
       "mappedWallColours": 0,
       "mappedRoofColours": 0,
-      "clearedNearTrack": 4,
+      "clearedNearTrack": 11,
       "roadSegments": 0,
-      "mappedTreeNodes": 0
+      "mappedTreeNodes": 0,
+      "windowPanels": 0,
+      "facadeShades": 0
     },
     {
       "index": 12,
       "name": "12.gltf",
-      "buildings": 100,
+      "buildings": 193,
       "knownHeights": 37,
-      "approximateHeights": 63,
-      "legacyOSMBuildingCandidates": 0,
-      "triangles": 2744,
+      "approximateHeights": 156,
+      "legacyOSMBuildingCandidates": 93,
+      "triangles": 5192,
       "anchor": {
         "longitude": 90.3961548,
         "latitude": 23.7400564
@@ -247,16 +271,18 @@
       "mappedRoofColours": 0,
       "clearedNearTrack": 3,
       "roadSegments": 0,
-      "mappedTreeNodes": 0
+      "mappedTreeNodes": 0,
+      "windowPanels": 0,
+      "facadeShades": 0
     },
     {
       "index": 13,
       "name": "13.gltf",
-      "buildings": 36,
+      "buildings": 78,
       "knownHeights": 29,
-      "approximateHeights": 7,
-      "legacyOSMBuildingCandidates": 0,
-      "triangles": 1230,
+      "approximateHeights": 49,
+      "legacyOSMBuildingCandidates": 47,
+      "triangles": 2213,
       "anchor": {
         "longitude": 90.3968427,
         "latitude": 23.7316979
@@ -264,18 +290,20 @@
       "source": "© OpenStreetMap contributors ODbL 1.0",
       "mappedWallColours": 0,
       "mappedRoofColours": 0,
-      "clearedNearTrack": 1,
+      "clearedNearTrack": 5,
       "roadSegments": 0,
-      "mappedTreeNodes": 0
+      "mappedTreeNodes": 0,
+      "windowPanels": 0,
+      "facadeShades": 0
     },
     {
       "index": 14,
       "name": "14.gltf",
-      "buildings": 160,
+      "buildings": 221,
       "knownHeights": 6,
-      "approximateHeights": 154,
-      "legacyOSMBuildingCandidates": 0,
-      "triangles": 3300,
+      "approximateHeights": 215,
+      "legacyOSMBuildingCandidates": 61,
+      "triangles": 4592,
       "anchor": {
         "longitude": 90.4075587,
         "latitude": 23.7300419
@@ -285,16 +313,18 @@
       "mappedRoofColours": 0,
       "clearedNearTrack": 5,
       "roadSegments": 0,
-      "mappedTreeNodes": 0
+      "mappedTreeNodes": 0,
+      "windowPanels": 0,
+      "facadeShades": 0
     },
     {
       "index": 15,
       "name": "15.gltf",
-      "buildings": 201,
+      "buildings": 276,
       "knownHeights": 7,
-      "approximateHeights": 194,
-      "legacyOSMBuildingCandidates": 0,
-      "triangles": 3978,
+      "approximateHeights": 269,
+      "legacyOSMBuildingCandidates": 75,
+      "triangles": 5509,
       "anchor": {
         "longitude": 90.4190709,
         "latitude": 23.7280844
@@ -304,7 +334,9 @@
       "mappedRoofColours": 0,
       "clearedNearTrack": 1,
       "roadSegments": 0,
-      "mappedTreeNodes": 0
+      "mappedTreeNodes": 0,
+      "windowPanels": 0,
+      "facadeShades": 0
     }
   ]
 }
