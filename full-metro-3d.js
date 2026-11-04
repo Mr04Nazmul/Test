@@ -201,4 +201,5 @@ const q=new URLSearchParams(location.search),target=Number(q.get("station"));
 if(q.has("station")&&Number.isInteger(target)&&target>=0&&target<16)focus(target);
 else overview();
 window.MRTFullLine3D={viewer:v,stations,focus,overview};
+window.dispatchEvent(new Event('mrt3dready'));
 })();
