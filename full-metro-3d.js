@@ -85,11 +85,15 @@ function makeStations(){
   // Always instantiate a distinct station-specific 3D architecture model
   // at each OSM station coordinate, but render only at street-level zoom.
   // Non-surveyed architecture is illustrative, not operator CAD.
+  const stationFile=i===8?"assets/agargaon-station.gltf":
+   i===10?"assets/farmgate-landmark.gltf":
+   i===13?"assets/dhaka-university-landmark.gltf":
+   "assets/stations/"+i+".gltf";
   allStationModels.push(v.entities.add({
    name:s.bn+" / "+s.n+" · original station 3D",
    position:getPos(s,0),
    orientation:orientation(i),
-   model:{uri:"assets/stations/"+i+".gltf",scale:1,
+   model:{uri:stationFile,scale:1,
     distanceDisplayCondition:new C.DistanceDisplayCondition(0,3300)}
   }));
   supports.push(v.entities.add({name:"Estimated physical sign support, "+s.n,
