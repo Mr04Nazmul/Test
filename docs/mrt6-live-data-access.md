@@ -97,3 +97,19 @@ The public website includes `data/independent-monitor.js`, an **independent pass
 **Why this is not actual operator tracking:** MRT-6 uses Communication-Based Train Control, including ATS/ATO/ATP and Moving Block, as described by the [DMTCL official FAQ](https://dmtcl.gov.bd/pages/static-pages/6922e089933eb65569e27764). The system's authoritative vehicle localization is internal to railway operations. An independent website cannot recreate that authoritative knowledge without an approved passenger-information feed; historical satellite imagery and timetable estimates are not substitutes.
 
 **If operator approval is granted:** please obtain the **specific approved read-only public API/base URL, credentials delivered securely, fields/data contract, use license, access scope and source timestamps**. Build a backend proxy for credentialed access (credentials must never be committed to GitHub Pages). Do not ask for or access signalling control networks.
+
+## JICA Dhaka Metro App RFP: precise interpretation (verified 2026-11-04)
+
+**Do not treat the JICA 2024 RFP as a live vehicle-location API.** In the JICA/DMTCL proposal, functional requirement **No. 22, "First and last metro time"** (printed p. 32) lists an **admin-panel push**, a proposed **Train Schedule API** and **Notification API**, and an app schedule DB related to a "Real-Time Train Operations System managed by admin panel." This is a *proposed integration for first/last train time information*, not a documented public endpoint for current train coordinates. The same page has no GTFS-RT VehiclePositions URL, response schema, authentication terms, or evidence of live vehicle GPS being available to third parties.
+
+Primary source: [JICA RFP (16 July 2024), functional requirements, p. 32](https://www.jica.go.jp/english/about/dx/jicadx/dxlab/project/detail_11/__icsFiles/afieldfile/2024/07/17/20240716_Dhaka_Metro_App_RFP_3.pdf#page=33).
+
+A **Rapid Pass / MRT Pass online recharge application** launched **12 January 2026**, but the official launch coverage describes **card recharge**, not live train-position data. This cannot be taken as confirmation the JICA real-time train API is publicly active:
+- [Bangladesh Sangbad Sangstha, 12 Jan 2026](https://b.bssnews.net/news/350581)
+- [Prothom Alo, 12 Jan 2026](https://en.prothomalo.com/amp/story/bangladesh/city/awdorw5qlv)
+
+A 2026 [independent source audit](https://metrodhaka.com/about-us/) similarly reports no published open DMTCL API, GTFS or GTFS-Realtime feed. This is secondary evidence and does not prove absence of every private provider's feed.
+
+**Practical currently integrated actual GPS:** the map's *Private Rider GPS* uses a consent-based WebRTC phone-sharing session; the viewer can copy the invitation or use the iPhone native Share Sheet. Each rider must opt in; observations are labelled rider PHONE (not operator-verified train) and expire after 20 seconds. Real train location still requires DMTCL's approved public passenger-information endpoint or a duly licensed, actively reporting provider. The approved vehicle adapter remains disabled until documented access exists.
+
+No outbound email is authorized without a new explicit user request; earlier outreach in a previous turn does not authorize future mail.
