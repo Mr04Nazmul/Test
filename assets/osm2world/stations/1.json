@@ -1,0 +1,15 @@
+{
+  "stationIndex": 1,
+  "name": "Uttara Center",
+  "bangla": "উত্তরা সেন্টার",
+  "latitude": 23.8597088,
+  "longitude": 90.3651273,
+  "requestRadiusM": 260,
+  "source": "© OpenStreetMap contributors (ODbL 1.0)",
+  "inputMode": "official-OSM-map-API",
+  "ways": 95,
+  "buildings": 52,
+  "roads": 41,
+  "bytes": 117635,
+  "accuracy": "Actual mapped 2D features. Unmapped objects absent; facade, colors, roofs, untagged building heights inferred."
+}

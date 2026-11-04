@@ -1,0 +1,15 @@
+{
+  "stationIndex": 15,
+  "name": "Motijheel",
+  "bangla": "মতিঝিল",
+  "latitude": 23.7280844,
+  "longitude": 90.4190709,
+  "requestRadiusM": 260,
+  "source": "© OpenStreetMap contributors (ODbL 1.0)",
+  "inputMode": "official-OSM-map-API",
+  "ways": 397,
+  "buildings": 299,
+  "roads": 69,
+  "bytes": 572658,
+  "accuracy": "Actual mapped 2D features. Unmapped objects absent; facade, colors, roofs, untagged building heights inferred."
+}

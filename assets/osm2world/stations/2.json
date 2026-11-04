@@ -1,0 +1,15 @@
+{
+  "stationIndex": 2,
+  "name": "Uttara South",
+  "bangla": "উত্তরা দক্ষিণ",
+  "latitude": 23.8459106,
+  "longitude": 90.3630841,
+  "requestRadiusM": 260,
+  "source": "© OpenStreetMap contributors (ODbL 1.0)",
+  "inputMode": "official-OSM-map-API",
+  "ways": 141,
+  "buildings": 87,
+  "roads": 37,
+  "bytes": 358823,
+  "accuracy": "Actual mapped 2D features. Unmapped objects absent; facade, colors, roofs, untagged building heights inferred."
+}
