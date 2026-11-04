@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a131e">
+<title>Dhaka MRT-6 | True 3D Model Studio</title>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.3.1/dist/model-viewer.min.js"></script>
+<style>
+:root{color-scheme:dark;background:#08131d;color:#eff7fc;font-family:Inter,system-ui,-apple-system,"Noto Sans Bengali",sans-serif}
+*{box-sizing:border-box}body{margin:0;overflow:hidden}.top{position:absolute;z-index:4;left:0;right:0;top:0;display:flex;gap:10px;align-items:center;padding:calc(env(safe-area-inset-top) + 12px) 14px 12px;background:linear-gradient(180deg,#06121def,#06121d99,transparent)}
+a{color:#a9fde4;text-decoration:none}.brand{font-size:13px;font-weight:800;letter-spacing:.04em}.brand small{font-size:10px;color:#aabac6;display:block;letter-spacing:.01em;margin-top:3px;font-weight:400}
+.back{padding:10px 12px;border-radius:11px;background:#ffffff12;border:1px solid #ffffff25;font-size:13px;white-space:nowrap}
+model-viewer{width:100vw;height:100dvh;display:block;background:radial-gradient(ellipse at 50% 25%,#acc6d4 0%,#7698a9 38%,#132d3e 100%)}
+.progress{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-width:84vw;background:#061a28df;padding:17px 23px;border:1px solid #ffffff33;border-radius:20px;text-align:center;z-index:2;font-size:12px;box-shadow:0 15px 60px #0008}
+.progress .title{font-weight:800;font-size:14px;margin-bottom:6px}.progress .sub{color:#c5d4df;line-height:1.6}
+.loading{margin:14px auto 6px;width:160px;height:5px;border-radius:9px;background:#ffffff29;overflow:hidden}.loading>div{height:100%;width:0;background:#69eab8;transition:width .18s}
+.deck{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 12px);left:12px;right:12px;z-index:5;padding:12px;background:#071824ee;backdrop-filter:blur(13px);border:1px solid #ffffff36;border-radius:17px;display:grid;gap:8px}
+.row{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}.btn{padding:11px 12px;background:#162b3b;color:#e7f4fc;border:1px solid #476271;border-radius:11px;font-weight:750;font-size:11px;cursor:pointer}
+.btn[aria-pressed="true"]{background:#2c8d77;color:#fff;border-color:#91f7d2}.btn:disabled{opacity:.46;cursor:not-allowed}
+.notice{font-size:10px;color:#bdcbd5;line-height:1.45;text-align:center}.notice strong{color:#f5d0a4}
+@media(min-width:800px){.deck{left:50%;transform:translateX(-50%);width:min(720px,96vw)}.top{padding-left:30px;padding-right:30px}.btn{font-size:13px}}
+</style>
+</head>
+<body>
+<header class="top">
+<a class="back" href="./">← Metro Map</a>
+<div class="brand">DHAKA METRO • REAL 3D STUDIO<small>Actual interactive GLB scene · 360° rotate · zoom · PBR color</small></div>
+</header>
+<model-viewer id="viewer" src="./assets/cinematic/agargaon-fullcolor-v2.glb" alt="Dhaka MRT Line 6 Agargaon original reconstructed 3D urban environment" camera-controls interaction-prompt="auto" touch-action="pan-y" shadow-intensity="1.1" shadow-softness="0.7" environment-image="neutral" tone-mapping="neutral" exposure="1.05" interpolation-decay="130" camera-orbit="32deg 68deg auto" min-camera-orbit="auto 5deg auto" max-camera-orbit="auto 175deg auto" camera-target="auto auto auto" field-of-view="38deg" loading="eager">
+<div class="progress" id="progress" slot="poster">
+<div class="title" id="loadTitle">রঙিন 3D Scene লোড হচ্ছে…</div>
+<div class="sub">এটি বাস্তব .GLB model, ছবি নয়।<br>৪৩ MB-এর 3D scene ডাউনলোড হতে পারে।</div>
+<div class="loading"><div id="progressbar"></div></div>
+<div class="sub" id="pct">0%</div>
+</div>
+</model-viewer>
+<footer class="deck">
+<div class="row">
+<button type="button" class="btn" id="art" aria-pressed="true">🎨 Full Color 3D</button>
+<button type="button" class="btn" id="mapped" aria-pressed="false" disabled>🏙️ OSM2World city</button>
+<button type="button" class="btn" id="rotate" aria-pressed="false">⟳ Auto rotate</button>
+<button type="button" class="btn" id="reset">◎ Reset camera</button>
+</div>
+<div class="notice" id="status"><strong>Full Color:</strong> শিল্পীর তৈরি অনুমানভিত্তিক আগারগাঁও শহর ও স্টেশন। ম্যাপে দেখানো রাস্তা/ভবনের ঠিকানার প্রমাণ নয়। OSM2World layer আসলে বাস্তব OpenStreetMap feature থেকে তৈরি হবে। © OpenStreetMap contributors (ODbL).</div>
+</footer>
+<script>
+const viewer=document.getElementById('viewer'),art=document.getElementById('art'),mapped=document.getElementById('mapped');
+const base='./assets/cinematic/agargaon-fullcolor-v2.glb';
+const osm='./assets/osm2world/agargaon-osm2world.glb';
+const status=document.getElementById('status'),pct=document.getElementById('pct'),bar=document.getElementById('progressbar');
+const el=(id)=>document.getElementById(id);
+viewer.addEventListener('progress',e=>{const n=Math.round(e.detail.totalProgress*100);bar.style.width=n+'%';pct.textContent=n+'%'});
+viewer.addEventListener('load',()=>{el('progress').hidden=true;const isOSM=mapped.getAttribute('aria-pressed')==='true';status.innerHTML=isOSM?'Mapped OSM 3D model: building/road placements are sourced from OpenStreetMap, with inferred colors and missing heights. © OSM contributors.':'<strong>Full Color 3D:</strong> আগারগাঁওয়ের রঙিন original 3D model লোড হয়েছে। কিছু ভবন/রাস্তা অনুমানভিত্তিক, ছবির ১০০% scan নয়।'});
+viewer.addEventListener('error',()=>{el('progress').hidden=false;el('loadTitle').textContent='এই 3D ফাইল লোড করা যায়নি';pct.textContent='মূল Metro Map-এ ফিরে যেতে পারেন।';status.textContent='মডেল লোডে সমস্যা; নেটওয়ার্ক বা iPhone-এর WebGL মেমোরি সীমা হতে পারে।'});
+async function checkMapped(){
+ try{const r=await fetch(osm,{method:'HEAD',cache:'no-store'});if(r.ok){mapped.disabled=false;mapped.title='OpenStreetMap থেকে তৈরি বাস্তব map-aligned 3D city';}}
+ catch(e){mapped.disabled=true}
+}
+function selectModel(src,mode){
+ if(viewer.getAttribute('src')!==src){el('progress').hidden=false;el('loadTitle').textContent='3D মডেল লোড হচ্ছে…';bar.style.width='0';pct.textContent='0%';viewer.src=src;}
+ art.setAttribute('aria-pressed',String(mode==='art'));mapped.setAttribute('aria-pressed',String(mode==='map'));
+}
+art.onclick=()=>selectModel(base,'art');
+mapped.onclick=()=>{if(!mapped.disabled)selectModel(osm,'map')};
+el('rotate').onclick=()=>{viewer.autoRotate=!viewer.autoRotate;el('rotate').setAttribute('aria-pressed',String(viewer.autoRotate))};
+el('reset').onclick=()=>{viewer.cameraOrbit='32deg 68deg auto';viewer.cameraTarget='auto auto auto';viewer.resetTurntableRotation()};
+checkMapped();
+</script>
+</body></html>
