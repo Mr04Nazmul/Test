@@ -38,6 +38,8 @@ jobs:
           node --check live-rider-p2p.js
           node --check scripts/check-private-gps.mjs
           node scripts/check-private-gps.mjs
+          node --check scripts/check-gps-source-runtime.mjs
+          node scripts/check-gps-source-runtime.mjs
       - name: Build six loud locally-hosted iPhone audio tracks and check audible RMS
         run: |
           node --check scripts/build-dhaka-audio.mjs
