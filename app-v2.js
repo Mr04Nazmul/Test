@@ -542,6 +542,7 @@ for(let i=0;i<6;i++){
 }
 const radarPanel=$("trainRadarPanel");
 let realOnlyMode=false;
+let lastRealOnlyPaint=0;
 function applyRealOnlyMode(){
  const button=$("realOnlyButton"),state=$("realOnlyState");
  button.setAttribute("aria-pressed",String(realOnlyMode));
@@ -1286,7 +1287,7 @@ function updateNow(t){
  }
  updateFollowCamera();
  updateRiderGPSFreshness();
- if(realOnlyMode&&t-etaLast>1000)applyRealOnlyMode();
+ if(realOnlyMode&&t-lastRealOnlyPaint>1500){lastRealOnlyPaint=t;applyRealOnlyMode();}
  updateSoundCamera(t);
  if(t-lastMapUpdate<45){
   stationMarkers.forEach((e,i)=>{e.show=!cinematicOn&&(!ride||i===selectedStation)});
