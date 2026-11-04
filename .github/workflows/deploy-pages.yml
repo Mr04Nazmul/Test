@@ -40,6 +40,9 @@ jobs:
           node scripts/check-private-gps.mjs
           node --check scripts/check-gps-source-runtime.mjs
           node scripts/check-gps-source-runtime.mjs
+          node --check data/independent-monitor.js
+          node --check scripts/check-independent-monitor.mjs
+          node scripts/check-independent-monitor.mjs
       - name: Build six loud locally-hosted iPhone audio tracks and check audible RMS
         run: |
           node --check scripts/build-dhaka-audio.mjs
