@@ -1,0 +1,38 @@
+name: Test Full MRT6 3D Route and Bilingual Station Boards
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'full-metro-3d.html'
+      - 'full-metro-3d.js'
+      - 'index.html'
+      - 'real-3d-studio.html'
+      - 'scripts/check-full-metro-3d.mjs'
+      - '.github/workflows/full-metro-3d-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse complete 3D corridor JavaScript
+        run: node --check full-metro-3d.js
+      - name: Test sixteen bilingual geocoded station nameboards and real 3D assets
+        run: node scripts/check-full-metro-3d.mjs
+      - name: Validate all source asset manifests
+        run: |
+          test -s data/mrt6-track.js
+          test -s assets/stations/0.gltf
+          test -s assets/stations/15.gltf
+          test -s assets/urban/8.gltf
+          test -s full-metro-3d.html
+          echo 'All 16 MRT6 3D station views and bilingual signs validated'
