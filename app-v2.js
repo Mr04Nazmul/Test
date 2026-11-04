@@ -75,75 +75,97 @@ try{
  orientation:{heading:C.Math.toRadians(20),pitch:C.Math.toRadians(-48),roll:0}});
 }catch(e){announce("3D viewer শুরু হয়নি: "+e.message,0);return}
 const originalCameraFov=viewer.camera.frustum.fov;
-const CINEMATIC_GLB="./assets/cinematic/agargaon-detailed.glb?v=20261104-replica-pbr-v1";
-// Separate model data source: hiding estimated map features must not hide the
-// user's original 37 MB authored environment. Its geometry is a cinematic
-// reference, not exact surveyed Agargaon streets/building locations.
-const cinematicSceneLayer=new C.CustomDataSource("Original high detail Agargaon (approximate 3D scene)");
-cinematicSceneLayer.show=false;
-viewer.dataSources.add(cinematicSceneLayer);
-let cinematicOn=false,cinematicSceneEntity=null,cinematicBusy=false,previousResolutionScale=null;
+const CINEMATIC_GLB="./assets/cinematic/agargaon-detailed.glb?v=20261104-fullcolor-v2";
+// This is a user-authored 37MB real glTF 3D scene. Geometry was artistically
+// reconstructed: it is NOT a 1:1 aerial survey or extracted Google Maps mesh.
+let cinematicOn=false,cinematicBusy=false,cinematicPrimitive=null;
+let previousResolutionScale=null,previousGlobeVisible=true;
+let cinematicYaw=C.Math.toRadians(28),cinematicPitch=C.Math.toRadians(-31),cinematicRange=330;
+const hiddenMappedEntities=new Map();
+function hideMappedScene(){
+ for(const e of viewer.entities.values){
+  if(!hiddenMappedEntities.has(e))hiddenMappedEntities.set(e,e.show);
+  e.show=false;
+ }
+}
+viewer.entities.collectionChanged.addEventListener((collection,added)=>{
+ if(!cinematicOn)return;
+ for(const e of added){if(!hiddenMappedEntities.has(e))hiddenMappedEntities.set(e,e.show);e.show=false;}
+});
+function setCinematicCamera(animate=false){
+ if(!cinematicPrimitive||!cinematicPrimitive.boundingSphere)return;
+ const sphere=cinematicPrimitive.boundingSphere;
+ const offset=new C.HeadingPitchRange(cinematicYaw,cinematicPitch,cinematicRange);
+ if(animate)viewer.camera.flyToBoundingSphere(sphere,{offset,duration:1.25});
+ else viewer.camera.lookAt(sphere.center,offset);
+}
+function cinematicOrbit(delta=0,zoom=1){
+ cinematicYaw+=delta;cinematicRange=clamp(cinematicRange*zoom,65,1300);
+ setCinematicCamera(false);
+}
 function leaveCinematicScene(){
  if(!cinematicOn)return;
- cinematicSceneLayer.show=false;
- viewer.entities.show=true;
  cinematicOn=false;
+ if(cinematicPrimitive)cinematicPrimitive.show=false;
+ viewer.scene.globe.show=previousGlobeVisible;
+ for(const [e,show] of hiddenMappedEntities)e.show=show;
+ hiddenMappedEntities.clear();
+ if(previousResolutionScale!==null){viewer.resolutionScale=previousResolutionScale;previousResolutionScale=null;}
  $("cinematicView").setAttribute("aria-pressed","false");
- $("cinematicView").textContent="🎬 Full Detail 3D";
- if(previousResolutionScale!==null){
-  viewer.resolutionScale=previousResolutionScale;
-  previousResolutionScale=null;
- }
- if(window.MRTActualRoads&&!googleMode)
-  window.MRTActualRoads.show(viewer,selectedStation,st[selectedStation]);
- announce("OpenStreetMap-based 3D city view restored. Station models have estimated facades.",6500);
+ $("cinematicView").textContent="🎬 Real Color 3D";
+ $("status").textContent="TIMETABLE ESTIMATE · NOT GPS";
+ if(window.MRTActualRoads&&!googleMode)window.MRTActualRoads.show(viewer,selectedStation,st[selectedStation]);
 }
 async function toggleCinematicScene(){
  if(cinematicBusy)return;
- if(cinematicOn){
-  leaveCinematicScene();
-  stationCinematicCamera(selectedStation,true);
-  return;
- }
- if(googleMode){
-  announce("Google 3D mode বন্ধ করে নিজের 3D মডেলটি খুলুন।",6000);return;
- }
+ if(cinematicOn){leaveCinematicScene();clearViewLock();stationCinematicCamera(selectedStation,true);return;}
+ if(googleMode){announce("Google Tiles বন্ধ করে রঙিন 3D খুলুন।",6000);return;}
  cinematicBusy=true;
- const button=$("cinematicView");
- button.disabled=true;
- button.textContent="Loading 3D…";
+ const btn=$("cinematicView");
+ btn.disabled=true;btn.textContent="⏳ Loading 37MB…";
+ $("status").textContent="LOADING REAL TEXTURED 3D";
  try{
-  const response=await fetch(CINEMATIC_GLB,{method:"HEAD",cache:"no-store"});
-  if(!response.ok)throw Error("3D GLB not published yet (HTTP "+response.status+")");
-  if(!cinematicSceneEntity){
-   const p=at(stopMeters[8]),root=at(stopMeters[8]-63);
-   cinematicSceneEntity=cinematicSceneLayer.entities.add({
-    name:"Agargaon original textured 3D: six-coach train, structures, shops, trees and city (illustrative)",
-    position:lonlatPoint(root,0),
-    orientation:modelOrientation(p),
-    model:{uri:CINEMATIC_GLB,scale:1,minimumPixelSize:0,maximumScale:1}
+  if(!cinematicPrimitive){
+   const p=at(stopMeters[8]),position=lonlatPoint(st[8],0);
+   const matrix=C.Transforms.headingPitchRollToFixedFrame(
+    position,new C.HeadingPitchRoll(p.heading-C.Math.PI_OVER_TWO,0,0));
+   // Wait for the actual glTF to load before switching away from map.
+   const asset=await C.Model.fromGltfAsync({
+    url:CINEMATIC_GLB,modelMatrix:matrix,scale:1,
+    incrementallyLoadTextures:false,show:false,
+    shadows:C.ShadowMode.DISABLED,allowPicking:true
    });
+   cinematicPrimitive=viewer.scene.primitives.add(asset);
   }
   clearViewLock();
   selectedStation=8;
   if(window.MRTActualRoads)window.MRTActualRoads.hide(viewer);
-  viewer.entities.show=false;
-  cinematicSceneLayer.show=true;
-  cinematicOn=true;
+  hiddenMappedEntities.clear();
+  previousGlobeVisible=viewer.scene.globe.show;
   previousResolutionScale=viewer.resolutionScale;
-  // Half a million mesh triangles and 37 textures: mobile-friendly preset.
-  viewer.resolutionScale=Math.min(previousResolutionScale,window.innerWidth<700?0.97:1.15);
-  button.textContent="◎ Back to Map";
-  button.setAttribute("aria-pressed","true");
-  stationCinematicCamera(8,true);
-  announce("Original 37 MB 3D environment loaded. Roads/buildings are artistic approximations, not a Google Maps copy or live GPS.",12000);
+  cinematicOn=true;
+  hideMappedScene();
+  viewer.scene.globe.show=false;
+  cinematicPrimitive.show=true;
+  cinematicYaw=C.Math.toRadians(28);
+  cinematicPitch=C.Math.toRadians(-31);
+  cinematicRange=330;
+  viewer.resolutionScale=Math.min(previousResolutionScale,window.innerWidth<700?1.02:1.3);
+  setCinematicCamera(true);
+  btn.textContent="🌍 Back to Map";btn.setAttribute("aria-pressed","true");
+  $("status").textContent="FULL-COLOR 3D · ARTISTIC RECONSTRUCTION";
+  announce("রঙিন 3D মডেল লোড হয়েছে। 360° ঘোরাও, zoom করো। রাস্তা/ভবনের কিছু অবস্থান অনুমানভিত্তিক।",10000);
  }catch(err){
-  cinematicSceneLayer.show=false;
-  viewer.entities.show=true;
-  button.setAttribute("aria-pressed","false");
-  button.textContent="🎬 Full Detail 3D";
-  announce("বিস্তারিত 3D মডেল এখনও পাওয়া যায়নি: "+err.message,8500);
- }finally{button.disabled=false;cinematicBusy=false}
+  cinematicOn=false;
+  if(cinematicPrimitive)cinematicPrimitive.show=false;
+  viewer.scene.globe.show=previousGlobeVisible;
+  for(const [ent,value] of hiddenMappedEntities)ent.show=value;
+  hiddenMappedEntities.clear();
+  $("status").textContent="MAP VIEW · MODEL LOAD FAILED";
+  btn.textContent="🎬 Real Color 3D";btn.setAttribute("aria-pressed","false");
+  announce("GLB মডেল লোড করা যায়নি: "+String(err?.message||err),10000);
+  console.error("GLB load error",err);
+ }finally{cinematicBusy=false;btn.disabled=false;}
 }
 $("cinematicView").addEventListener("click",toggleCinematicScene);
 
@@ -1018,7 +1040,7 @@ function updateModeControls(){
  const demo=mode==="demo",onboard=mode==="onboard";
  $("pause").textContent=demo?"◉ Timetable Mode":onboard?"◉ Exit My GPS":"▶ Demo Ride";
  $("speed").textContent="▶ "+rate+"× demo speed";
- $("status").textContent=onboard?"MY PHONE · NOT TRAIN GPS":demo?"DEMO RIDE · NOT LIVE":trainData.length?"TRAIN POSITIONS ESTIMATED · NOT GPS":"NO SCHEDULED TRAINS · NOT GPS";
+ $("status").textContent=cinematicOn?"FULL-COLOR 3D · ARTISTIC":onboard?"MY PHONE · NOT TRAIN GPS":demo?"DEMO RIDE · NOT LIVE":trainData.length?"TRAIN POSITIONS ESTIMATED · NOT GPS":"NO SCHEDULED TRAINS · NOT GPS";
 }
 // Follow view remains user-controlled through orbit/zoom offset; no forced reset.
 function updateFollowCamera(){
@@ -1423,14 +1445,14 @@ sceneCanvas.addEventListener("wheel",e=>{
  e.preventDefault();e.stopImmediatePropagation();
  cameraZoom(e.deltaY>0?1.14:.87);
 },{capture:true,passive:false});
-$("camMode").addEventListener("click",()=>{
+$("camMode").addEventListener("click",()=>{if(cinematicOn){cinematicOrbit(C.Math.toRadians(35));return;}
  const n=cameraModes.findIndex(x=>x.id===cameraStyle);
  useCameraMode(cameraModes[(n+1)%cameraModes.length].id);
 });
-$("orbitLeft").addEventListener("click",()=>{if(!ride)useCameraMode("orbit");orbitYaw-=C.Math.toRadians(25)});
-$("orbitRight").addEventListener("click",()=>{if(!ride)useCameraMode("orbit");orbitYaw+=C.Math.toRadians(25)});
-$("zoomIn").addEventListener("click",()=>cameraZoom(.78));
-$("zoomOut").addEventListener("click",()=>cameraZoom(1.28));
+$("orbitLeft").addEventListener("click",()=>{if(cinematicOn){cinematicOrbit(-C.Math.toRadians(25));return;}if(!ride)useCameraMode("orbit");orbitYaw-=C.Math.toRadians(25)});
+$("orbitRight").addEventListener("click",()=>{if(cinematicOn){cinematicOrbit(C.Math.toRadians(25));return;}if(!ride)useCameraMode("orbit");orbitYaw+=C.Math.toRadians(25)});
+$("zoomIn").addEventListener("click",()=>{if(cinematicOn)cinematicOrbit(0,.78);else cameraZoom(.78)});
+$("zoomOut").addEventListener("click",()=>{if(cinematicOn)cinematicOrbit(0,1.28);else cameraZoom(1.28)});
 let qualityLevel=1;
 const qModes=[
  {name:"Balanced",scale:1.02,error:2.5},
@@ -1677,5 +1699,6 @@ if(window.innerWidth<700){
  ride=false;$("follow").classList.remove("primary");
 }
 satelliteToggle();loadBuildings(8);requestAnimationFrame(updateNow);
-announce("OSM real route + 3D trains + satellite + ETA estimates। এটি live GPS নয়।",11000);
+announce("Full-color Agargaon 3D লোড হচ্ছে। 37MB মডেল না খুললে ম্যাপ থাকবে।",9000);
+setTimeout(()=>{if(!cinematicOn&&!cinematicBusy)toggleCinematicScene();},700);
 })();
