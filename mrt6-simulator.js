@@ -320,6 +320,18 @@ function tileAt(lon,lat,z){
  return [Math.floor((lon+180)/360*n),Math.floor((1-Math.asinh(Math.tan(lat*Math.PI/180))/Math.PI)/2*n)];
 }
 const worldM=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,metalness:.03,roughness:.87});
+// Small procedural facade windows, derived from geometry, NOT real surveyed windows.
+// Shader keeps one mesh per OSM tile and avoids thousands of WebGL draw calls.
+worldM.onBeforeCompile=shader=>{
+ shader.vertexShader=shader.vertexShader.replace("#include <common>",
+  "#include <common>\nvarying vec3 vCityWorld;");
+ shader.vertexShader=shader.vertexShader.replace("#include <begin_vertex>",
+  "#include <begin_vertex>\nvCityWorld = (modelMatrix * vec4(position,1.0)).xyz;");
+ shader.fragmentShader=shader.fragmentShader.replace("#include <common>",
+  "#include <common>\nvarying vec3 vCityWorld;");
+ shader.fragmentShader=shader.fragmentShader.replace("#include <color_fragment>",
+  "#include <color_fragment>\nvec3 wallN = normalize(cross(dFdx(vCityWorld), dFdy(vCityWorld)));\nfloat facade = 1.0 - step(0.4, abs(wallN.y));\nfloat across = abs(wallN.x) > abs(wallN.z) ? vCityWorld.z : vCityWorld.x;\nfloat windowX = fract(across / 3.25);\nfloat windowY = fract(vCityWorld.y / 3.15);\nfloat glassX = step(0.17, windowX) * (1.0-step(0.83, windowX));\nfloat glassY = step(0.30, windowY) * (1.0-step(0.82, windowY));\nfloat lit = step(0.76, fract(across*.073 + vCityWorld.y*.11));\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(.11,.22,.28) + vec3(.08,.07,.025)*lit, facade*glassX*glassY*.88);");
+};
 const facades=["#d7cabb","#c8ac96","#d4d5c9","#a7beca","#d8b1a1","#d0d9d2","#c8b8af"];
 function buildTile(data){
  const vertices=[],cols=[];
@@ -338,7 +350,7 @@ function buildTile(data){
   if(pts.length<3)continue;
   const h=Number(rec[1])>2?Math.min(Number(rec[1]),190):10+(Math.abs(Math.round(pts[0].x*15+pts[0].z*9))%8)*3.1;
   const seed=Math.abs(Math.round(pts[0].x*3+pts[0].z*7));
-  const material=THREE.Color.prototype.set.call(new THREE.Color(),facades[(seed+Number(rec[2]||0))%facades.length]);
+  const material=new THREE.Color(facades[(seed+Number(rec[2]||0))%facades.length]);
   const face=material.clone().multiplyScalar(.91),roof=material.clone().multiplyScalar(.82);
   try{
    const triangulated=THREE.ShapeUtils.triangulateShape(pts.map(p=>new THREE.Vector2(p.x,p.z)),[]);
