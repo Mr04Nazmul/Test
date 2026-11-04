@@ -342,7 +342,16 @@ body.panel-hidden .controls{margin-left:auto}
 .approved-train{display:block;text-align:left;width:100%;background:#124a3c;color:#e8fff5;border:1px solid #6ce3ac73;border-radius:8px;padding:9px;margin:5px 0}
 .approved-train b{display:block;font-size:11px}.approved-train small{font-size:10px;color:#b0ece0}
 
-#cinematicView{border-color:#b2d8c5a8;color:#a5f4d2}
+#cinematicView{
+ position:fixed;top:104px;right:14px;z-index:45;
+ background:#124d43f5;border:1px solid #88e5c1;color:#f5fff8;
+ box-shadow:0 10px 25px #001b20b5;backdrop-filter:blur(12px);
+ min-width:153px;padding:13px 10px;font-size:12px;font-weight:800;
+ white-space:nowrap;border-radius:14px
+}
+@media(max-width:680px){
+ #cinematicView{top:202px;right:12px;min-width:147px;font-size:11px;padding:13px 10px}
+}
 #cinematicView[aria-pressed="true"]{background:#146d5c;border-color:#69f0d0;color:#fff}
 #cinematicView:disabled{opacity:.6}
 </style>
@@ -521,6 +530,6 @@ body.panel-hidden .controls{margin-left:auto}
 <script src="./live-rider-p2p.js?v=20261104-private-rider-v2"></script>
 <script src="dhaka-soundscape.js?v=20261104-local-audio-fix-v3"></script>
 <script src="actual-roads.js?v=20261104-osm-geometry-v2"></script>
-<script src="app-v2.js?v=20261104-native-rider-share-v9"></script>
+<script src="app-v2.js?v=20261104-color-real3d-autoload-v11"></script>
 </body>
 </html>
