@@ -427,6 +427,7 @@ body.panel-hidden .controls{margin-left:auto}
  <label for="riderGPSLink">এই লিংকটি শুধু ট্রেনে থাকা বিশ্বাসযোগ্য যাত্রীকে দাও</label>
  <input type="url" id="riderGPSLink" readonly autocomplete="off" />
  <button type="button" id="riderGPSCopy">📋 Copy Private Link</button>
+ <button type="button" id="riderGPSNativeShare" aria-label="Share trusted rider GPS invitation using iPhone Share Sheet">📤 Share Link to Rider</button>
  </div>
  <p id="riderGPSStatus" role="status" aria-live="polite">Not connected · কারও GPS অনুমতি ছাড়া দেখা যাবে না</p>
  <div id="independentMonitorStatus" class="independent-monitor" aria-live="polite">রুট মনিটর: GPS উৎস সংযুক্ত নয়। অপারেটরের ATS/CBTC থেকে কোনো ডেটা নেওয়া হচ্ছে না।</div>
@@ -520,6 +521,6 @@ body.panel-hidden .controls{margin-left:auto}
 <script src="./live-rider-p2p.js?v=20261104-private-rider-v2"></script>
 <script src="dhaka-soundscape.js?v=20261104-local-audio-fix-v3"></script>
 <script src="actual-roads.js?v=20261104-osm-geometry-v2"></script>
-<script src="app-v2.js?v=20261104-replica-cinematic-v1"></script>
+<script src="app-v2.js?v=20261104-native-rider-share-v9"></script>
 </body>
 </html>
