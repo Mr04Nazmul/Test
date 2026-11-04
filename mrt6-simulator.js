@@ -36,21 +36,37 @@ function closestOnTrack(p){
 }
 const stationD=R.stations.map(s=>closestOnTrack(position(s.lon,s.lat)));
 const planet=new THREE.Scene();
-planet.background=new THREE.Color("#a8cddd");
-planet.fog=new THREE.Fog("#a8cddd",650,mobile?1900:2600);
+planet.background=new THREE.Color("#9dbfd4");
+planet.fog=new THREE.Fog("#9dbfd4",600,mobile?2250:3000);
 const renderer=new THREE.WebGLRenderer({antialias:!mobile,powerPreference:"high-performance"});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,mobile?1.15:1.75));
+const deviceRatio=Math.max(1,window.devicePixelRatio||1);
+let qualityMode="auto",renderScale=Math.min(deviceRatio,mobile?1.3:1.65);
+function applyRenderScale(next){
+  renderScale=Math.round(clamp(next,.85,Math.min(deviceRatio,mobile?1.8:2))*100)/100;
+  renderer.setPixelRatio(renderScale);
+}
+applyRenderScale(renderScale);
 renderer.setSize(window.innerWidth,window.innerHeight);
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.18;
+renderer.toneMappingExposure=1.06;
 $("viewport").appendChild(renderer.domElement);
 const camera=new THREE.PerspectiveCamera(66,innerWidth/innerHeight,.15,3200);
-const hemi=new THREE.HemisphereLight("#f9f8e9","#637778",2.1);planet.add(hemi);
-const sun=new THREE.DirectionalLight("#fff7de",2.35);sun.position.set(-120,340,-130);planet.add(sun);
+const hemi=new THREE.HemisphereLight("#fff9ee","#566971",1.74);planet.add(hemi);
+const sun=new THREE.DirectionalLight("#ffefcf",2.05);sun.position.set(-120,340,-130);planet.add(sun);
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(3400,3400),new THREE.MeshStandardMaterial({color:"#7f9386",roughness:1}));
 ground.rotation.x=-Math.PI/2;ground.position.y=-.07;planet.add(ground);
-const asphalt=new THREE.MeshStandardMaterial({color:"#3b4047",roughness:.97});
+const asphalt=new THREE.MeshStandardMaterial({color:"#373d40",roughness:.98});
+asphalt.onBeforeCompile=shader=>{
+ shader.vertexShader=shader.vertexShader.replace("#include <common>",
+  "#include <common>\nvarying vec3 vAsphaltWorld;");
+ shader.vertexShader=shader.vertexShader.replace("#include <begin_vertex>",
+  "#include <begin_vertex>\nvAsphaltWorld=(modelMatrix*vec4(position,1.0)).xyz;");
+ shader.fragmentShader=shader.fragmentShader.replace("#include <common>",
+  "#include <common>\nvarying vec3 vAsphaltWorld;");
+ shader.fragmentShader=shader.fragmentShader.replace("#include <color_fragment>",
+  "#include <color_fragment>\nfloat grain=fract(sin(dot(floor(vAsphaltWorld.xz*1.4),vec2(12.9898,78.233)))*43758.5453);\ndiffuseColor.rgb*=.91+grain*.17;");
+};
 const concrete=new THREE.MeshStandardMaterial({color:"#b0bab9",roughness:.86});
 const steel=new THREE.MeshStandardMaterial({color:"#6c7476",metalness:.45,roughness:.55});
 const yellow=new THREE.MeshBasicMaterial({color:"#e9e2af"});
@@ -245,14 +261,21 @@ const matTraffic=[
  new THREE.MeshStandardMaterial({color:"#e7dfd1"})
 ];
 const traffic=[];
-for(let i=0;i<(mobile?12:20);i++){
+for(let i=0;i<(mobile?24:42);i++){
  const group=new THREE.Group(),bus=i%5===0,rikshaw=i%6===0;
  addBox(group,bus?2.3:rikshaw?1.3:1.8,bus?2.65:rikshaw?1.65:1.3,bus?7.5:rikshaw?2.9:3.9,
   0,bus?1.6:rikshaw?1.05:.9,0,matTraffic[i%4]);
  addBox(group,bus?2.24:1.75,.56,bus?4.5:2.3,0,bus?2.25:1.65,0,glass);
- traffic.push({root:group,s:(i*287)%LENGTH,side:i%2?-9:9,dir:i%2?1:-1});
+ traffic.push({root:group,s:(i*173)%LENGTH,side:i%2?-9:9,dir:i%2?1:-1,type:bus?"bus":rikshaw?"rickshaw":"car"});
  planet.add(group);
 }
+// Replace placeholders with the existing three genuine original traffic glTF assets.
+Promise.all(["car","bus","rickshaw"].map(n=>bodyLoader.loadAsync("assets/dhaka-"+n+".gltf").catch(()=>null))).then(([car,bus,rickshaw])=>{
+ const base={car,bus,rickshaw};
+ for(const t of traffic){if(!base[t.type])continue;
+  t.root.clear();t.root.add(base[t.type].scene.clone(true));
+ }
+});
 let sMeters=105,speed=0,power=0,brake=0,score=0,nextIndex=1,doors=false,mode=0,night=false,rate=1;
 let running=false,lastUpdate=performance.now(),lastTiles="",served=new Set(),lastHUD=0;
 const uiMessage=t=>{$("message").textContent=t;};
@@ -322,8 +345,9 @@ function setCamera(){
 }
 function setNight(){
  night=!night;$("sun").textContent=night?"🌙 Night":"☀ Day";
- planet.background.set(night?"#10263c":"#a8cddd");planet.fog.color.copy(planet.background);
- hemi.intensity=night?.75:2.1;sun.intensity=night?.55:2.35;
+ planet.background.set(night?"#142c43":"#9dbfd4");planet.fog.color.copy(planet.background);
+ hemi.intensity=night?.69:1.74;sun.intensity=night?.38:2.05;
+ if(worldM.userData.shader?.uniforms?.uNight)worldM.userData.shader.uniforms.uNight.value=night?1:0;
 }
 let audioCtx=null;
 function horn(){
@@ -380,14 +404,15 @@ const worldM=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.Double
 // Small procedural facade windows, derived from geometry, NOT real surveyed windows.
 // Shader keeps one mesh per OSM tile and avoids thousands of WebGL draw calls.
 worldM.onBeforeCompile=shader=>{
+ shader.uniforms.uNight={value:0};worldM.userData.shader=shader;
  shader.vertexShader=shader.vertexShader.replace("#include <common>",
   "#include <common>\nvarying vec3 vCityWorld;");
  shader.vertexShader=shader.vertexShader.replace("#include <begin_vertex>",
   "#include <begin_vertex>\nvCityWorld = (modelMatrix * vec4(position,1.0)).xyz;");
  shader.fragmentShader=shader.fragmentShader.replace("#include <common>",
-  "#include <common>\nvarying vec3 vCityWorld;");
+  "#include <common>\nvarying vec3 vCityWorld;\nuniform float uNight;");
  shader.fragmentShader=shader.fragmentShader.replace("#include <color_fragment>",
-  "#include <color_fragment>\nvec3 wallN = normalize(cross(dFdx(vCityWorld), dFdy(vCityWorld)));\nfloat facade = 1.0 - step(0.4, abs(wallN.y));\nfloat across = abs(wallN.x) > abs(wallN.z) ? vCityWorld.z : vCityWorld.x;\nfloat windowX = fract(across / 3.25);\nfloat windowY = fract(vCityWorld.y / 3.15);\nfloat glassX = step(0.17, windowX) * (1.0-step(0.83, windowX));\nfloat glassY = step(0.30, windowY) * (1.0-step(0.82, windowY));\nfloat lit = step(0.76, fract(across*.073 + vCityWorld.y*.11));\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(.11,.22,.28) + vec3(.08,.07,.025)*lit, facade*glassX*glassY*.88);");
+  "#include <color_fragment>\nvec3 wallN = normalize(cross(dFdx(vCityWorld), dFdy(vCityWorld)));\nfloat facade = 1.0 - step(0.4, abs(wallN.y));\nfloat across = abs(wallN.x) > abs(wallN.z) ? vCityWorld.z : vCityWorld.x;\nfloat windowX = fract(across / 3.25);\nfloat windowY = fract(vCityWorld.y / 3.15);\nfloat glassX = step(0.17, windowX) * (1.0-step(0.83, windowX));\nfloat glassY = step(0.30, windowY) * (1.0-step(0.82, windowY));\nfloat lit = step(0.76, fract(across*.073 + vCityWorld.y*.11));\ndiffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(.10,.21,.26),vec3(.84,.65,.32),lit*uNight) + vec3(.08,.07,.025)*lit, facade*glassX*glassY*.90);");
 };
 const facades=["#d7cabb","#c8ac96","#d4d5c9","#a7beca","#d8b1a1","#d0d9d2","#c8b8af"];
 function buildTile(data){
@@ -461,11 +486,34 @@ async function initTiles(){
  }catch(e){uiMessage("OSM corridor offline tiles নেই। স্টেশন, ট্র্যাক এবং ট্রেন 3D তবুও চলবে।");}
 }
 initTiles();
-let lastCenter=null;
+// iPhone-friendly adaptive HD: prioritise fluid gameplay, and let the user force resolution.
+const qualityButton=$("quality"),maxAuto=Math.min(deviceRatio,mobile?1.65:1.9);
+qualityButton.onclick=()=>{
+ qualityMode=qualityMode==="auto"?"hd":qualityMode==="hd"?"smooth":"auto";
+ qualityButton.textContent=qualityMode==="hd"?"✨ HD":qualityMode==="smooth"?"⚡ Smooth":"✨ Auto HD";
+ applyRenderScale(qualityMode==="hd"?Math.min(deviceRatio,mobile?1.8:2.0):
+  qualityMode==="smooth"?(mobile?1.0:1.2):Math.min(renderScale,maxAuto));
+};
+let frameTicks=0,frameTime=performance.now();
+const trainAudio=new Audio("assets/audio/train.wav");
+trainAudio.loop=true;trainAudio.preload="auto";trainAudio.volume=0;
+function updateAdaptive(now){
+ frameTicks++;
+ if(now-frameTime<2200)return;
+ const fps=frameTicks*1000/Math.max(1,now-frameTime);
+ frameTicks=0;frameTime=now;
+ if(qualityMode==="auto" && running){
+  if(fps<36)applyRenderScale(Math.max(.88,renderScale-.12));
+  else if(fps>53&&renderScale<maxAuto)applyRenderScale(Math.min(maxAuto,renderScale+.07));
+ }
+}
 function render(){
  const now=performance.now(),dt=Math.min((now-lastUpdate)/1000,.075);lastUpdate=now;
+ updateAdaptive(now);
  if(running){
   updatePhysics(dt*rate);paintTrain(sMeters);
+  trainAudio.volume=clamp(.035+speed*.004,0,.12);
+  trainAudio.playbackRate=clamp(.7+speed*.025,.7,1.35);
   const f=trackAt(sMeters);ground.position.x=f.p.x;ground.position.z=f.p.z;
   for(const ch of trackChunks)ch.group.visible=Math.abs(ch.center-sMeters)<(mobile?1350:1900);
   hdRail.update(sMeters,mobile?1500:1900);
@@ -483,9 +531,10 @@ function render(){
  renderer.render(planet,camera);
  requestAnimationFrame(render);
 }
-paintTrain(sMeters);updateCamera(1);updateHUD();render();
+paintTrain(sMeters);updateCamera(1);updateHUD();hdRail.update(sMeters,1500);render();
 $("start").onclick=()=>{
  $("loading").hidden=true;running=true;lastUpdate=performance.now();jump.value="0";
+ trainAudio.play().catch(()=>{});
  uiMessage("Simulator শুরু! Power বাড়াও, স্টেশনের আগে Brake দিয়ে থামাও, তারপর Doors খুলে পয়েন্ট নাও।");
 };
 window.addEventListener("resize",()=>{
