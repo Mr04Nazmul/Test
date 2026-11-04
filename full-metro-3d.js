@@ -187,6 +187,11 @@ function overview(){
 function focus(i){
  if(!Number.isInteger(i)||i<0||i>=stations.length)return;
  selected=i;$("pickStation").value=String(i);
+ const studioLink=$("studioStationLink");
+ if(studioLink){
+  studioLink.href="real-3d-studio.html?station="+i;
+  studioLink.textContent="🏙 "+stations[i].bn+" · Real 3D";
+ }
  $("allLine").classList.remove("active");
  const s=stations[i];
  v.camera.flyToBoundingSphere(new C.BoundingSphere(getPos(s,20),52),{
