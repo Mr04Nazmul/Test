@@ -5,7 +5,7 @@ const C=window.Cesium,route=window.MRT_TRACK,$=id=>document.getElementById(id);
 if(!C||!route||route.stations.length!==16){$("message").textContent="Route/3D engine unavailable";return;}
 const stations=route.stations,track=route.points;
 let v,selected=-1,buildToken=0;
-const models=[],fullBoards=[],numberPins=[],supports=[];
+const models=[],fullBoards=[],numberPins=[],supports=[],allStationModels=[];
 const getPos=(s,h=0)=>C.Cartesian3.fromDegrees(s.lon,s.lat,h);
 const angle=x=>C.Math.toRadians(x);
 const note=x=>$("message").textContent=x;
@@ -82,6 +82,16 @@ function makeStations(){
    billboard:{image:pinTexture(i),width:34,height:34,
     disableDepthTestDistance:Number.POSITIVE_INFINITY}
   }));
+  // Always instantiate a distinct station-specific 3D architecture model
+  // at each OSM station coordinate, but render only at street-level zoom.
+  // Non-surveyed architecture is illustrative, not operator CAD.
+  allStationModels.push(v.entities.add({
+   name:s.bn+" / "+s.n+" · original station 3D",
+   position:getPos(s,0),
+   orientation:orientation(i),
+   model:{uri:"assets/stations/"+i+".gltf",scale:1,
+    distanceDisplayCondition:new C.DistanceDisplayCondition(0,3300)}
+  }));
   supports.push(v.entities.add({name:"Estimated physical sign support, "+s.n,
    position:getPos(s,34),
    box:{dimensions:new C.Cartesian3(.4,.5,10),material:tint("#61716c"),
@@ -96,6 +106,7 @@ function updateLabels(){
   fullBoards[i].show=close||selected===i;
   numberPins[i].show=!close&&selected!==i;
   supports[i].show=height<1500;
+  allStationModels[i].show=(height<3500&&i!==selected);
  }
 }
 function dropModels(){
