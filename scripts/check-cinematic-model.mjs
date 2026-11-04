@@ -23,6 +23,12 @@ for(const kind of ["concrete","roof_green","asphalt","plaster_old","glass","trai
 const html=readFileSync("index.html","utf8"),app=readFileSync("app-v2.js","utf8");
 assert(html.includes('id="cinematicView"'),"No accessible cinematic toggle");
 assert(app.includes("assets/cinematic/agargaon-detailed.glb"),"Cinematic GLB is not connected to website");
-assert(app.includes("C.CustomDataSource"),"Cinematic model needs its own independent Cesium layer");
+assert(app.includes("C.Model.fromGltfAsync"),"Full-color 3D must wait for the GLB model to load");
+assert(app.includes("hideMappedScene()"),"Mapped low-detail scene must be hidden in cinematic mode");
+assert(app.includes("setCinematicCamera("),"360° independent model camera must be available");
+assert(app.includes("setTimeout(()=>{if(!cinematicOn"),"Detailed 3D must open automatically on site load");
+assert(!app.includes("viewer.entities.show="),"EntityCollection.show is not a valid way to hide mapped geometry");
+assert(html.includes('id="cinematicView"'),"Cinematic toggle must remain accessible");
+assert(html.includes('#cinematicView{'),"Cinematic toggle must be visible, not hidden in a horizontal menu");
 assert(app.includes("MRTActualRoads"),"Mapped roads must still be available");
 console.log("PASS",name,Math.round(buf.length/1048576*100)/100+" MiB",data.meshes.length,"3D material meshes",data.images.length,"embedded textures");
