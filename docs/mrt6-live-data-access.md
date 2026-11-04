@@ -113,3 +113,25 @@ A 2026 [independent source audit](https://metrodhaka.com/about-us/) similarly re
 **Practical currently integrated actual GPS:** the map's *Private Rider GPS* uses a consent-based WebRTC phone-sharing session; the viewer can copy the invitation or use the iPhone native Share Sheet. Each rider must opt in; observations are labelled rider PHONE (not operator-verified train) and expire after 20 seconds. Real train location still requires DMTCL's approved public passenger-information endpoint or a duly licensed, actively reporting provider. The approved vehicle adapter remains disabled until documented access exists.
 
 No outbound email is authorized without a new explicit user request; earlier outreach in a previous turn does not authorize future mail.
+
+
+## Real open-source GPS tool evaluation (4 November 2026)
+
+These repositories were checked against their actual READMEs on GitHub. **These are software tools, not an already-operational DMTCL MRT-6 vehicle GPS data source.**
+
+| Tool | What it can actually do | Requirement / limitation |
+| --- | --- | --- |
+| [OneBusAway/vehicle-positions](https://github.com/OneBusAway/vehicle-positions) | Go backend with rider-contributed (opt-in) GPS, route and trip verification, map-matched crowd observations and GTFS-Realtime VehiclePositions feed. Rider mode publishes with distinctive `rider:<trip_id>:<start_date>` identifiers and `source=rider`, and offers a iOS SDK. | Host a server, PostgreSQL, public MRT-6 GTFS static schedule (with shapes and trips), enabled rider mode, real consenting reporters. **Does not include a DMTCL public feed.** |
+| [traccar/traccar](https://github.com/traccar/traccar) and [traccar/traccar-client](https://github.com/traccar/traccar-client) | Mature open-source GPS backend and iOS/Android clients, live location, device management and REST API. Can receive fresh consenting phone/device GPS from inside MRT-6. | Deploy HTTPS Traccar server, obtain clear opt-in, permissions and suitable data isolation; phone GPS is not an official train identity. Never expose personal location or server tokens through this public site. |
+| [public-transport/gtfs-rt-inspector](https://github.com/public-transport/gtfs-rt-inspector) | Visualize and inspect an *existing* GTFS-Realtime VehiclePositions feed in a browser. | Requires a known published/CORS-accessible live data URL. Does not create coordinates or discover secured DMTCL operator telemetry. |
+| [RJ-SMTR/pygtfsrealtime](https://github.com/RJ-SMTR/pygtfsrealtime) | Turn a **separately obtained raw GPS/AVL stream** into standards-compliant GTFS-Realtime VehiclePositions with route/trip matching. | Requires raw, authorized location reports and a GTFS feed. Not a GPS provider itself. |
+| [imamhossain94/dhaka-metro-live-map](https://github.com/imamhossain94/dhaka-metro-live-map) | OpenStreetMap MRT-6 alignment and timetable-derived train animation. | Explicitly says all train positions are estimates; only the user's own location feature is true GPS. **Do not use as a live train feed.** |
+
+### Recommended architecture for this website
+
+1. **Now:** Continue current explicit opt-in `Private Rider GPS` for live phone observations, separately labelled. No operator feed is available; no invented vehicle positions.
+2. **When testing actual consented passengers:** Traccar is easiest to self-host as a privacy-aware back end for multiple consenting phones. Do not publicly expose individuals' tracks or claim a phone is a specific train without corroboration.
+3. **For a multi-rider transit-standard service:** OneBusAway/vehicle-positions can produce a properly labelled GTFS-Realtime crowdsource feed, but setting up its GTFS and backend and recruiting genuine riders are required. A test simulator is **not** live MRT-6 data.
+4. **If DMTCL provides a read-only passenger-facing feed:** Use the site's gated `data/operator-live-feed.js` HTTPS adapter behind a backend proxy and verify origin, timestamps, route and reuse rights.
+
+**No outreach:** The user explicitly forbids sending emails without renewed specific consent. Do not send any email as part of this project without asking.
