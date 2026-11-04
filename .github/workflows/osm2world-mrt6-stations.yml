@@ -1,0 +1,125 @@
+name: OSM2World — Real MRT6 Station Districts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/osm2world-mrt6-stations.yml'
+      - 'scripts/prepare-station-osm2world.mjs'
+      - 'scripts/check-station-osm2world.mjs'
+      - 'scripts/write-station-osm2world-manifest.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mrt6-osm2world-station-models
+  cancel-in-progress: false
+
+jobs:
+  build-districts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        group:
+          - '0 1 2 3 4'
+          - '5 6 7 9 10'
+          - '11 12 13 14 15'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/cache@v4
+        with:
+          path: .cache/OSM2World-0.4.0-bin.zip
+          key: osm2world-official-0.4.0-v1
+      - name: Install official OSM2World 3D engine
+        run: |
+          set -euo pipefail
+          mkdir -p .cache /tmp/osm2world
+          if [ ! -s .cache/OSM2World-0.4.0-bin.zip ]; then
+            curl -fL --retry 3 --max-time 220 \
+              https://osm2world.org/download/files/0.4.0/OSM2World-0.4.0-bin.zip \
+              -o .cache/OSM2World-0.4.0-bin.zip
+          fi
+          unzip -q .cache/OSM2World-0.4.0-bin.zip -d /tmp/osm2world
+          test -n "$(find /tmp/osm2world -iname '*osm2world*.jar' -type f | head -n1)"
+      - name: Generate mapped station city GLBs
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p assets/osm2world/stations
+          JAR="$(find /tmp/osm2world -type f -iname '*osm2world*.jar' | head -n1)"
+          jar_dir="$(dirname "$JAR")"
+          for idx in ${{ matrix.group }}; do
+            echo "::group::OSM2World station index $idx"
+            if OSM_RADIUS_M=260 node scripts/prepare-station-osm2world.mjs "$idx"; then
+              if (cd "$jar_dir" && java -Xmx4g -jar "$JAR" \
+                 -i "$GITHUB_WORKSPACE/build/osm2world/station-$idx-source.osm" \
+                 -o "$GITHUB_WORKSPACE/assets/osm2world/stations/$idx.glb"); then
+                if node scripts/check-station-osm2world.mjs "$idx"; then
+                  cp "build/osm2world/station-$idx-source.json" "assets/osm2world/stations/$idx.json"
+                  echo "Generated station $idx"
+                else
+                  rm -f "assets/osm2world/stations/$idx.glb"
+                fi
+              else
+                echo "OSM2World could not reconstruct station $idx; no fake replacement"
+                rm -f "assets/osm2world/stations/$idx.glb"
+              fi
+            else
+              echo "OSM mapping unavailable for station $idx; no fictional model"
+            fi
+            echo "::endgroup::"
+            sleep 5
+          done
+          ls -lh assets/osm2world/stations || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mrt6-osm-3d-${{ strategy.job-index }}
+          path: assets/osm2world/stations/
+          if-no-files-found: warn
+          retention-days: 4
+
+  publish:
+    needs: build-districts
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mrt6-osm-3d-*
+          merge-multiple: true
+          path: assets/osm2world/stations/
+      - name: Index available verified OSM city models
+        run: |
+          node scripts/write-station-osm2world-manifest.mjs
+          test -s assets/osm2world/stations/manifest.json
+      - name: Commit city tiles to branch-backed GitHub Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f assets/osm2world/stations/
+          if git diff --cached --quiet; then
+            echo "No new verified station models"
+            exit 0
+          fi
+          git commit -m 'feat: original OSM2World MRT6 mapped 3D station districts [skip ci]'
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            git rebase origin/main
+          done
+          exit 1
