@@ -17,9 +17,6 @@ jobs:
   map-tiles:
     runs-on: ubuntu-latest
     timeout-minutes: 55
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,10 +60,5 @@ jobs:
               if [ "$attempt" -eq 3 ]; then exit 1; fi
             done
           fi
-      - name: Publish generated tile snapshot to GitHub Pages
-        uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Pages publication
+        run: echo 'GitHub Pages publishes the committed corridor tile snapshots from main.'
