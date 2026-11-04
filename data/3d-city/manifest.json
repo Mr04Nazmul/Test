@@ -1,0 +1,9 @@
+{
+  "ready": false,
+  "zoom": 14,
+  "bounds": [90.25, 23.65, 90.57, 24.03],
+  "dataSource": "Pending Geofabrik Bangladesh OSM extraction",
+  "attribution": "© OpenStreetMap contributors, ODbL 1.0",
+  "accuracy": "Mapped footprints only; building appearance and missing heights estimated.",
+  "completeness": "The 16 station footprint snapshots are used until generated Dhaka urban tiles become available."
+}
