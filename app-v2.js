@@ -20,6 +20,31 @@ let playing=true,demoMeters=0,rate=1,ride=false,worldModels=[],buildings=[],show
 let cameraStyle="chase",orbitYaw=0,orbitPitch=-0.74,followDistance=220,gpsDisplayMeters=null;
 let lastFrame=0,lastMapUpdate=0,lastMarkerAnimation=0,etaLast=0,lastAudioSceneUpdate=0,stationStructure=null,trainEntities=[],trainMarkers=new Map(),miniTrains=new Map();
 const stationMarkers=[];
+// Approved vehicle telemetry: separate from schedule estimates and private rider GPS.
+const officialVehicleMarkers=new Map();
+window.MRT_OFFICIAL_VEHICLES?.subscribe(state=>{
+ for(const marker of officialVehicleMarkers.values())viewer.entities.remove(marker);
+ officialVehicleMarkers.clear();
+ if(state.status!=="actual")return;
+ for(const vehicle of state.vehicles){
+  const entity=viewer.entities.add({
+   name:"ACTUAL VEHICLE GPS · "+vehicle.id+" · "+state.provider,
+   position:C.Cartesian3.fromDegrees(vehicle.lon,vehicle.lat,26),
+   point:{pixelSize:15,color:C.Color.LIME,outlineColor:C.Color.WHITE,outlineWidth:3,
+    disableDepthTestDistance:Number.POSITIVE_INFINITY},
+   label:{text:"GPS · "+vehicle.id, font:"bold 13px sans-serif",
+    pixelOffset:new C.Cartesian2(0,-27),fillColor:C.Color.WHITE,
+    showBackground:true,backgroundColor:C.Color.fromCssColorString("#073d30")}
+  });
+  officialVehicleMarkers.set(vehicle.id,entity);
+ }
+});
+// Only a deliberately provisioned, documented provider may enable this adapter.
+if(window.MRT_APPROVED_FEED_CONFIG?.approved===true){
+ try{window.MRT_OFFICIAL_VEHICLES?.configure(window.MRT_APPROVED_FEED_CONFIG)}
+ catch(e){console.warn("Approved vehicle feed not started:",e.message)}
+}
+
 let loadTicket=0,bldgRequest=null,gpsWatchId=null,gpsMeters=null,gpsMark=null;
 const nameFor=i=>(st[i]&&st[i].bn)||"";
 const carLength=19.8;
