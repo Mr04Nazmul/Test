@@ -270,7 +270,7 @@ function renderStructure(index){
  const title=university?" — Dhaka University original detailed 3D":agargaon?" — Agargaon photo-referenced 3D":farmgate?" — Farmgate detailed reconstruction":" conceptual 3D station";
  stationStructure=viewer.entities.add({name:s.n+title,
   position:lonlatPoint(s,0),orientation:modelOrientation(p),
-  model:{uri:university?"assets/dhaka-university-landmark.gltf":agargaon?"assets/agargaon-station.gltf":farmgate?"assets/farmgate-landmark.gltf":"assets/stations/"+index+".gltf",
+  model:{uri:university?"assets/dhaka-university-landmark.gltf":agargaon?"assets/agargaon-station.gltf?v=20261104-architecture-detail-v1":farmgate?"assets/farmgate-landmark.gltf":"assets/stations/"+index+".gltf",
    scale:1,minimumPixelSize:0,maximumScale:1}});
  setupStreetTraffic(index);
  addFarmgateDetails(index);
@@ -920,7 +920,7 @@ async function loadBuildings(i){
  const hasCityMesh=new Set(Array.from({length:16},(_,n)=>n));
  if(hasCityMesh.has(i)){
   try{
-   const url="./assets/urban/"+i+".gltf";
+   const url="./assets/urban/"+i+".gltf?v=20261104-osm-107-detail-v1";
    const head=await fetch(url,{method:"HEAD",cache:"force-cache",signal:bldgRequest.signal});
    if(head.ok){
     if(i!==selectedStation||token!==loadTicket||!showBuildings||googleMode)return;
