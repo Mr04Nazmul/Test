@@ -375,6 +375,10 @@ body.cinematic-active #scene canvas{
 .camera-witness-panel summary{cursor:pointer;font-size:11px;color:#d2ffe6}
 @media(max-width:390px){.camera-watch-buttons{grid-template-columns:1fr}}
 
+.real-only-switch{margin:11px 0;padding:10px;border:1px solid #39dcb66e;border-radius:11px;background:#0b40366e}
+.real-only-switch button{width:100%;padding:10px;border-radius:9px;background:#1b5c4d;color:white;font-size:12px;font-weight:750;border:1px solid #81eeca88}
+.real-only-switch button[aria-pressed="true"]{background:#207c5b;border-color:#8cfcca}
+.real-only-switch p{margin:8px 0 0;color:#c7e6e1;line-height:1.5;font-size:10px}
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/";</script>
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.126/Build/Cesium/Cesium.js"></script>
@@ -472,7 +476,11 @@ body.cinematic-active #scene canvas{
  <p class="radar-notice">সময়সূচি অনুযায়ী অনুমান · এটি Live GPS নয়। DMTCL কোনো উন্মুক্ত train-location feed দেয় না।</p>
  <p id="satelliteTrackingNote" class="radar-satellite-note">🛰 <strong>Satellite ≠ Live GPS:</strong> স্যাটেলাইট ম্যাপে ঐতিহাসিক ছবি দেখা যায়; চলমান ট্রেনের বর্তমান অবস্থান পাওয়া যায় না। <a href="https://support.google.com/earth/answer/6327779?hl=en" target="_blank" rel="noopener noreferrer">Google Earth imagery explanation</a>।</p>
 
- <div class="gps-source-status" aria-label="Actual train GPS source and freshness">
+ <section class="real-only-switch" aria-label="Observed GPS only map mode">
+  <button type="button" id="realOnlyButton" aria-pressed="false">📍 Real GPS Only · OFF</button>
+  <p id="realOnlyState" role="status" aria-live="polite">ON করলে demo ও timetable-ভিত্তিক সব ট্রেন লুকাবে। শুধু অনুমোদিত GPS বা সম্মতিপ্রাপ্ত যাত্রীর ফোন GPS দেখাবে।</p>
+ </section>
+<div class="gps-source-status" aria-label="Actual train GPS source and freshness">
   <div class="gps-source-line"><span class="gps-led" id="actualGpsLed"></span><strong id="actualGpsHeadline">REAL GPS · No connected source</strong></div>
   <p id="actualGpsDetails" role="status" aria-live="polite">Official train GPS feed unavailable. Private passenger GPS connects only after permission.</p>
   <div class="gps-source-facts">
@@ -578,6 +586,6 @@ body.cinematic-active #scene canvas{
 <script src="./camera-observer-p2p.js?v=20261104-camera-v1"></script>
 <script src="dhaka-soundscape.js?v=20261104-local-audio-fix-v3"></script>
 <script src="actual-roads.js?v=20261104-osm-geometry-v2"></script>
-<script src="app-v2.js?v=20261104-camera-watch-v13"></script>
+<script src="app-v2.js?v=20261104-real-gps-only-v14"></script>
 </body>
 </html>
