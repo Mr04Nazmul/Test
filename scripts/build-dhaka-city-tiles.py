@@ -132,7 +132,7 @@ def build(source):
                 if dist_to_track_m(lon, lat) > BUFFER_METERS:
                     continue
                 xy = slippy(lon, lat)
-                key = (identifier, part_idx) if identifier else (xy, tuple(ring[:3]))
+                key = (identifier, part_idx) if identifier else (xy, tuple((float(p[0]), float(p[1])) for p in ring[:3]))
                 if key in seen:
                     continue
                 seen.add(key)
